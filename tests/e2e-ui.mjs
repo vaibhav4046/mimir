@@ -45,6 +45,7 @@ async function main() {
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mimir-e2e-'));
   const coord = await startCoordinator({ dataDir: tmpDir, enableScheduler: false });
+  coord.store.updateSettings({ firstRunDismissed: true });
   let coordRestart = null;
   const uiSrv = await startStaticDistServer(distDir);
   const browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ['--no-sandbox'] });
@@ -359,6 +360,7 @@ async function main() {
     // Verify /app.html without coordinator shows RuntimeConnectGate & supports explicit pairing + unpairing against auth-protected coordinator
     const authTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mimir-e2e-auth-'));
     const authCoord = await startCoordinator({ dataDir: authTmp, enableScheduler: false, token: 'e2e-pairing-secret' });
+  authCoord.store.updateSettings({ firstRunDismissed: true });
     const gateCtx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     const gatePage = await gateCtx.newPage();
     gatePage.on('pageerror', err => pageErrors.push(`gatePage: ${err.message}`));
@@ -400,6 +402,7 @@ async function main() {
       token: 'exp-secret',
       pairingSessionTtlMs: 1500,
     });
+    expCoord.store.updateSettings({ firstRunDismissed: true });
     const expCtx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     const expPage = await expCtx.newPage();
     expPage.on('pageerror', err => pageErrors.push(`expPage: ${err.message}`));
@@ -440,6 +443,7 @@ async function main() {
     });
     await new Promise(r => slowSrv.listen(0, '127.0.0.1', r));
     const offlineCoord = await startCoordinator({ dataDir: offlineTmp, enableScheduler: false });
+  offlineCoord.store.updateSettings({ firstRunDismissed: true });
     await fetch(`${offlineCoord.url}/v1/settings`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

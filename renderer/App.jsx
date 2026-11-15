@@ -26,6 +26,7 @@ import { BoardMeetingView } from './components/BoardMeetingView.jsx';
 import { MimriStackView } from './components/MimriStackView.jsx';
 import { VoiceLiveModal } from './components/VoiceLiveModal.jsx';
 import { RuntimeConnectGate } from './components/RuntimeConnectGate.jsx';
+import { FirstRunSetup } from './components/FirstRunSetup.jsx';
 import { BotAvatar } from './components/BotAvatar.jsx';
 import { deriveMimirAvatarState } from './components/MimirAvatarSvg.jsx';
 import { MenuBarsSvg } from './components/Icons.jsx';
@@ -668,6 +669,25 @@ export function App() {
         health={runtimeState.health}
         onConnected={connectAndRefresh}
         onStatusChange={next => setRuntimeState(prev => ({ ...prev, ...next }))}
+      />
+    );
+  }
+
+  // First launch: until a model is set up (or the user skips), show device check + model install.
+  if (mode !== 'spotlight' && mode !== 'popout' && settings && !settings.modelSetupDone && !settings.firstRunDismissed) {
+    return (
+      <FirstRunSetup
+        settings={settings}
+        onDone={async next => {
+          setSettings(next);
+          await refreshAll();
+          await probeModels();
+        }}
+        onUseCloud={async () => {
+          const next = await apiFetch('/v1/settings', { method: 'PATCH', body: JSON.stringify({ firstRunDismissed: true }) });
+          setSettings(next);
+          setActiveTab('settings');
+        }}
       />
     );
   }
