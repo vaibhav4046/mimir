@@ -19,10 +19,12 @@ A certificate must come from a CA (OV or EV code-signing; EV builds SmartScreen 
 ## Runtimes not bundled
 Ollama, Python and a browser are detected at runtime. Settings → "This computer" (`GET /v1/preflight`) shows what is missing with the exact install command. Browser tools fall back to installed Chrome or Edge. Python packages: `scripts/requirements.txt`.
 
-## Verified on this machine (2026-11-13)
+## Verified on this machine (1.0.4, 2026-11-15)
+
+Release asset name on GitHub is `Mimir-Setup-<version>.exe` (the local file has spaces; rename before upload so the landing-page link stays valid). Bump `package.json` and `daemon/version.mjs` together, then `npm run manifest`.
 | Check | Result |
 |---|---|
-| Packaged smoke test (`MIMIR_SMOKE_TEST=1`) | ok, Rust sidecar ran from `app.asar.unpacked` |
+| Installed copy, smoke mode on a fresh profile | ok; opens on the first-run setup screen, which the check accepts |
 | Silent install `/S /D=<dir>` | exit 0; exe, uninstaller, registry entry, Start menu + desktop shortcuts present |
 | Installed copy, smoke mode | ok |
 | Installed copy, normal mode | coordinator `/health` ok, main window shown, second launch exits (single instance) |
