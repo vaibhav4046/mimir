@@ -16,6 +16,23 @@ import path from 'node:path';
 const MAX_STEPS = 8;
 const HANDOFF_CHARS = 1500; // per earlier step, so the chain fits a small model's window
 const MAX_RUNS_KEPT = 60;
+const MAX_EVENTS = 200; // activity log entries kept per run
+
+/**
+ * Group steps into stages. A step marked `parallel` runs at the same time as the step before
+ * it; everything else starts a new stage. Returns arrays of step indexes, e.g. [[0],[1,2],[3]].
+ */
+export function groupWaves(steps = []) {
+  const waves = [];
+  steps.forEach((s, i) => {
+    if (i > 0 && s.parallel) waves.at(-1).push(i);
+    else waves.push([i]);
+  });
+  return waves;
+}
+
+/** "at the same time", "in parallel", "meanwhile": the step runs beside the one before it. */
+const PARALLEL_WORDS = /\b(?:at the same time|in parallel|simultaneously|meanwhile|alongside that)\b[,:]?\s*/i;
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const slug = s => String(s || 'step').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'step';
@@ -214,7 +231,13 @@ export class WorkflowEngine {
       trigger,
       triggerNote: note || null,
       plannedBy,
-      steps: rawSteps.map(s => ({ ...s, botId: assignBot(`${s.title} ${s.instruction}`, bots, fallbackId) })),
+      steps: rawSteps.map((s, i) => {
+        // "…, then at the same time check the prices" runs beside the step before it.
+        const together = i > 0 && PARALLEL_WORDS.test(s.instruction);
+        const instruction = together ? s.instruction.replace(PARALLEL_WORDS, '').trim() : s.instruction;
+        const title = together ? titleOf(instruction) : s.title;
+        return { title, instruction, parallel: together, botId: assignBot(`${title} ${instruction}`, bots, fallbackId) };
+      }),
     };
   }
 
@@ -222,8 +245,9 @@ export class WorkflowEngine {
     const name = String(input.name || '').trim();
     if (!name) throw bad('Give the workflow a name.');
     const steps = (Array.isArray(input.steps) ? input.steps : [])
-      .map(s => ({ title: String(s.title || '').trim().slice(0, 60), instruction: String(s.instruction || '').trim(), botId: s.botId }))
+      .map(s => ({ title: String(s.title || '').trim().slice(0, 60), instruction: String(s.instruction || '').trim(), botId: s.botId, parallel: Boolean(s.parallel) }))
       .filter(s => s.instruction);
+    if (steps[0]) steps[0].parallel = false; // nothing before it to run beside
     if (!steps.length || steps.length > MAX_STEPS) throw bad(`A workflow needs 1 to ${MAX_STEPS} steps.`);
     for (const s of steps) {
       if (!this.store.getBot(s.botId)) throw bad(`Step "${s.title || s.instruction.slice(0, 30)}" has no valid bot.`);
@@ -311,7 +335,8 @@ export class WorkflowEngine {
         startedAt: new Date().toISOString(),
         finishedAt: null,
         status: 'running',
-        steps: wf.steps.map(s => ({ title: s.title, botId: s.botId, botName: this.store.getBot(s.botId)?.name || s.botId, status: 'waiting', output: '', file: null, error: null })),
+        steps: wf.steps.map(s => ({ title: s.title, botId: s.botId, botName: this.store.getBot(s.botId)?.name || s.botId, parallel: Boolean(s.parallel), status: 'waiting', output: '', file: null, error: null, startedAt: null, finishedAt: null })),
+        events: [],
         deliverable: null,
       };
       runs.unshift(run);
@@ -328,17 +353,30 @@ export class WorkflowEngine {
     };
     checkpoint();
 
+    const note = (kind, text, i = null) => {
+      const rec = i === null ? null : run.steps[i];
+      run.events.push({ at: new Date().toISOString(), kind, text: String(text).slice(0, 400), stepIndex: i, botId: rec?.botId || null, botName: rec?.botName || null });
+      if (run.events.length > MAX_EVENTS) run.events.splice(0, run.events.length - MAX_EVENTS);
+    };
+    if (!Array.isArray(run.events)) run.events = [];
+    const waves = groupWaves(wf.steps);
+    note(resumeRunId && run.events.length ? 'resumed' : 'started', `"${wf.name}" started: ${wf.steps.length} step(s) in ${waves.length} stage(s)`);
+
     try {
-      for (let i = 0; i < wf.steps.length; i++) {
+      const runStep = async (i, waveStart) => {
         const step = wf.steps[i];
         const rec = run.steps[i];
-        if (!rec || rec.status === 'done') continue; // missing or finished in an earlier attempt
+        if (!rec || rec.status === 'done') return; // missing or finished in an earlier attempt
         rec.status = 'running';
         rec.error = null;
+        rec.startedAt = new Date().toISOString();
+        rec.finishedAt = null;
+        note('step-started', `${rec.botName} started: ${rec.title}`, i);
         checkpoint();
 
+        // A step sees the results of earlier stages only; steps in its own stage run beside it.
         const earlier = run.steps
-          .slice(0, i)
+          .slice(0, waveStart)
           .map((r, n) => `Step ${n + 1} (${r.title}) by ${r.botName}:\n${String(r.output).slice(0, HANDOFF_CHARS)}`)
           .join('\n\n');
         const userText =
@@ -365,7 +403,10 @@ export class WorkflowEngine {
         const reply = String(out?.reply || '').trim();
         if (out?.error || out?.aborted || !reply || reply.startsWith('Error:')) {
           rec.status = 'failed';
+          rec.finishedAt = new Date().toISOString();
           rec.error = (out?.error || (out?.aborted ? 'Stopped' : reply) || 'The bot returned nothing').slice(0, 300);
+          note('step-failed', `${rec.botName} could not finish "${rec.title}": ${rec.error}`, i);
+          checkpoint();
           throw new Error(`Step ${i + 1} (${step.title}) failed: ${rec.error}`);
         }
         // The engine writes the result to disk itself, so a step's output exists whether or
@@ -376,14 +417,32 @@ export class WorkflowEngine {
         rec.file = file;
         rec.threadId = out.threadId || null;
         rec.status = 'done';
+        rec.finishedAt = new Date().toISOString();
+        note('step-done', `${rec.botName} finished "${rec.title}": ${reply.replace(/\s+/g, ' ').slice(0, 220)}`, i);
         checkpoint();
+      };
+
+      for (let w = 0; w < waves.length; w++) {
+        const wave = waves[w];
+        if (w > 0 && wave.some(i => run.steps[i]?.status !== 'done')) {
+          const from = waves[w - 1].map(i => run.steps[i].botName).join(' and ');
+          const to = wave.map(i => run.steps[i].botName).join(' and ');
+          note('handoff', `${from} handed results to ${to}`);
+        }
+        // Steps of one stage run at the same time. One failure fails the run after the
+        // others in the stage have finished, so their work is kept for a resume.
+        const settled = await Promise.allSettled(wave.map(i => runStep(i, wave[0])));
+        const failed = settled.find(r => r.status === 'rejected');
+        if (failed) throw failed.reason;
       }
       run.status = 'done';
+      note('finished', `"${wf.name}" finished`);
       run.deliverable = run.steps.at(-1).file;
       return { ok: true, reply: `Workflow "${wf.name}" finished ${run.steps.length} step(s). Result: ${run.steps.at(-1).output.slice(0, 400)}`, runId: run.id, run };
     } catch (err) {
       run.status = 'failed';
       run.error = err.message;
+      note('failed', `"${wf.name}" stopped: ${err.message}`);
       throw Object.assign(err, { runId: run.id });
     } finally {
       run.finishedAt = new Date().toISOString();

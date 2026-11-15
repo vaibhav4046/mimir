@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { apiFetch } from '../api.js';
+import { TeamRunView } from './TeamRunView.jsx';
 
 const triggerText = t =>
   t.type === 'daily' ? `Every day at ${t.dailyAt}` : t.type === 'interval' ? `Every ${t.intervalMinutes >= 60 ? `${t.intervalMinutes / 60} h` : `${t.intervalMinutes} min`}` : t.type === 'file' ? `When ${t.watchPath} changes` : 'When you press Run';
@@ -13,6 +14,7 @@ export function WorkflowsPanel({ bots }) {
   const [draft, setDraft] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [watching, setWatching] = useState(null); // workflow id whose run is open
 
   const load = useCallback(async () => {
     try {
@@ -49,7 +51,7 @@ export function WorkflowsPanel({ bots }) {
       setText('');
       await load();
     });
-  const run = (id, resumeRunId) => guard(async () => { await apiFetch(`/v1/workflows/${id}/run`, { method: 'POST', body: JSON.stringify({ resumeRunId }) }); await load(); });
+  const run = (id, resumeRunId) => guard(async () => { setWatching(id); await apiFetch(`/v1/workflows/${id}/run`, { method: 'POST', body: JSON.stringify({ resumeRunId }) }); await load(); });
   const remove = id => guard(async () => { await apiFetch(`/v1/workflows/${id}`, { method: 'DELETE' }); await load(); });
   const decide = (id, decision) => guard(async () => { await apiFetch(`/v1/approvals/${id}`, { method: 'POST', body: JSON.stringify({ decision }) }); await load(); });
   const editStep = (i, patch) => setDraft(d => ({ ...d, steps: d.steps.map((s, n) => (n === i ? { ...s, ...patch } : s)) }));
@@ -57,7 +59,7 @@ export function WorkflowsPanel({ bots }) {
   return (
     <section className="card" data-testid="workflows-panel" aria-labelledby="wf-title">
       <h3 className="card-title" id="wf-title">Workflows</h3>
-      <p className="muted">Describe a job once. Mimir splits it into steps, gives each step to the right bot, and runs it on your schedule.</p>
+      <p className="muted">Describe a job once. Mimir splits it into steps, gives each step to the right teammate, and runs it on your schedule. Steps can run one after another or at the same time.</p>
       {error && <div role="alert" className="wizard-error">{error}</div>}
 
       {approvals.length > 0 && (
@@ -83,7 +85,7 @@ export function WorkflowsPanel({ bots }) {
               className="textarea"
               rows={3}
               data-testid="wf-describe"
-              placeholder="Every day at 8am, research competitor pricing, then write a short brief, then draft one reply idea"
+              placeholder="Every day at 8am, research competitor pricing, then at the same time check our own prices, then write a short brief"
               value={text}
               onChange={e => setText(e.target.value)}
             />
@@ -115,6 +117,12 @@ export function WorkflowsPanel({ bots }) {
                 <select className="select" aria-label={`Who does step ${i + 1}`} value={s.botId} onChange={e => editStep(i, { botId: e.target.value })}>
                   {bots.map(b => <option key={b.id} value={b.id}>{b.name} · {b.role}</option>)}
                 </select>
+                {i > 0 && (
+                  <label className="wf-together">
+                    <input type="checkbox" checked={Boolean(s.parallel)} data-testid={`wf-together-${i}`} onChange={e => editStep(i, { parallel: e.target.checked })} />
+                    Do at the same time as the step above
+                  </label>
+                )}
               </li>
             ))}
           </ol>
@@ -136,12 +144,19 @@ export function WorkflowsPanel({ bots }) {
                 {last?.status === 'failed' && !w.running && (
                   <button type="button" className="btn btn-sm" disabled={busy} onClick={() => run(w.id, last.id)}>Resume from failed step</button>
                 )}
+                {last && (
+                  <button type="button" className="btn btn-sm" data-testid={`wf-watch-${w.id}`} aria-expanded={watching === w.id} onClick={() => setWatching(watching === w.id ? null : w.id)}>
+                    {watching === w.id ? 'Hide details' : w.running ? 'Watch it work' : 'See last run'}
+                  </button>
+                )}
                 <button type="button" className="btn btn-primary btn-sm" data-testid={`wf-run-${w.id}`} disabled={busy || w.running} onClick={() => run(w.id)}>
                   {w.running ? 'Running…' : 'Run now'}
                 </button>
                 <button type="button" className="btn btn-danger btn-sm" disabled={busy || w.running} onClick={() => remove(w.id)}>Delete</button>
               </span>
             </header>
+            {watching === w.id && last && <TeamRunView run={last} bots={bots} onClose={() => setWatching(null)} />}
+            {!(watching === w.id && last) && (<>
             <ol className="wf-steps wf-run">
               {(last?.steps || w.steps).map((s, i) => (
                 <li key={i} data-status={s.status || 'waiting'}>
@@ -159,6 +174,7 @@ export function WorkflowsPanel({ bots }) {
                 <span className="muted">Saved to {last.deliverable}</span>
               </details>
             )}
+            </>)}
           </article>
         );
       })}

@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
 import { startCoordinator } from '../daemon/coordinator.mjs';
-import { parseTrigger, splitSteps, assignBot } from '../daemon/workflows.mjs';
+import { parseTrigger, splitSteps, assignBot, groupWaves } from '../daemon/workflows.mjs';
 import { findUnbackedClaims } from '../daemon/receipt.mjs';
 
 test('plain words become a trigger and steps', () => {
@@ -152,4 +152,46 @@ test('workflow end to end: draft from a sentence, run with hand-offs, fail, resu
   // Deleting the workflow removes its schedule too.
   assert.equal((await api('DELETE', `/v1/workflows/${wf.id}`)).data.ok, true);
   assert.ok(!coord.routines.listRoutines().some(r => r.workflowId === wf.id));
+});
+
+test('steps marked "at the same time" run side by side, then hand both results on', async t => {
+  assert.deepEqual(groupWaves([{}, { parallel: true }, {}, { parallel: true }, { parallel: true }]), [[0, 1], [2, 3, 4]]);
+  assert.deepEqual(groupWaves([{ parallel: true }, {}]), [[0], [1]], 'the first step always starts a stage');
+
+  const model = await startModel(t);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mimir-wfp-'));
+  const coord = await startCoordinator({ dataDir: dir, enableScheduler: false, enableRust: false });
+  t.after(async () => {
+    await coord.close().catch(() => {});
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+  });
+  coord.store.updateSettings({ provider: 'openai-compat', openaiBaseUrl: model.baseUrl, openaiModel: 'scripted', enableFallback: false });
+  const api = async (method, p, body) => {
+    const r = await fetch(coord.url + p, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    return { status: r.status, data: await r.json() };
+  };
+  await api('POST', '/v1/team/deploy-preset', {});
+
+  const draft = (await api('POST', '/v1/workflows/draft', { description: 'Research competitor pricing, then at the same time write a short note on our own prices, then draft one reply idea', useModel: false })).data;
+  assert.deepEqual(draft.steps.map(s => s.parallel), [false, true, false]);
+  assert.equal(draft.steps[1].instruction, 'write a short note on our own prices', 'the marker words are not part of the step');
+
+  const wf = (await api('POST', '/v1/workflows', draft)).data;
+  const out = (await api('POST', `/v1/workflows/${wf.id}/run`, { wait: true })).data;
+  assert.equal(out.ok, true);
+  const run = out.run;
+  assert.deepEqual(run.steps.map(s => s.status), ['done', 'done', 'done']);
+  // Step 2 ran beside step 1, so it was not handed step 1's result; step 3 got both.
+  assert.match(run.steps[1].output, /MISSING findings/);
+  const step3 = model.ctl.calls.filter(c => c.step === 3).at(-1).user;
+  assert.ok(step3.includes('rival cut price to 39') && step3.includes('BRIEF built on'), 'the next stage receives every result of the stage before');
+  assert.ok(new Date(run.steps[1].startedAt) <= new Date(run.steps[0].finishedAt), 'step 2 started before step 1 finished');
+  for (const s of run.steps) assert.ok(s.startedAt && s.finishedAt);
+
+  const kinds = run.events.map(e => e.kind);
+  assert.equal(kinds[0], 'started');
+  assert.equal(kinds.at(-1), 'finished');
+  assert.equal(kinds.filter(k => k === 'step-done').length, 3);
+  assert.equal(kinds.filter(k => k === 'handoff').length, 1, 'one hand-off: stage 1 to stage 2');
+  assert.match(run.events.find(e => e.kind === 'handoff').text, / and .* handed results to /);
 });
