@@ -110,7 +110,7 @@ export function classifyReversibility(toolName, args = {}) {
   if (name === 'browser_action' && ['snapshot', 'extract_structured', 'hover'].includes(String(args?.action || ''))) {
     return { reversibility: 'reversible', reversibilityLabel: 'Reversible · Read-only Snapshot', tier: 'read' };
   }
-  if (name === 'browser_action' && ['scroll', 'back', 'forward'].includes(String(args?.action || ''))) {
+  if (name === 'browser_action' && ['scroll', 'back', 'forward', 'reload'].includes(String(args?.action || args?.type || ''))) {
     return { reversibility: 'reversible', reversibilityLabel: 'Reversible · Page Navigation', tier: 'read' };
   }
   if (name === 'fs_write') {
@@ -127,7 +127,7 @@ export function classifyReversibility(toolName, args = {}) {
     name === 'vault_use' ||
     name === 'bot_spawn' ||
     name === 'desktop_control' ||
-    (name === 'browser_action' && ['upload', 'submit', 'click', 'double_click', 'fill_form', 'drag', 'draw'].includes(String(args?.action || ''))) ||
+    (name === 'browser_action' && ['upload', 'submit', 'click', 'clickElement', 'double_click', 'fill_form', 'drag', 'draw', 'key', 'press'].includes(String(args?.action || args?.type || ''))) ||
     (name.startsWith('mcp__') && /(send|post|reply|delete|remove|create|update|write|schedule|execute|commit|merge|pay|charge)/i.test(name))
   ) {
     return { reversibility: 'irreversible', reversibilityLabel: 'Irreversible · Needs Human OK', tier: 'high' };
@@ -986,7 +986,7 @@ export class BrowserSessionManager {
 
   async action(botId, params = {}) {
     const session = await this.#ensurePage(botId);
-    const act = params.action;
+    const act = params.action || params.type;
     let structured = null;
     if (act === 'click' || act === 'double_click' || act === 'hover') {
       if (params.selector) {
@@ -1239,8 +1239,48 @@ export class BrowserSessionManager {
         interactiveElements: session.interactiveElements,
         excerpt: tree.slice(0, 6000),
       };
-    } else if (act === 'press') {
-      await session.page.keyboard.press(String(params.key || 'Enter'));
+    } else if (act === 'press' || act === 'key') {
+      const keyName = String(params.key || (act === 'press' ? 'Enter' : '')).trim();
+      if (!keyName) throw new Error('key requires a key name');
+      this.#emitCursor(botId, session, { action: act, label: `Key: ${keyName}`.slice(0, 48) });
+      await session.page.keyboard.press(keyName);
+    } else if (act === 'clickElement') {
+      let targetSel = params.selector ? String(params.selector) : '';
+      let matchedEl = null;
+      if (params.elementIndex != null && params.elementIndex !== '') {
+        const idx = Number(params.elementIndex);
+        const els = session.interactiveElements || [];
+        matchedEl = els.find(e => e.index === idx) || els[idx] || null;
+        if (!targetSel && matchedEl?.selector) targetSel = matchedEl.selector;
+      }
+      if (targetSel) {
+        let pt = await this.#resolveLocatorCenter(session.page, targetSel);
+        if (!pt && matchedEl && typeof matchedEl.x === 'number' && typeof matchedEl.y === 'number') {
+          await this.#moveCursor(botId, session, matchedEl.x, matchedEl.y, {
+            action: 'clickElement',
+            label: `Click #${matchedEl.index}: ${matchedEl.label || targetSel}`.slice(0, 48),
+            targetSelector: targetSel,
+          });
+          await session.page.mouse.click(matchedEl.x, matchedEl.y);
+        } else {
+          if (pt) {
+            await this.#moveCursor(botId, session, pt.x, pt.y, {
+              action: 'clickElement',
+              label: `Click ${matchedEl ? `#${matchedEl.index}` : targetSel}`.slice(0, 48),
+              targetSelector: targetSel,
+            });
+          }
+          await session.page.locator(targetSel).first().click({ timeout: 5000 });
+        }
+      } else if (matchedEl && typeof matchedEl.x === 'number' && typeof matchedEl.y === 'number') {
+        await this.#moveCursor(botId, session, matchedEl.x, matchedEl.y, {
+          action: 'clickElement',
+          label: `Click #${matchedEl.index}`.slice(0, 48),
+        });
+        await session.page.mouse.click(matchedEl.x, matchedEl.y);
+      } else {
+        throw new Error('clickElement requires elementIndex or selector');
+      }
     } else if (act === 'scroll') {
       if (params.xPct != null && params.yPct != null) {
         const sx = Math.round((Number(params.xPct) / 100) * 1280);
@@ -1252,9 +1292,14 @@ export class BrowserSessionManager {
         : (params.direction === 'up' ? -500 : 500);
       await session.page.mouse.wheel(0, delta);
     } else if (act === 'back') {
+      this.#emitCursor(botId, session, { action: 'back', label: 'Back' });
       await session.page.goBack({ timeout: 8000 }).catch(() => {});
     } else if (act === 'forward') {
+      this.#emitCursor(botId, session, { action: 'forward', label: 'Forward' });
       await session.page.goForward({ timeout: 8000 }).catch(() => {});
+    } else if (act === 'reload') {
+      this.#emitCursor(botId, session, { action: 'reload', label: 'Reload' });
+      await session.page.reload({ waitUntil: 'domcontentloaded', timeout: 8000 }).catch(() => {});
     } else {
       throw new Error(`Unsupported browser action: ${act}`);
     }

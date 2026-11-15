@@ -2,6 +2,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const crypto = require('node:crypto');
 const zlib = require('node:zlib');
+const { fileURLToPath } = require('node:url');
 const { fork } = require('node:child_process');
 const {
   app,
@@ -13,6 +14,7 @@ const {
   desktopCapturer,
   globalShortcut,
   nativeImage,
+  session,
   shell,
 } = require('electron');
 
@@ -91,22 +93,79 @@ function getAppUrl(params = {}) {
   return fileUrl.toString();
 }
 
+const DIST_RENDERER_DIR = path.resolve(__dirname, '..', 'dist', 'renderer');
+const ALLOWED_IPC_ENTRY_FILES = new Set([
+  path.join(DIST_RENDERER_DIR, 'index.html'),
+  path.join(DIST_RENDERER_DIR, 'app.html'),
+].map(p => (process.platform === 'win32' ? p.toLowerCase() : p)));
+
+function getDevOrigin() {
+  if (env('DEV') !== '1') return null;
+  try {
+    return new URL(env('DEV_URL') || 'http://127.0.0.1:5173/').origin;
+  } catch {
+    return 'http://127.0.0.1:5173';
+  }
+}
+
+function isSafeExternalHttpUrl(rawUrl) {
+  if (typeof rawUrl !== 'string' || rawUrl.length > 2048) return false;
+  try {
+    const parsed = new URL(rawUrl.trim());
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function isAllowedAppUrl(rawUrl, { strictDistHtmlOnly = false } = {}) {
+  if (typeof rawUrl !== 'string' || !rawUrl) return false;
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+  const devOrigin = getDevOrigin();
+  if (devOrigin && parsed.origin === devOrigin) {
+    return true;
+  }
+  if (parsed.protocol === 'file:') {
+    let targetPath;
+    try {
+      targetPath = path.resolve(fileURLToPath(parsed));
+    } catch {
+      return false;
+    }
+    const base = process.platform === 'win32' ? DIST_RENDERER_DIR.toLowerCase() : DIST_RENDERER_DIR;
+    const cmp = process.platform === 'win32' ? targetPath.toLowerCase() : targetPath;
+    if (cmp !== base && !cmp.startsWith(base + path.sep)) {
+      return false;
+    }
+    return strictDistHtmlOnly ? ALLOWED_IPC_ENTRY_FILES.has(cmp) : true;
+  }
+  return false;
+}
+
+function assertTrustedIpcSender(evt) {
+  const frameUrl = evt?.senderFrame?.url;
+  if (!isAllowedAppUrl(frameUrl, { strictDistHtmlOnly: true })) {
+    throw new Error(`Untrusted IPC sender frame: ${String(frameUrl || '<missing>')}`);
+  }
+}
+
 function attachWindowSecurity(win) {
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:\/\//i.test(url)) shell.openExternal(url).catch(() => {});
+    if (isSafeExternalHttpUrl(url)) shell.openExternal(url).catch(() => {});
     return { action: 'deny' };
   });
+  win.webContents.on('will-attach-webview', evt => {
+    evt.preventDefault();
+  });
   win.webContents.on('will-navigate', (evt, targetUrl) => {
-    let devOrigin = 'http://127.0.0.1:5173';
-    try {
-      devOrigin = new URL(env('DEV_URL') || 'http://127.0.0.1:5173/').origin;
-    } catch {}
-    const allowed =
-      targetUrl.startsWith(devOrigin) ||
-      targetUrl.startsWith('file://');
-    if (!allowed) {
+    if (!isAllowedAppUrl(targetUrl, { strictDistHtmlOnly: false })) {
       evt.preventDefault();
-      if (/^https?:\/\//i.test(targetUrl)) shell.openExternal(targetUrl).catch(() => {});
+      if (isSafeExternalHttpUrl(targetUrl)) shell.openExternal(targetUrl).catch(() => {});
     }
   });
 }
@@ -283,28 +342,35 @@ function createTray() {
 }
 
 function registerIpc() {
-  ipcMain.handle('desktop:get-coordinator', () => coordReadyPromise);
-  ipcMain.handle('desktop:open-spotlight', () => {
+  const handleTrusted = (channel, handler) => {
+    ipcMain.handle(channel, (evt, ...args) => {
+      assertTrustedIpcSender(evt);
+      return handler(evt, ...args);
+    });
+  };
+
+  handleTrusted('desktop:get-coordinator', () => coordReadyPromise);
+  handleTrusted('desktop:open-spotlight', () => {
     openSpotlightWindow();
     return true;
   });
-  ipcMain.handle('desktop:open-popout', (_e, botId) => {
+  handleTrusted('desktop:open-popout', (_e, botId) => {
     openPopoutWindow(String(botId || 'bot-grok-default'));
     return true;
   });
-  ipcMain.handle('desktop:hide-current', evt => {
+  handleTrusted('desktop:hide-current', evt => {
     const win = BrowserWindow.fromWebContents(evt.sender);
     win?.hide();
     return true;
   });
-  ipcMain.handle('desktop:open-external', (_e, url) => {
-    if (/^https?:\/\//i.test(String(url || ''))) {
-      shell.openExternal(String(url));
+  handleTrusted('desktop:open-external', (_e, url) => {
+    if (isSafeExternalHttpUrl(url)) {
+      shell.openExternal(String(url).trim());
       return true;
     }
     return false;
   });
-  ipcMain.handle('desktop:pick-files', async evt => {
+  handleTrusted('desktop:pick-files', async evt => {
     const win = BrowserWindow.fromWebContents(evt.sender);
     const res = await dialog.showOpenDialog(win, { properties: ['openFile', 'multiSelections'] });
     if (res.canceled) return [];
@@ -324,7 +390,7 @@ function registerIpc() {
     }
     return out;
   });
-  ipcMain.handle('desktop:capture-screen', async () => {
+  handleTrusted('desktop:capture-screen', async () => {
     try {
       const sources = await desktopCapturer.getSources({
         types: ['screen'],
@@ -357,6 +423,12 @@ if (env('SMOKE_TEST') !== '1') {
 }
 
 app.whenReady().then(async () => {
+  session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => {
+    callback(false);
+  });
+  if (typeof session.defaultSession.setPermissionCheckHandler === 'function') {
+    session.defaultSession.setPermissionCheckHandler(() => false);
+  }
   startCoordinatorDaemon();
   registerIpc();
   const win = createMainWindow();

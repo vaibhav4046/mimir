@@ -95,6 +95,7 @@ export function Sidebar({
   bots,
   activeBotId,
   agentStatuses,
+  onSelectBot,
   onSelectBotFresh,
   onNewBot,
   onEditBot,
@@ -109,6 +110,7 @@ export function Sidebar({
   modelStatus,
   onOpenSpotlight,
   onOpenPopout,
+  onOpenPalette,
   isMobileOpen,
   onCloseMobile,
   mimirAvatarState = 'IDLE',
@@ -117,7 +119,9 @@ export function Sidebar({
   activeSpaceId = '',
   onSelectSpace,
   onCreateSpace,
+  onUpdateSpace,
   onDeleteSpace,
+  onClearSpace,
   showDeveloperTools = false,
 }) {
   const OS_TABS = ALL_MORE_TABS.filter(t => !t.dev || showDeveloperTools);
@@ -128,16 +132,53 @@ export function Sidebar({
   const [newSpaceOpen, setNewSpaceOpen] = useState(false);
   const [newSpaceTitle, setNewSpaceTitle] = useState('');
   const [newSpaceSurface, setNewSpaceSurface] = useState('research');
+  const [editingSpaceId, setEditingSpaceId] = useState('');
+  const [spaceTitleDraft, setSpaceTitleDraft] = useState('');
+  const [spacePromptDraft, setSpacePromptDraft] = useState('');
+  const [spaceBotDraft, setSpaceBotDraft] = useState('');
+  const [spaceSaving, setSpaceSaving] = useState(false);
+
   const q = search.trim().toLowerCase();
-  const filteredThreads = threads.filter(t =>
-    !q ? true : String(t.title || '').toLowerCase().includes(q)
-  );
+  const activeSpace = (spaces || []).find(sp => sp.id === activeSpaceId) || null;
+  const spaceById = new Map((spaces || []).map(sp => [sp.id, sp]));
+  const filteredThreads = threads.filter(t => {
+    if (activeSpaceId && t.spaceId !== activeSpaceId) return false;
+    return !q ? true : String(t.title || '').toLowerCase().includes(q);
+  });
   const filteredBots = bots.filter(b =>
     !q ? true : `${b.name} ${b.role} ${b.specialistTag || ''}`.toLowerCase().includes(q)
   );
   const chiefBot = filteredBots.find(b => b.id === 'bot-chief-klaus' || b.specialistTag === 'chief-of-staff') || null;
   const specialistBots = chiefBot ? filteredBots.filter(b => b.id !== chiefBot.id) : filteredBots;
   const hasFullChiefTeam = bots.some(b => b.id === 'bot-chief-klaus');
+  const selectBotHandler = onSelectBot || onSelectBotFresh;
+
+  const openSpaceEditor = sp => {
+    if (editingSpaceId === sp.id) {
+      setEditingSpaceId('');
+      return;
+    }
+    setEditingSpaceId(sp.id);
+    setSpaceTitleDraft(sp.title || '');
+    setSpacePromptDraft(sp.systemPrompt || '');
+    setSpaceBotDraft(sp.defaultBotId || '');
+  };
+
+  const handleSaveSpaceEdit = async e => {
+    e.preventDefault();
+    if (!editingSpaceId || !onUpdateSpace || spaceSaving) return;
+    setSpaceSaving(true);
+    try {
+      await onUpdateSpace(editingSpaceId, {
+        title: spaceTitleDraft.trim() || 'Untitled Space',
+        systemPrompt: spacePromptDraft,
+        defaultBotId: spaceBotDraft || '',
+      });
+      setEditingSpaceId('');
+    } finally {
+      setSpaceSaving(false);
+    }
+  };
 
   const handleDeployClick = async () => {
     if (!onDeployChiefTeam || deployingTeam) return;
@@ -225,6 +266,22 @@ export function Sidebar({
             <PlusPixelSvg size={14} />
             <span>New Chat</span>
           </button>
+          {onOpenPalette && (
+            <button
+              type="button"
+              className="btn btn-icon"
+              style={{ minWidth: 34, minHeight: 34 }}
+              aria-label="Open command palette"
+              title="Command palette (Ctrl+K)"
+              data-testid="open-palette-btn"
+              onClick={() => {
+                onOpenPalette();
+                onCloseMobile?.();
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--sand-mono)' }}>⌘K</span>
+            </button>
+          )}
           {window.desktop && (
             <>
               <button type="button" className="btn btn-icon" aria-label="Quick ask box" title="Quick ask box" onClick={onOpenSpotlight}>
@@ -275,7 +332,7 @@ export function Sidebar({
           <button
             type="button"
             className="btn btn-icon btn-sm"
-            style={{ width: 24, height: 24, minHeight: 24 }}
+            style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
             data-testid="new-bot-btn"
             aria-label="Add teammate"
             title="Add teammate"
@@ -284,7 +341,7 @@ export function Sidebar({
               onCloseMobile?.();
             }}
           >
-            <PlusPixelSvg size={12} />
+            <PlusPixelSvg size={13} />
           </button>
         </div>
       </div>
@@ -304,9 +361,9 @@ export function Sidebar({
                 type="button"
                 className={`bot-pill is-chief ${bot.id === activeBotId ? 'active' : ''}`}
                 data-testid={`bot-pill-${bot.id}`}
-                title={`Start fresh session with ${bot.name}`}
+                title={`Switch to ${bot.name}`}
                 onClick={() => {
-                  onSelectBotFresh(bot.id);
+                  selectBotHandler(bot.id);
                   onCloseMobile?.();
                 }}
               >
@@ -326,7 +383,7 @@ export function Sidebar({
               <button
                 type="button"
                 className="btn btn-icon btn-sm"
-                style={{ width: 26, height: 26, minHeight: 26, flexShrink: 0 }}
+                style={{ width: 32, height: 32, minWidth: 32, minHeight: 32, flexShrink: 0 }}
                 aria-label={`Configure ${bot.name}`}
                 title={`Configure ${bot.name}`}
                 onClick={e => {
@@ -335,7 +392,7 @@ export function Sidebar({
                   onCloseMobile?.();
                 }}
               >
-                <EditQuillSvg size={12} />
+                <EditQuillSvg size={13} />
               </button>
             </div>
           );
@@ -355,9 +412,9 @@ export function Sidebar({
                 type="button"
                 className={`bot-pill ${bot.id === activeBotId ? 'active' : ''}`}
                 data-testid={`bot-pill-${bot.id}`}
-                title={`Start fresh session with ${bot.name}`}
+                title={`Switch to ${bot.name}`}
                 onClick={() => {
-                  onSelectBotFresh(bot.id);
+                  selectBotHandler(bot.id);
                   onCloseMobile?.();
                 }}
               >
@@ -377,7 +434,7 @@ export function Sidebar({
               <button
                 type="button"
                 className="btn btn-icon btn-sm"
-                style={{ width: 26, height: 26, minHeight: 26, flexShrink: 0 }}
+                style={{ width: 32, height: 32, minWidth: 32, minHeight: 32, flexShrink: 0 }}
                 aria-label={`Configure ${bot.name}`}
                 title={`Configure ${bot.name}`}
                 onClick={e => {
@@ -386,7 +443,7 @@ export function Sidebar({
                   onCloseMobile?.();
                 }}
               >
-                <EditQuillSvg size={12} />
+                <EditQuillSvg size={13} />
               </button>
             </div>
           );
@@ -396,24 +453,39 @@ export function Sidebar({
       {onSelectSpace && (
         <div className="spaces-strip" data-testid="spaces-list" style={{ padding: '4px 10px 6px' }}>
           <div className="sidebar-section-label" style={{ padding: '4px 0' }}>
-            <span>Pinned ({(spaces || []).length})</span>
+            <span>Spaces ({(spaces || []).length})</span>
             {onCreateSpace && (
               <button
                 type="button"
                 className="btn btn-icon btn-sm"
-                style={{ width: 22, height: 22, minHeight: 22 }}
+                style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
                 aria-label="Pin a new workspace"
                 title="Pin a new workspace"
                 data-testid="new-space-btn"
                 onClick={() => setNewSpaceOpen(v => !v)}
               >
-                <PlusPixelSvg size={11} />
+                <PlusPixelSvg size={12} />
               </button>
             )}
           </div>
+          {activeSpace && (
+            <div className="space-badge" data-testid="active-space-badge" style={{ marginBottom: 6 }}>
+              <span>Space: {activeSpace.title}</span>
+              {onClearSpace && (
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  style={{ minHeight: 24, padding: '1px 6px', fontSize: 10 }}
+                  onClick={onClearSpace}
+                >
+                  All
+                </button>
+              )}
+            </div>
+          )}
           {newSpaceOpen && (
             <form
-              style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 6, padding: 6, background: 'var(--panel)', border: '1px solid var(--rule)', borderRadius: 6 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 6, padding: 6, background: 'var(--bg-surface)', border: '1px solid var(--rule)', borderRadius: 6 }}
               onSubmit={e => {
                 e.preventDefault();
                 if (!newSpaceTitle.trim()) return;
@@ -442,6 +514,43 @@ export function Sidebar({
               </div>
             </form>
           )}
+          {editingSpaceId && onUpdateSpace && (
+            <form className="space-editor-card" data-testid="space-editor-card" onSubmit={handleSaveSpaceEdit}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--brass)' }}>Edit space instructions</div>
+              <input
+                className="input"
+                aria-label="Space title"
+                value={spaceTitleDraft}
+                onChange={e => setSpaceTitleDraft(e.target.value)}
+                placeholder="Space title"
+              />
+              <textarea
+                className="input"
+                rows={2}
+                aria-label="Space instructions"
+                value={spacePromptDraft}
+                onChange={e => setSpacePromptDraft(e.target.value)}
+                placeholder="Custom system instructions for chats in this space..."
+              />
+              <select
+                className="select"
+                aria-label="Default teammate for this space"
+                value={spaceBotDraft}
+                onChange={e => setSpaceBotDraft(e.target.value)}
+              >
+                <option value="">Default teammate: current</option>
+                {bots.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-sm" onClick={() => setEditingSpaceId('')}>Cancel</button>
+                <button type="submit" className="btn btn-primary btn-sm" disabled={spaceSaving}>
+                  {spaceSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
+          )}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {(spaces || []).map(sp => (
               <div key={sp.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
@@ -451,6 +560,7 @@ export function Sidebar({
                   data-testid={`space-pill-${sp.id}`}
                   style={{
                     cursor: 'pointer',
+                    minHeight: 30,
                     borderColor: activeSpaceId === sp.id ? 'var(--frost)' : undefined,
                     color: activeSpaceId === sp.id ? 'var(--frost)' : undefined,
                   }}
@@ -461,14 +571,29 @@ export function Sidebar({
                 >
                   {sp.title}
                 </button>
+                {onUpdateSpace && (
+                  <button
+                    type="button"
+                    className="btn btn-icon btn-sm"
+                    style={{ width: 28, height: 28, minWidth: 28, minHeight: 28 }}
+                    aria-label={`Edit space ${sp.title}`}
+                    title={`Edit space ${sp.title}`}
+                    data-testid={`edit-space-btn-${sp.id}`}
+                    onClick={() => openSpaceEditor(sp)}
+                  >
+                    <EditQuillSvg size={11} />
+                  </button>
+                )}
                 {onDeleteSpace && (
                   <button
                     type="button"
+                    className="btn btn-icon btn-sm"
+                    style={{ width: 28, height: 28, minWidth: 28, minHeight: 28 }}
                     aria-label={`Remove space ${sp.title}`}
-                    style={{ background: 'none', border: 'none', color: 'var(--ink-subtle)', cursor: 'pointer', fontSize: 11, padding: '0 2px' }}
+                    title={`Remove space ${sp.title}`}
                     onClick={() => onDeleteSpace(sp.id)}
                   >
-                    ×
+                    <CloseCrossSvg size={10} />
                   </button>
                 )}
               </div>
@@ -486,38 +611,52 @@ export function Sidebar({
 
       <div className="thread-list">
         {filteredThreads.length === 0 ? (
-          <div style={{ padding: '10px 8px', color: 'var(--ink-subtle)', fontSize: 12 }}>
-            No chats yet.
+          <div style={{ padding: '10px 8px', color: 'var(--ink-subtle)', fontSize: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span>{activeSpace ? `No chats in ${activeSpace.title} yet.` : 'No chats yet.'}</span>
+            {activeSpace && onClearSpace && (
+              <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={onClearSpace}>
+                Show all chats
+              </button>
+            )}
           </div>
         ) : (
-          filteredThreads.map(t => (
-            <div key={t.id} className={`thread-item ${t.id === activeThreadId ? 'active' : ''}`}>
-              <button
-                type="button"
-                className="thread-item-title"
-                style={{ background: 'none', border: 'none', textAlign: 'left', padding: 0 }}
-                onClick={() => {
-                  onSelectTab('chat');
-                  onSelectThread(t.id);
-                  onCloseMobile?.();
-                }}
-              >
-                {t.title || 'New Chat'}
-              </button>
-              <button
-                type="button"
-                className="thread-del"
-                aria-label={`Delete chat ${t.title || 'New Chat'}`}
-                title="Delete chat"
-                onClick={e => {
-                  e.stopPropagation();
-                  onDeleteThread(t.id);
-                }}
-              >
-                <CloseCrossSvg size={12} />
-              </button>
-            </div>
-          ))
+          filteredThreads.map(t => {
+            const threadSpace = t.spaceId ? spaceById.get(t.spaceId) : null;
+            return (
+              <div key={t.id} data-testid={`thread-item-${t.id}`} className={`thread-item ${t.id === activeThreadId ? 'active' : ''}`}>
+                <button
+                  type="button"
+                  className="thread-item-title"
+                  style={{ background: 'none', border: 'none', textAlign: 'left', padding: 0, display: 'flex', alignItems: 'center', gap: 6 }}
+                  onClick={() => {
+                    onSelectTab('chat');
+                    onSelectThread(t.id);
+                    onCloseMobile?.();
+                  }}
+                >
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title || 'New Chat'}</span>
+                  {threadSpace && !activeSpaceId && (
+                    <span className="space-badge" style={{ fontSize: 10, padding: '1px 5px', flexShrink: 0 }}>
+                      {threadSpace.title}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="thread-del"
+                  style={{ minWidth: 32, minHeight: 32 }}
+                  aria-label={`Delete chat ${t.title || 'New Chat'}`}
+                  title="Delete chat"
+                  onClick={e => {
+                    e.stopPropagation();
+                    onDeleteThread(t.id);
+                  }}
+                >
+                  <CloseCrossSvg size={12} />
+                </button>
+              </div>
+            );
+          })
         )}
       </div>
 
@@ -537,8 +676,7 @@ export function Sidebar({
                 className={`nav-tab nav-tab-core ${isSelected ? 'active' : ''}`}
                 data-testid={`nav-${tab.id}`}
                 onKeyDown={e => handleNavKeyDown(e, idx)}
-                onClick={e => {
-                  e.currentTarget.blur();
+                onClick={() => {
                   onSelectTab(tab.id);
                   onCloseMobile?.();
                 }}
@@ -580,8 +718,7 @@ export function Sidebar({
                 className={`nav-tab nav-tab-sub ${isSelected ? 'active' : ''}`}
                 data-testid={`nav-${tab.id}`}
                 onKeyDown={e => handleNavKeyDown(e, idx)}
-                onClick={e => {
-                  e.currentTarget.blur();
+                onClick={() => {
                   onSelectTab(tab.id);
                   onCloseMobile?.();
                 }}

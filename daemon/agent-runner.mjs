@@ -33,6 +33,35 @@ const UTILITY_COMMANDS = new Set(['/kill', '/library', '/forge', '/map', '/eval'
 const MUTATING_MCP_RE = /(send|post|reply|delete|remove|create|update|write|schedule|execute|commit|merge)/i;
 const AUTONOMY_COMMANDS = new Set(['/council', '/spawn', '/research']);
 
+async function runWithConcurrency(items, concurrency, worker) {
+  const list = Array.isArray(items) ? items : [];
+  if (!list.length) return [];
+  const limit = Math.max(1, Math.min(Number(concurrency) || 1, list.length));
+  const results = new Array(list.length);
+  let cursor = 0;
+  const runWorker = async () => {
+    while (true) {
+      const idx = cursor++;
+      if (idx >= list.length) break;
+      results[idx] = await worker(list[idx], idx);
+    }
+  };
+  await Promise.all(Array.from({ length: limit }, () => runWorker()));
+  return results;
+}
+
+function resolveTargetConcurrency(targets, settingsNow = {}) {
+  const list = Array.isArray(targets) ? targets : [];
+  if (list.length <= 1) return 1;
+  const provider = String(settingsNow?.provider || 'ollama').toLowerCase();
+  if (provider === 'ollama') {
+    const models = list.map(t => String(t?.modelOverride || settingsNow?.ollamaModel || 'default'));
+    // Avoid thrashing one local Ollama runner when every bot shares the same model
+    if (new Set(models).size <= 1) return 1;
+  }
+  return Math.min(2, list.length);
+}
+
 function buildDreamLoopReport(artifact) {
   const fmt = String(artifact?.format || '').toLowerCase();
   const sizeBytes = Number(artifact?.size_bytes || 0);
@@ -488,6 +517,25 @@ export class AgentRunner {
       score: s.overallScore ?? s.quality?.overallScore ?? 0,
       url: s.urlOrPath || s.url || '',
     }));
+    const resolvedMode = res.mode || mode;
+    const offlineFallback = Boolean(res.offlineFallback);
+    const corpusHits = Number(
+      res.corpusHits ?? rawSources.filter(s => (s.domainType || s.quality?.domainType) !== 'web').length
+    );
+    const verifiedUrls = Array.isArray(res.verifiedUrls)
+      ? res.verifiedUrls
+      : rawSources.map(s => s.urlOrPath || s.url).filter(u => /^https?:\/\//i.test(String(u || '')));
+    const subQueries = Array.isArray(res.plannedQueries)
+      ? res.plannedQueries.map(p => p?.query || String(p || '')).filter(Boolean)
+      : Array.isArray(res.subQuestions)
+        ? res.subQuestions.map(sq => sq?.question || String(sq || '')).filter(Boolean)
+        : [];
+    const fetchedSources = rawSources.map((s, idx) => ({
+      title: s.title || s.topic || `Source ${idx + 1}`,
+      url: s.urlOrPath || s.url || '',
+      status: 'verified',
+      snippet: String(s.quote || s.snippet || '').slice(0, 100),
+    }));
     return {
       kind,
       runId: isCamp ? null : (res.id || null),
@@ -497,7 +545,14 @@ export class AgentRunner {
         : `Research Report · ${(query || res.query || 'Brief').slice(0, 72)}`,
       query: query || res.query || '',
       packId: res.packId || 'single-query',
-      mode: res.mode || mode,
+      mode: resolvedMode,
+      requestedMode: res.requestedMode || mode,
+      offlineFallback,
+      modeLabel: resolvedMode === 'live' && !offlineFallback ? 'Mode: Live Web' : 'Mode: Offline Corpus',
+      corpusHits,
+      verifiedUrls,
+      subQueries,
+      fetchedSources,
       topicsCount: isCamp ? (res.topicsCount || res.perTopic?.length || 1) : Math.max(1, res.subQuestions?.length || 1),
       totalSources: isCamp ? (res.totalSources || rawSources.length) : rawSources.length,
       datasetRowsCount: rawSources.length,
@@ -511,7 +566,7 @@ export class AgentRunner {
     };
   }
 
-  async #runNaturalIntent(intent, { bot, thread, settingsNow, runState, runId, userId, turnStartIndex }) {
+  async #runNaturalIntent(intent, { bot, thread, settingsNow, runState, runId, userId, turnStartIndex, researchMode = 'auto' }) {
     const timelineSteps = [];
     const artifacts = [];
     let reply = '';
@@ -645,7 +700,10 @@ export class AgentRunner {
             '- Initial campaign queued.',
           ].join('\n');
     } else if (intent.kind === 'research-harvest') {
-      const effectiveMode = settingsNow?.localOnly === false && /\bweb\b/i.test(intent.query) ? 'live' : 'offline';
+      const requestedMode = researchMode === 'live' || researchMode === 'offline' ? researchMode : 'auto';
+      const effectiveMode = requestedMode === 'auto'
+        ? (settingsNow?.localOnly === false ? 'auto' : 'offline')
+        : (settingsNow?.localOnly ? 'offline' : requestedMode);
       emitStep('harvest-1', 'web_search', `Harvesting multi-domain research (${intent.packId})`, 'running');
       const campaignRes = await this.deepResearch.runResearchCampaign({
         packId: intent.packId || 'all',
@@ -681,7 +739,10 @@ export class AgentRunner {
         researchCard.csvPath ? `- Dataset CSV: \`${researchCard.csvPath}\`` : '',
       ].filter(Boolean).join('\n');
     } else {
-      const effectiveMode = settingsNow?.localOnly === false && /\bweb|live\b/i.test(intent.query) ? 'live' : 'offline';
+      const requestedMode = researchMode === 'live' || researchMode === 'offline' ? researchMode : 'auto';
+      const effectiveMode = requestedMode === 'auto'
+        ? (settingsNow?.localOnly === false ? 'auto' : 'offline')
+        : (settingsNow?.localOnly ? 'offline' : requestedMode);
       emitStep('deep-1', 'web_search', `Deep research: ${intent.query.slice(0, 56)}`, 'running');
       const res = await this.deepResearch.runResearch({
         query: intent.query,
@@ -689,6 +750,9 @@ export class AgentRunner {
         maxSources: 6,
         userId,
         botId: bot.id,
+        threadId: thread.id,
+        runId,
+        onProgress: evt => this.broadcast?.('research:progress', evt),
         exportFormats: ['md', 'docx', 'pdf'],
       });
       timelineSteps[timelineSteps.length - 1].status = 'done';
@@ -874,9 +938,21 @@ export class AgentRunner {
     return this.vault?.redactText ? this.vault.redactText(text) : text;
   }
 
-  #buildSystemPrompt(bot, attachments, userText = '', executionMode = 'agent') {
+  #buildSystemPrompt(bot, attachments, userText = '', executionMode = 'agent', thread = null) {
     const workspace = this.store.getBotWorkspace(bot.id);
-    const memories = this.store.getMemories(bot.id);
+    const space = thread?.spaceId ? this.store.getSpace?.(thread.spaceId, thread.userId || null) : null;
+    const rawMemories = this.store.getMemories(bot.id, thread?.userId || null, { spaceId: thread?.spaceId || null });
+    const sharedSpaceMemories = space && space.memoryScope !== 'bot-only' && bot.id !== '__shared__'
+      ? (this.store.getMemories('__shared__', thread?.userId || null, { spaceId: space.id, spaceOnly: true }) || [])
+      : [];
+    const seenMemKeys = new Set();
+    const memories = [];
+    for (const m of [...rawMemories, ...sharedSpaceMemories]) {
+      const k = `${m.scope || 'bot'}:${m.key}`;
+      if (seenMemKeys.has(k)) continue;
+      seenMemKeys.add(k);
+      memories.push(m);
+    }
     const s = this.store.getSettings();
     const mcpInstr = (s.mcpBoxServers || [])
       .filter(srv => srv.enabled !== false && s.mcpCustomInstructionsByServerId?.[srv.id])
@@ -912,10 +988,22 @@ export class AgentRunner {
         : '- Tool calls that change anything pause for the human\'s OK before they run. Never claim an action happened unless its tool result says so.');
 
     const dialogueMode = MIMIR_DIALOGUE_PROFILES[s.mimirDialogueMode || 'counselor'] || MIMIR_DIALOGUE_PROFILES.counselor;
+    const spaceSections = [];
+    if (space) {
+      if (space.systemPrompt) {
+        spaceSections.push(`Space Instructions (${space.name || space.id}):\n${space.systemPrompt}`);
+      }
+      if (Array.isArray(space.attachedPaths) && space.attachedPaths.length) {
+        spaceSections.push(
+          'Space Attached Paths:\n' + space.attachedPaths.map(p => `- ${p}`).join('\n')
+        );
+      }
+    }
     const parts = [
       bot.systemPrompt || 'You are Mimir, a grounded local desktop & browser autonomous assistant.',
       dialogueMode.promptPrefix,
       modeGuidance,
+      ...spaceSections,
       lineage,
       orgSection,
       workspaceContract,
@@ -924,7 +1012,10 @@ export class AgentRunner {
     ].filter(Boolean);
 
     if (memories.length) {
-      parts.push('Saved Memories:\n' + memories.map(m => `- ${m.key}: ${m.value}`).join('\n'));
+      parts.push(
+        'Saved Memories:\n' +
+          memories.map(m => `- ${m.key}: ${m.value}${m.scope === 'space' ? ' [space]' : ''}`).join('\n')
+      );
     }
 
     const learnedRules = this.rsi?.listRules?.(bot.id) || [];
@@ -1016,6 +1107,8 @@ export class AgentRunner {
     depth = 1,
     signal = null,
     rootThreadId = null,
+    spaceId = null,
+    userId = 'local-owner',
   } = {}) {
     const nextDepth = Number(depth);
     if (!Number.isFinite(nextDepth) || nextDepth < 1 || nextDepth > MAX_SUBAGENT_DEPTH) {
@@ -1043,6 +1136,10 @@ export class AgentRunner {
 
     const subThread = this.store.createThread({
       botId: targetBot.id,
+      userId,
+      spaceId: spaceId || null,
+      isSubagent: true,
+      parentThreadId: rootThreadId || null,
       title: `Subagent: ${String(goal || '').slice(0, 48)}`,
       executionMode: targetBot.executionMode || 'agent',
     });
@@ -1058,6 +1155,7 @@ export class AgentRunner {
         maxSteps: Math.max(1, Math.min(Number(maxSteps) || 8, 16)),
         parentBotId: parentBot?.id || null,
         rootThreadId,
+        userId,
       });
       return {
         ok: !res.aborted && !res.stoppedByDepthLimit,
@@ -1072,7 +1170,7 @@ export class AgentRunner {
     }
   }
 
-  async #runAutonomyCommand(parsedCmd, { bot, thread, settingsNow, abortController, runState, currentDepth }) {
+  async #runAutonomyCommand(parsedCmd, { bot, thread, settingsNow, abortController, runState, currentDepth, runId = null, researchMode = 'auto' }) {
     const cmdTimeline = [];
     const emitSwarm = step => {
       const idx = cmdTimeline.findIndex(s => s.id === step.id);
@@ -1241,6 +1339,10 @@ export class AgentRunner {
           timelineSteps: [{ id: 'research-usage', icon: 'web_search', label: 'Research usage help', status: 'warn' }],
         };
       }
+      const requestedResearchMode = researchMode === 'live' || researchMode === 'offline' ? researchMode : 'auto';
+      const resolvedResearchMode = requestedResearchMode === 'auto'
+        ? (settingsNow.localOnly ? 'offline' : 'auto')
+        : (settingsNow.localOnly ? 'offline' : requestedResearchMode);
       const campaignMatch = topic.match(/^--(?:campaign|harvest)(?:\s+([\s\S]+))?$/i);
       let campaignRes = null;
       if (campaignMatch && this.deepResearch?.runResearchCampaign) {
@@ -1251,9 +1353,9 @@ export class AgentRunner {
         campaignRes = await this.deepResearch.runResearchCampaign({
           packId: isPack ? rawSpec.toLowerCase() : 'all',
           topics: isPack ? [] : rawSpec.split(/\s*[|;]\s*/).filter(Boolean),
-          mode: settingsNow.localOnly ? 'offline' : 'live',
+          mode: resolvedResearchMode,
           botId: bot.id,
-          userId: 'local-owner',
+          userId: thread.userId || 'local-owner',
           exportFormats: ['md', 'docx', 'pdf', 'csv'],
         });
         emitSwarm({
@@ -1267,7 +1369,7 @@ export class AgentRunner {
           kind: 'research-harvest',
           res: campaignRes,
           query: rawSpec,
-          mode: settingsNow.localOnly ? 'offline' : 'live',
+          mode: resolvedResearchMode,
         });
         const docsList = campaignRes.artifacts?.length
           ? campaignRes.artifacts
@@ -1287,7 +1389,7 @@ export class AgentRunner {
         ragRes = await this.ragEngine.retrieve({
           query: topic,
           topK: 5,
-          useWebFallback: !settingsNow.localOnly,
+          useWebFallback: !settingsNow.localOnly && resolvedResearchMode !== 'offline',
         });
       } else {
         const hits = this.knowledge?.query?.(topic, 5) || [];
@@ -1321,10 +1423,13 @@ export class AgentRunner {
           }));
           deepRun = await this.deepResearch.runResearch({
             query: topic,
-            mode: settingsNow.localOnly ? 'offline' : 'live',
+            mode: resolvedResearchMode,
             maxSources: 6,
-            userId: 'local-owner',
+            userId: thread.userId || 'local-owner',
             botId: bot.id,
+            threadId: thread.id,
+            runId,
+            onProgress: evt => this.broadcast?.('research:progress', evt),
             exportFormats: ['md', 'docx', 'pdf'],
             seedCorpus: seedFromRag.length ? seedFromRag : null,
           });
@@ -1387,7 +1492,7 @@ export class AgentRunner {
             kind: 'deep-research',
             res: deepRun,
             query: topic,
-            mode: settingsNow.localOnly ? 'offline' : 'live',
+            mode: resolvedResearchMode,
           })
         : null;
 
@@ -1402,6 +1507,13 @@ export class AgentRunner {
     }
 
     return { ok: false, reply: `Unknown command ${parsedCmd.cmd}`, timelineSteps: cmdTimeline };
+  }
+
+  async run(optsOrThreadId, maybeOpts = null) {
+    const opts = typeof optsOrThreadId === 'string'
+      ? { ...(maybeOpts || {}), threadId: optsOrThreadId }
+      : (optsOrThreadId || {});
+    return this.runTurn(opts);
   }
 
   async runTurn(opts) {
@@ -1439,6 +1551,9 @@ export class AgentRunner {
     toolNames = null,
     userId = 'local-owner',
     runId = null,
+    spaceId = null,
+    researchMode = 'auto',
+    skipUserAppend = false,
   }) {
     let thread = threadId ? this.store.getThread(threadId) : null;
     const effectiveBotId = thread?.botId || botId || this.store.listBots()[0]?.id;
@@ -1474,6 +1589,7 @@ export class AgentRunner {
       thread = this.store.createThread({
         botId: bot.id,
         userId,
+        spaceId: spaceId || null,
         title: title || 'New Chat',
         executionMode: executionMode || null,
       });
@@ -1508,19 +1624,27 @@ export class AgentRunner {
     this.activeRuns.set(thread.id, runState);
     this.broadcast?.('agents:status', { botId: bot.id, state: 'working', threadId: thread.id });
 
+    if (skipUserAppend && (userText === undefined || userText === null)) {
+      const activeBranch = this.store.getActiveMessages?.(thread.id, userId) || this.store.getThread(thread.id)?.messages || [];
+      userText = String(activeBranch.at(-1)?.content || '');
+    }
     const credCheck = trustedUserInput ? detectCredentialPasteInChat(userText) : { blockedCredentialPaste: false, sanitizedText: String(userText || ''), reason: null };
     if (credCheck.blockedCredentialPaste) {
       userText = credCheck.sanitizedText;
     }
 
-    const turnStartIndex = this.store.getThread(thread.id)?.messages.length || 0;
-    this.store.appendMessage(thread.id, {
-      role: 'user',
-      content: String(userText || ''),
-      attachments,
-      ...(credCheck.blockedCredentialPaste ? { credentialGuardNotice: credCheck.reason } : {}),
-    });
-    this.broadcast?.('thread:updated', { threadId: thread.id });
+    const turnStartIndex = skipUserAppend
+      ? Math.max(0, (this.store.getThread(thread.id)?.messages.length || 1) - 1)
+      : (this.store.getThread(thread.id)?.messages.length || 0);
+    if (!skipUserAppend) {
+      this.store.appendMessage(thread.id, {
+        role: 'user',
+        content: String(userText || ''),
+        attachments,
+        ...(credCheck.blockedCredentialPaste ? { credentialGuardNotice: credCheck.reason } : {}),
+      });
+      this.broadcast?.('thread:updated', { threadId: thread.id });
+    }
 
     try {
       const settingsNow = this.store.getSettings();
@@ -1561,6 +1685,8 @@ export class AgentRunner {
           abortController,
           runState,
           currentDepth,
+          runId,
+          researchMode,
         });
         const cleanReply = this.#redact(out.reply);
         this.store.appendMessage(thread.id, {
@@ -1656,6 +1782,7 @@ export class AgentRunner {
           runId,
           userId,
           turnStartIndex,
+          researchMode,
         });
       }
 
@@ -1727,63 +1854,89 @@ export class AgentRunner {
        * this bot's permissions), its answer is posted into this chat under its own name, and the
        * step is marked done or failed from what actually happened.
        */
-      const delegateTo = async (target, goal) => {
-        const stepObj = {
-          id: `delegate-${target.id}-${delegated.length}`,
-          icon: 'subagent',
-          label: `${bot.name} -> @${target.name}`,
-          detail: target.role,
-          fromBotId: bot.id,
-          fromBotName: bot.name,
-          toBotId: target.id,
-          toBotName: target.name,
-          status: 'running',
-        };
-        timelineSteps.push(stepObj);
-        const emit = () => this.broadcast?.('swarm:step', { threadId: thread.id, botId: bot.id, step: stepObj, timeline: [...timelineSteps] });
-        emit();
-        let out;
-        try {
-          out = await this.runSubagentTurn({
-            parentBot: bot,
-            bot: target,
-            goal,
-            depth: currentDepth + 1,
-            signal: abortController.signal,
-            rootThreadId: runState.rootThreadId,
-          });
-        } catch (err) {
-          out = { ok: false, reply: `Could not run: ${err?.message || String(err)}`, threadId: null };
-        }
-        stepObj.status = out.ok ? 'done' : 'error';
-        emit();
-        const record = { botId: target.id, name: target.name, role: target.role, color: target.color, status: out.ok ? 'done' : 'failed', threadId: out.threadId || null };
-        delegated.push(record);
-        this.store.appendMessage(thread.id, {
-          role: 'assistant',
-          content: this.#redact(out.reply || '(no reply)'),
-          speakerBotId: target.id,
-          speakerName: target.name,
-          speakerColor: target.color,
-          delegatedBy: directAddress && currentDepth === 0 ? 'you' : bot.name,
-          isError: !out.ok || undefined,
-          provider: 'delegation',
-          model: target.name,
+      const delegateBatch = async (targets, makeGoal) => {
+        const targetList = Array.isArray(targets) ? targets : [];
+        if (!targetList.length || abortController.signal.aborted) return [];
+        const concurrency = resolveTargetConcurrency(targetList, settingsNow);
+        const stepObjs = targetList.map((target, idx) => {
+          const stepObj = {
+            id: `delegate-${target.id}-${delegated.length + idx}`,
+            icon: 'subagent',
+            label: `${bot.name} -> @${target.name}`,
+            detail: target.role,
+            fromBotId: bot.id,
+            fromBotName: bot.name,
+            toBotId: target.id,
+            toBotName: target.name,
+            status: 'running',
+          };
+          timelineSteps.push(stepObj);
+          return stepObj;
         });
-        this.broadcast?.('thread:updated', { threadId: thread.id });
-        return { ...record, reply: out.reply || '' };
+        const emitStepObj = stepObj =>
+          this.broadcast?.('swarm:step', { threadId: thread.id, botId: bot.id, step: stepObj, timeline: [...timelineSteps] });
+        for (const stepObj of stepObjs) emitStepObj(stepObj);
+
+        const outcomes = await runWithConcurrency(targetList, concurrency, async target => {
+          if (abortController.signal.aborted) {
+            return { ok: false, reply: 'Aborted before subagent started.', threadId: null };
+          }
+          try {
+            return await this.runSubagentTurn({
+              parentBot: bot,
+              bot: target,
+              goal: typeof makeGoal === 'function' ? makeGoal(target) : String(makeGoal || ''),
+              depth: currentDepth + 1,
+              signal: abortController.signal,
+              rootThreadId: runState.rootThreadId,
+              spaceId: thread.spaceId || spaceId || null,
+              userId,
+            });
+          } catch (err) {
+            return { ok: false, reply: `Could not run: ${err?.message || String(err)}`, threadId: null };
+          }
+        });
+
+        // Commit delegated results deterministically in target order to preserve transcript ordering
+        const committed = [];
+        for (let i = 0; i < targetList.length; i += 1) {
+          const target = targetList[i];
+          const stepObj = stepObjs[i];
+          const out = outcomes[i] || { ok: false, reply: '(no reply)', threadId: null };
+          stepObj.status = out.ok ? 'done' : 'error';
+          emitStepObj(stepObj);
+          const record = {
+            botId: target.id,
+            name: target.name,
+            role: target.role,
+            color: target.color,
+            status: out.ok ? 'done' : 'failed',
+            threadId: out.threadId || null,
+          };
+          delegated.push(record);
+          this.store.appendMessage(thread.id, {
+            role: 'assistant',
+            content: this.#redact(out.reply || '(no reply)'),
+            speakerBotId: target.id,
+            speakerName: target.name,
+            speakerColor: target.color,
+            delegatedBy: directAddress && currentDepth === 0 ? 'you' : bot.name,
+            isError: !out.ok || undefined,
+            provider: 'delegation',
+            model: target.name,
+          });
+          this.broadcast?.('thread:updated', { threadId: thread.id });
+          committed.push({ ...record, reply: out.reply || '' });
+        }
+        return committed;
       };
 
       // The user named teammates: run them first so this bot can build on their reports.
       // Only at the top level: an "@Name" inside a goal passed between bots is quoted text, and
       // acting on it would let two bots re-delegate to each other.
-      const mentionReports = [];
-      if (canDelegate && currentDepth === 0) {
-        for (const target of mentionedTargets.slice(0, MAX_DELEGATIONS_PER_TURN)) {
-          if (abortController.signal.aborted) break;
-          mentionReports.push(await delegateTo(target, String(userText || '')));
-        }
-      }
+      const mentionReports = canDelegate && currentDepth === 0
+        ? await delegateBatch(mentionedTargets.slice(0, MAX_DELEGATIONS_PER_TURN), () => String(userText || ''))
+        : [];
 
       const mentionRoutingHint = mentionReports.length
         ? `\n\n[Team]: ${mentionReports.map(r => `@${r.name} (${r.status})`).join(', ')} already reported in this chat. Summarize what they found and decide next steps; do not repeat their reports in full.`
@@ -1803,7 +1956,7 @@ export class AgentRunner {
       const systemMsg = {
         role: 'system',
         content:
-          this.#buildSystemPrompt(bot, attachments, userText, effectiveMode) +
+          this.#buildSystemPrompt(bot, attachments, userText, effectiveMode, thread) +
           (sharedContext ? `\n\n${sharedContext}` : '') +
           memoryNote +
           mentionRoutingHint,
@@ -1847,7 +2000,8 @@ export class AgentRunner {
         // is distilled into a structured state note plus relevant keyword snippets.
         const toolsChars = mentionReports.length ? 0 : JSON.stringify(allTools).length;
         const repairChars = ephemeralRepairMsgs.reduce((s, m) => s + String(m.content || '').length + 24, 0);
-        const { kept, omitted } = fitHistoryToWindow(this.store.getThread(thread.id).messages, {
+        const activeHistory = this.store.getActiveMessages?.(thread.id, userId) || this.store.getThread(thread.id).messages;
+        const { kept, omitted } = fitHistoryToWindow(activeHistory, {
           numCtx: resolveNumCtx(settings),
           overheadChars: systemMsg.content.length + toolsChars + repairChars + 1800,
         });
@@ -2003,11 +2157,8 @@ export class AgentRunner {
               .filter(b => b.parentBotId === bot.id && called.includes(String(b.name || '').toLowerCase()))
               .filter(b => !delegated.some(d => d.botId === b.id))
               .slice(0, Math.max(0, MAX_DELEGATIONS_PER_TURN - delegated.length));
-            for (const target of handoffs) {
-              if (abortController.signal.aborted) break;
-              await delegateTo(target, `${String(userText || '')}\n\n${bot.name} asks you: ${cleanContent}`);
-            }
             if (handoffs.length) {
+              await delegateBatch(handoffs, () => `${String(userText || '')}\n\n${bot.name} asks you: ${cleanContent}`);
               ownMessage.delegation = { fromBotId: bot.id, fromBotName: bot.name, targets: [...delegated] };
               ownMessage.timelineSteps = [...timelineSteps];
               this.store.save();
@@ -2298,7 +2449,8 @@ export class AgentRunner {
       if ((lastTurnHadToolCalls || doomLoopStopped || !finalReply) && !abortController.signal.aborted && !directAddress) {
         try {
           const settings = this.store.getSettings();
-          const { kept } = fitHistoryToWindow(this.store.getThread(thread.id).messages, {
+          const activeSynthHistory = this.store.getActiveMessages?.(thread.id, userId) || this.store.getThread(thread.id).messages;
+          const { kept } = fitHistoryToWindow(activeSynthHistory, {
             numCtx: resolveNumCtx(settings),
             overheadChars: systemMsg.content.length + 600,
           });

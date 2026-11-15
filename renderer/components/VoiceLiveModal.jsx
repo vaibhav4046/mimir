@@ -10,10 +10,29 @@ const VAD_POLL_MS = 60;
 
 const PHASE_META = {
   idle: { label: 'Ready', badge: 'Standby' },
-  listening: { label: 'Listening — speak naturally', badge: 'Listening' },
+  listening: { label: 'Listening, speak naturally', badge: 'Listening' },
   thinking: { label: 'Transcribing & thinking...', badge: 'Thinking' },
   speaking: { label: 'Speaking reply', badge: 'Speaking' },
 };
+
+function friendlyVoiceError(err, fallback = 'Voice request failed.') {
+  const name = String(err?.name || '');
+  const raw = String(err?.message || err || '').trim();
+  const lower = `${name} ${raw}`.toLowerCase();
+  if (lower.includes('notallowed') || lower.includes('permissiondenied') || lower.includes('permission denied')) {
+    return 'Microphone access was blocked. Allow microphone permission in your browser or system settings, or type your message below.';
+  }
+  if (lower.includes('notfound') || lower.includes('devicesnotfound')) {
+    return 'No microphone was detected on this device. Connect a mic or type your message below.';
+  }
+  if (lower.includes('not supported') || lower.includes('notsupported') || lower.includes('mediadevices')) {
+    return 'Live microphone capture is unavailable in this window. Check browser permissions or type your message below.';
+  }
+  if (lower.includes('failed to fetch') || lower.includes('networkerror') || lower.includes('offline') || lower.includes('econnrefused')) {
+    return 'Could not reach the local Mimir daemon. Confirm it is running and try again.';
+  }
+  return raw || fallback;
+}
 
 function createTurnId() {
   return `vt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -268,9 +287,9 @@ export function VoiceLiveModal({
       }
     } catch (err) {
       if (err?.name === 'AbortError' || mySeq !== turnSeqRef.current || !isOpenRef.current) return;
-      setErrorMsg(err?.message || 'Voice turn failed.');
+      setErrorMsg(friendlyVoiceError(err, 'Voice turn failed.'));
       setPhase('idle');
-      setStatusNote('Error — tap Resume Mic or retry');
+      setStatusNote('Error: tap Resume Mic or retry');
     }
   };
 
@@ -313,12 +332,12 @@ export function VoiceLiveModal({
       const spoken = String(sttRes?.text || '').trim();
       if (!spoken) {
         if (sttRes?.error) {
-          setErrorMsg(sttRes.error);
+          setErrorMsg(friendlyVoiceError(sttRes.error, 'Speech transcription is unavailable right now.'));
           setPhase('idle');
           setStatusNote('STT unavailable');
           return;
         }
-        setStatusNote('No speech detected — listening...');
+        setStatusNote('No speech detected, listening...');
         if (activeCallRef.current && !pausedListeningRef.current) {
           startListeningTurn();
         } else {
@@ -330,7 +349,7 @@ export function VoiceLiveModal({
       await runDuplexTurn(spoken);
     } catch (err) {
       if (err?.name === 'AbortError' || mySeq !== turnSeqRef.current || !isOpenRef.current) return;
-      setErrorMsg(err?.message || 'Speech transcription failed.');
+      setErrorMsg(friendlyVoiceError(err, 'Speech transcription failed.'));
       setPhase('idle');
       setStatusNote('Transcription error');
     }
@@ -481,16 +500,16 @@ export function VoiceLiveModal({
             }
           }, VAD_POLL_MS);
         } catch {
-          setStatusNote('Listening — tap Send Turn when done');
+          setStatusNote('Listening, tap Send Turn when done');
         }
       } else {
-        setStatusNote('Listening — tap Send Turn when done');
+        setStatusNote('Listening, tap Send Turn when done');
       }
     } catch (err) {
       stopActiveRecorder({ discard: true });
       setPhase('idle');
-      setErrorMsg(err?.message || 'Microphone access denied.');
-      setStatusNote('Mic blocked — type below or grant access');
+      setErrorMsg(friendlyVoiceError(err, 'Microphone access denied.'));
+      setStatusNote('Mic blocked: type below or grant access');
     }
   };
 
@@ -604,7 +623,7 @@ export function VoiceLiveModal({
       setTypedDraft('');
       await runDuplexTurn(draftNote, merged);
     } catch (err) {
-      if (isOpenRef.current) setErrorMsg(err?.message || 'Failed staging file in Live Voice.');
+      if (isOpenRef.current) setErrorMsg(friendlyVoiceError(err, 'Failed staging file in Live Voice.'));
     } finally {
       if (isOpenRef.current) setVoiceDropBusy(false);
     }
@@ -790,7 +809,7 @@ export function VoiceLiveModal({
               </p>
             ) : (
               <p className="voice-live-latest-line is-hint">
-                Speak naturally or drop any file into this window — Mimir auto-inspects and speaks back.
+                Speak naturally or drop any file into this window. Mimir auto-inspects and speaks back.
               </p>
             )}
           </div>
@@ -841,7 +860,9 @@ export function VoiceLiveModal({
             ref={voiceFileInputRef}
             type="file"
             multiple
-            style={{ display: 'none' }}
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
             onChange={async evt => {
               const files = evt.target.files;
               await stageVoiceFilesAndAutoTurn(files);

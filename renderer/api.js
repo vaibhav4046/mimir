@@ -191,6 +191,105 @@ export async function apiFetch(path, options = {}) {
   return data;
 }
 
+export async function getWorkspaceFile(botId, filePath) {
+  return apiFetch(`/v1/workspace/${encodeURIComponent(botId)}/file?path=${encodeURIComponent(filePath)}`);
+}
+
+export async function putWorkspaceFile(botId, { path, content, threadId = null }) {
+  return apiFetch(`/v1/workspace/${encodeURIComponent(botId)}/file`, {
+    method: 'PUT',
+    body: JSON.stringify({ path, content, ...(threadId ? { threadId } : {}) }),
+  });
+}
+
+export async function canvasEdit({ botId, threadId = null, path = '', content, selection = null, instruction }) {
+  return apiFetch('/v1/canvas/edit', {
+    method: 'POST',
+    body: JSON.stringify({
+      botId,
+      ...(threadId ? { threadId } : {}),
+      ...(path ? { path } : {}),
+      content,
+      ...(selection ? { selection } : {}),
+      instruction,
+    }),
+  });
+}
+
+export async function forkThread(threadId, payload = {}) {
+  return apiFetch(`/v1/threads/${encodeURIComponent(threadId)}/fork`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function branchEditThread(threadId, payload) {
+  return apiFetch(`/v1/threads/${encodeURIComponent(threadId)}/branch-edit`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getThreadExportUrl(threadId, format = 'md') {
+  const cfg = await resolveCoordinator();
+  const fmt = format === 'json' ? 'json' : 'md';
+  return `${cfg.url}/v1/threads/${encodeURIComponent(threadId)}/export?format=${encodeURIComponent(fmt)}`;
+}
+
+export async function downloadThreadExport(threadId, format = 'md', titleHint = 'mimir-thread') {
+  const cfg = await resolveCoordinator();
+  const fmt = format === 'json' ? 'json' : 'md';
+  const url = `${cfg.url}/v1/threads/${encodeURIComponent(threadId)}/export?format=${encodeURIComponent(fmt)}`;
+  const headers = {};
+  if (cfg.token) headers.Authorization = `Bearer ${cfg.token}`;
+  const res = await fetch(url, { headers });
+  if (!res.ok) {
+    throw new Error(`Thread export failed (HTTP ${res.status})`);
+  }
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const slug = String(titleHint || 'mimir-thread')
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48) || 'mimir-thread';
+  a.href = objectUrl;
+  a.download = `${slug}.${fmt}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
+}
+
+export async function patchThread(threadId, patch) {
+  return apiFetch(`/v1/threads/${encodeURIComponent(threadId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function patchSpace(spaceId, patch) {
+  return apiFetch(`/v1/spaces/${encodeURIComponent(spaceId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function patchBotMemory(botId, key, patch) {
+  return apiFetch(`/v1/bots/${encodeURIComponent(botId)}/memories/${encodeURIComponent(key)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function sendComputerAction(botId, action) {
+  return apiFetch(`/v1/computer/${encodeURIComponent(botId)}/action`, {
+    method: 'POST',
+    body: JSON.stringify(action),
+  });
+}
+
 export async function getArtifactPreview(id) {
   return apiFetch(`/v1/artifacts/${encodeURIComponent(id)}/preview-data`);
 }
@@ -224,7 +323,21 @@ export function subscribeEvents(onMessage, onStatusChange) {
     onStatusChange?.('connecting');
     try {
       const cfg = await resolveCoordinator();
-      const wsUrl = cfg.url.replace(/^http/, 'ws') + '/ws' + (cfg.token ? `?token=${encodeURIComponent(cfg.token)}` : '');
+      let wsQuery = '';
+      if (cfg.token) {
+        try {
+          const ticketRes = await apiFetch('/v1/auth/ws-ticket');
+          const ticket = ticketRes?.ticket || ticketRes?.wsTicket;
+          wsQuery = ticket
+            ? `?ticket=${encodeURIComponent(ticket)}`
+            : `?token=${encodeURIComponent(cfg.token)}`;
+        } catch (err) {
+          if (err?.status === 401) throw err;
+          // Automatic fallback to legacy token query when /v1/auth/ws-ticket returns 404 or is unavailable.
+          wsQuery = `?token=${encodeURIComponent(cfg.token)}`;
+        }
+      }
+      const wsUrl = cfg.url.replace(/^http/, 'ws') + '/ws' + wsQuery;
       ws = new WebSocket(wsUrl);
       ws.onopen = () => {
         retryDelayMs = 1000;

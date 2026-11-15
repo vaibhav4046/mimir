@@ -1,8 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   apiFetch,
+  branchEditThread,
   clearCoordinatorSession,
+  downloadThreadExport,
+  forkThread,
+  getArtifactPreview,
   getRuntimeEnvironment,
+  patchSpace,
+  patchThread,
   playSoftCue,
   probeCoordinatorHealth,
   resolveCoordinator,
@@ -11,25 +17,29 @@ import {
 import { Sidebar } from './components/Sidebar.jsx';
 import { ChatView } from './components/ChatView.jsx';
 import { ComputerPane } from './components/ComputerPane.jsx';
-import { BotManagerModal } from './components/BotManagerModal.jsx';
-import { AgentsView } from './components/AgentsView.jsx';
-import { ForgeView } from './components/ForgeView.jsx';
-import { RsiPipelineView } from './components/RsiPipelineView.jsx';
-import { McpView } from './components/McpView.jsx';
-import { VaultView } from './components/VaultView.jsx';
-import { RoutinesView } from './components/RoutinesView.jsx';
-import { SettingsView } from './components/SettingsView.jsx';
-import { OverviewView } from './components/OverviewView.jsx';
-import { LibraryView } from './components/LibraryView.jsx';
-import { RealmProjectMapView } from './components/RealmProjectMapView.jsx';
-import { BoardMeetingView } from './components/BoardMeetingView.jsx';
-import { MimriStackView } from './components/MimriStackView.jsx';
-import { VoiceLiveModal } from './components/VoiceLiveModal.jsx';
+import { CommandPaletteModal } from './components/CommandPaletteModal.jsx';
 import { RuntimeConnectGate } from './components/RuntimeConnectGate.jsx';
-import { FirstRunSetup } from './components/FirstRunSetup.jsx';
 import { BotAvatar } from './components/BotAvatar.jsx';
 import { deriveMimirAvatarState } from './components/MimirAvatarSvg.jsx';
 import { MenuBarsSvg } from './components/Icons.jsx';
+
+const lazyNamed = (loader, name) => React.lazy(() => loader().then(mod => ({ default: mod[name] })));
+
+const BotManagerModal = lazyNamed(() => import('./components/BotManagerModal.jsx'), 'BotManagerModal');
+const AgentsView = lazyNamed(() => import('./components/AgentsView.jsx'), 'AgentsView');
+const ForgeView = lazyNamed(() => import('./components/ForgeView.jsx'), 'ForgeView');
+const RsiPipelineView = lazyNamed(() => import('./components/RsiPipelineView.jsx'), 'RsiPipelineView');
+const McpView = lazyNamed(() => import('./components/McpView.jsx'), 'McpView');
+const VaultView = lazyNamed(() => import('./components/VaultView.jsx'), 'VaultView');
+const RoutinesView = lazyNamed(() => import('./components/RoutinesView.jsx'), 'RoutinesView');
+const SettingsView = lazyNamed(() => import('./components/SettingsView.jsx'), 'SettingsView');
+const OverviewView = lazyNamed(() => import('./components/OverviewView.jsx'), 'OverviewView');
+const LibraryView = lazyNamed(() => import('./components/LibraryView.jsx'), 'LibraryView');
+const RealmProjectMapView = lazyNamed(() => import('./components/RealmProjectMapView.jsx'), 'RealmProjectMapView');
+const BoardMeetingView = lazyNamed(() => import('./components/BoardMeetingView.jsx'), 'BoardMeetingView');
+const MimriStackView = lazyNamed(() => import('./components/MimriStackView.jsx'), 'MimriStackView');
+const VoiceLiveModal = lazyNamed(() => import('./components/VoiceLiveModal.jsx'), 'VoiceLiveModal');
+const FirstRunSetup = lazyNamed(() => import('./components/FirstRunSetup.jsx'), 'FirstRunSetup');
 
 export function App() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -69,9 +79,15 @@ export function App() {
   const [liveVoiceOpen, setLiveVoiceOpen] = useState(false);
   const [councilSteps, setCouncilSteps] = useState([]);
   const [swarmStepsByThread, setSwarmStepsByThread] = useState({});
+  const [researchProgressByThread, setResearchProgressByThread] = useState({});
+  const [researchMode, setResearchMode] = useState('auto');
   const [teamOverview, setTeamOverview] = useState(null);
   const [spaces, setSpaces] = useState([]);
   const [activeSpaceId, setActiveSpaceId] = useState('');
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [paletteCommands, setPaletteCommands] = useState([]);
+  const [pendingDraftCommand, setPendingDraftCommand] = useState('');
+  const [canvasTarget, setCanvasTarget] = useState(null);
   const [wsStatus, setWsStatus] = useState('connected');
   const [sentinelBlocked, setSentinelBlocked] = useState(false);
   const [voicePhase, setVoicePhase] = useState('idle');
@@ -91,13 +107,22 @@ export function App() {
   const threadReqRef = useRef(0);
   const botReqRef = useRef(0);
   const wsWasDisconnectedRef = useRef(false);
+  const openedArtifactsRef = useRef(new Set());
   activeThreadRef.current = activeThreadId;
   activeBotRef.current = activeBotId;
   teachRef.current = teachMode;
   settingsRef.current = settings;
 
   const refreshAll = useCallback(async () => {
-    const [m, s, bList, aStatuses, mcpList, vList, rtnList, recList, aprList, spacesOut] = await Promise.all([
+    if (mode === 'spotlight') {
+      const [s, bList] = await Promise.all([apiFetch('/v1/settings'), apiFetch('/v1/bots')]);
+      setSettings(s);
+      setBots(bList);
+      document.documentElement.setAttribute('data-theme', s.themePreference || 'dark');
+      document.documentElement.setAttribute('data-reduced-motion', s.reducedMotion ? 'true' : 'false');
+      return;
+    }
+    const [m, s, bList, aStatuses, mcpList, vList, rtnList, recList, aprList, spacesOut, agiState] = await Promise.all([
       apiFetch('/v1/meta'),
       apiFetch('/v1/settings'),
       apiFetch('/v1/bots'),
@@ -108,6 +133,7 @@ export function App() {
       apiFetch('/v1/recordings'),
       apiFetch('/v1/approvals'),
       apiFetch('/v1/spaces').catch(() => ({ spaces: [] })),
+      apiFetch('/v1/agi/state').catch(() => ({ commands: [] })),
     ]);
     setMeta(m);
     setSettings(s);
@@ -119,9 +145,10 @@ export function App() {
     setRecordings(recList);
     setPendingApprovals(aprList);
     setSpaces(spacesOut?.spaces || []);
+    setPaletteCommands(agiState?.commands || []);
     document.documentElement.setAttribute('data-theme', s.themePreference || 'dark');
     document.documentElement.setAttribute('data-reduced-motion', s.reducedMotion ? 'true' : 'false');
-  }, []);
+  }, [mode]);
 
   const probeModels = useCallback(async () => {
     try {
@@ -197,7 +224,7 @@ export function App() {
     try {
       await refreshAll();
       setRuntimeState({ status: 'connected', url: cfg.url, message: '', health: null });
-      probeModels();
+      if (mode !== 'spotlight') probeModels();
     } catch (err) {
       const msg = String(err?.message || '');
       const health = await probeCoordinatorHealth(cfg.url);
@@ -262,12 +289,56 @@ export function App() {
   }, [mode]);
 
   useEffect(() => {
-    if (runtimeState.status !== 'connected') return;
+    if (runtimeState.status !== 'connected' || mode === 'spotlight') return;
     refreshBotContext(activeBotId).catch(() => {});
-  }, [activeBotId, refreshBotContext, runtimeState.status]);
+  }, [activeBotId, mode, refreshBotContext, runtimeState.status]);
+
+  const handleOpenInCanvas = useCallback(
+    ({ path = '', content = '', language = '', title = '' } = {}) => {
+      setCanvasTarget({
+        path,
+        content,
+        language,
+        title: title || path || 'Canvas',
+        openRequestedAt: Date.now(),
+      });
+      if (mode !== 'popout') setShowComputer(true);
+    },
+    [mode]
+  );
+
+  const maybeAutoOpenArtifact = useCallback(
+    async art => {
+      if (!art?.id || openedArtifactsRef.current.has(art.id)) return;
+      const fmt = String(art.format || '').toLowerCase();
+      if (!['html', 'svg', 'webapp'].includes(fmt)) return;
+      openedArtifactsRef.current.add(art.id);
+      try {
+        const previewRes = await getArtifactPreview(art.id).catch(() => null);
+        const p = previewRes?.preview || previewRes || {};
+        const content =
+          p.html ||
+          p.svg ||
+          p.code ||
+          p.content ||
+          (Array.isArray(p.files) && p.files[0]?.content) ||
+          '';
+        const lang = fmt === 'svg' ? 'svg' : 'html';
+        if (content) {
+          handleOpenInCanvas({
+            path: p.path || '',
+            content,
+            language: lang,
+            title: art.title || `${fmt.toUpperCase()} preview`,
+          });
+        }
+      } catch {}
+    },
+    [handleOpenInCanvas]
+  );
 
   useEffect(() => {
-    if (runtimeState.status !== 'connected') return undefined;
+    if (runtimeState.status !== 'connected' || mode === 'spotlight') return undefined;
     const unsub = subscribeEvents(
       async msg => {
         const { event, data } = msg;
@@ -284,13 +355,35 @@ export function App() {
               },
             };
           });
+        } else if (event === 'research:progress') {
+          const tid = data?.threadId || activeThreadRef.current;
+          if (!tid) return;
+          setResearchProgressByThread(prev => ({
+            ...prev,
+            [tid]: {
+              ...(prev[tid] || {}),
+              ...data,
+              updatedAt: Date.now(),
+            },
+          }));
+        } else if (event === 'foundry:created' || event === 'artifact:created') {
+          const art = data?.artifact || data;
+          if (art?.id) maybeAutoOpenArtifact(art);
         } else if (event === 'thread:updated') {
           const list = await apiFetch(`/v1/threads?botId=${encodeURIComponent(activeBotRef.current)}`);
           setThreads(list);
           if (data.threadId === activeThreadRef.current) {
             const reqId = ++threadReqRef.current;
             const loaded = await apiFetch(`/v1/threads/${encodeURIComponent(data.threadId)}`);
-            if (reqId === threadReqRef.current) setActiveThread(loaded);
+            if (reqId === threadReqRef.current) {
+              setActiveThread(loaded);
+              const lastMsg = [...(loaded?.messages || [])].reverse().find(m => m.role === 'assistant');
+              if (Array.isArray(lastMsg?.artifacts)) {
+                for (const art of lastMsg.artifacts) {
+                  maybeAutoOpenArtifact(art);
+                }
+              }
+            }
           }
         } else if (event === 'receipt:created') {
           if (data?.threadId && data.threadId === activeThreadRef.current) {
@@ -374,6 +467,11 @@ export function App() {
               delete next[tid];
               return next;
             });
+            setResearchProgressByThread(prev => {
+              const next = { ...prev };
+              delete next[tid];
+              return next;
+            });
           }
           if ((!tid || tid === activeThreadRef.current) && event === 'agent:done' && settingsRef.current?.soundEffects !== false) {
             playSoftCue('done');
@@ -392,6 +490,7 @@ export function App() {
           setRunningThreads({});
           setStreamingByThread({});
           setSwarmStepsByThread({});
+          setResearchProgressByThread({});
           setKillNotice(`Stopped all running tasks (${data.runsKilled || 0} stopped)`);
           setComputerState(await apiFetch(`/v1/computer/${encodeURIComponent(activeBotRef.current)}/state`));
         } else if (event === 'council:step') {
@@ -432,7 +531,7 @@ export function App() {
       }
     );
     return unsub;
-  }, [runtimeState.status, refreshAll, refreshBotContext]);
+  }, [maybeAutoOpenArtifact, mode, runtimeState.status, refreshAll, refreshBotContext]);
 
   useEffect(() => {
     if (mode !== 'spotlight') return undefined;
@@ -459,15 +558,39 @@ export function App() {
     };
   }, []);
 
-  const handleNewThread = async (targetBotId = activeBotId) => {
+  const handleNewThread = useCallback(
+    async (targetBotId = activeBotId) => {
+      const t = await apiFetch('/v1/threads', {
+        method: 'POST',
+        body: JSON.stringify({
+          botId: targetBotId,
+          title: 'New Chat',
+          ...(activeSpaceId ? { spaceId: activeSpaceId } : {}),
+        }),
+      });
+      setActiveTab('chat');
+      setThreads(prev => [t, ...prev]);
+      setActiveThreadId(t.id);
+      setActiveThread(t);
+    },
+    [activeBotId, activeSpaceId]
+  );
+
+  // Explicit clean bot switch -> always starts a fresh empty session for that agent!
+  const handleSelectBotFresh = async botId => {
+    skipAutoThreadSelectRef.current = true;
     const t = await apiFetch('/v1/threads', {
       method: 'POST',
-      body: JSON.stringify({ botId: targetBotId, title: 'New Chat' }),
+      body: JSON.stringify({
+        botId,
+        title: 'New Chat',
+        ...(activeSpaceId ? { spaceId: activeSpaceId } : {}),
+      }),
     });
-    setActiveTab('chat');
-    setThreads(prev => [t, ...prev]);
+    setActiveBotId(botId);
     setActiveThreadId(t.id);
     setActiveThread(t);
+    setActiveTab('chat');
   };
 
   const handleDeployChiefTeam = async () => {
@@ -514,18 +637,32 @@ export function App() {
     return res;
   };
 
-  // Explicit clean bot switch -> always starts a fresh empty session for that agent!
-  const handleSelectBotFresh = async botId => {
-    skipAutoThreadSelectRef.current = true;
-    const t = await apiFetch('/v1/threads', {
-      method: 'POST',
-      body: JSON.stringify({ botId, title: 'New Chat' }),
-    });
-    setActiveBotId(botId);
-    setActiveThreadId(t.id);
-    setActiveThread(t);
+  // Switch to bot's latest active thread (creating one only if none exists) to eliminate New Chat spam.
+  const handleSelectBotResume = useCallback(async botId => {
     setActiveTab('chat');
-  };
+    if (!botId) return;
+    const list = await apiFetch(`/v1/threads?botId=${encodeURIComponent(botId)}`).catch(() => []);
+    if (Array.isArray(list) && list.length > 0) {
+      skipAutoThreadSelectRef.current = true;
+      setActiveBotId(botId);
+      setThreads(list);
+      await loadThread(list[0].id);
+    } else {
+      skipAutoThreadSelectRef.current = true;
+      const created = await apiFetch('/v1/threads', {
+        method: 'POST',
+        body: JSON.stringify({
+          botId,
+          title: 'New Chat',
+          ...(activeSpaceId ? { spaceId: activeSpaceId } : {}),
+        }),
+      });
+      setActiveBotId(botId);
+      setThreads([created]);
+      setActiveThreadId(created.id);
+      setActiveThread(created);
+    }
+  }, [activeSpaceId, loadThread]);
 
   // Explicit resume existing latest session from Agents Roster
   const handleResumeBotLatest = botId => {
@@ -535,6 +672,102 @@ export function App() {
     setActiveThread(null);
     setActiveTab('chat');
   };
+
+  const handleSwitchThreadBot = async nextBotId => {
+    if (!nextBotId) return;
+    if (activeThreadId) {
+      const updated = await patchThread(activeThreadId, { botId: nextBotId });
+      if (updated) {
+        setActiveThread(updated);
+        setThreads(prev => prev.map(t => (t.id === updated.id ? { ...t, ...updated } : t)));
+      }
+      skipAutoThreadSelectRef.current = true;
+    }
+    setActiveBotId(nextBotId);
+  };
+
+  const handleForkThread = async (fromMessageId = null) => {
+    if (!activeThreadId) return;
+    const res = await forkThread(activeThreadId, {
+      ...(fromMessageId ? { fromMessageId } : {}),
+    });
+    const forked = res?.thread || res;
+    if (forked?.id) {
+      setThreads(prev => [forked, ...prev]);
+      setActiveThreadId(forked.id);
+      setActiveThread(forked);
+      setActiveTab('chat');
+    }
+  };
+
+  const handleBranchEditMessage = async (messageId, newContent, options = {}) => {
+    if (!activeThreadId || !messageId) return;
+    const tid = activeThreadId;
+    setStreamingByThread(prev => ({ ...prev, [tid]: { content: '', thinking: '' } }));
+    setLastRunFailed(false);
+    const res = await branchEditThread(tid, {
+      messageId,
+      newContent,
+      run: true,
+      researchMode: options?.researchMode || researchMode,
+    });
+    const nextThread = res?.thread || (await apiFetch(`/v1/threads/${encodeURIComponent(tid)}`));
+    setActiveThread(nextThread);
+    setThreads(prev => prev.map(t => (t.id === tid ? { ...t, ...nextThread } : t)));
+    if (res?.started || res?.runStarted) {
+      setRunningThreads(prev => ({ ...prev, [tid]: true }));
+    }
+  };
+
+  const handleExportThread = async (format = 'md') => {
+    if (!activeThreadId) return;
+    await downloadThreadExport(activeThreadId, format, activeThread?.title || 'mimir-thread');
+  };
+
+  useEffect(() => {
+    if (mode === 'spotlight') return undefined;
+    const onGlobalKeyDown = e => {
+      const mod = e.ctrlKey || e.metaKey;
+      const key = e.key.toLowerCase();
+      if (mod && !e.shiftKey && key === 'k') {
+        e.preventDefault();
+        setPaletteOpen(v => !v);
+        return;
+      }
+      if (mod && !e.shiftKey && key === 'n') {
+        e.preventDefault();
+        handleNewThread().catch(() => {});
+        return;
+      }
+      if (mod && e.shiftKey && key === 'b' && mode !== 'popout') {
+        e.preventDefault();
+        setShowComputer(v => !v);
+        return;
+      }
+      if (e.altKey && !mod && !e.shiftKey && /^[1-9]$/.test(e.key)) {
+        const idx = Number(e.key) - 1;
+        if (bots[idx]) {
+          e.preventDefault();
+          handleSelectBotResume(bots[idx].id).catch(() => {});
+        }
+        return;
+      }
+      if (e.key === 'Escape') {
+        if (paletteOpen) {
+          e.preventDefault();
+          setPaletteOpen(false);
+        } else if (botModal !== null) {
+          e.preventDefault();
+          setBotModal(null);
+        } else if (mobileNavOpen) {
+          e.preventDefault();
+          setMobileNavOpen(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', onGlobalKeyDown);
+    return () => window.removeEventListener('keydown', onGlobalKeyDown);
+  }, [botModal, bots, handleNewThread, handleSelectBotResume, mobileNavOpen, mode, paletteOpen]);
 
   const handleDeleteThread = async id => {
     await apiFetch(`/v1/threads/${encodeURIComponent(id)}`, { method: 'DELETE' });
@@ -546,12 +779,16 @@ export function App() {
     }
   };
 
-  const handleSendMessage = async (text, attachments = []) => {
+  const handleSendMessage = async (text, attachments = [], options = {}) => {
     let tid = activeThreadId;
     if (!tid) {
       const created = await apiFetch('/v1/threads', {
         method: 'POST',
-        body: JSON.stringify({ botId: activeBotId, title: 'New Chat' }),
+        body: JSON.stringify({
+          botId: activeBotId,
+          title: 'New Chat',
+          ...(activeSpaceId ? { spaceId: activeSpaceId } : {}),
+        }),
       });
       tid = created.id;
       setThreads(prev => [created, ...prev]);
@@ -560,6 +797,11 @@ export function App() {
     }
     setStreamingByThread(prev => ({ ...prev, [tid]: { content: '', thinking: '' } }));
     setSwarmStepsByThread(prev => ({ ...prev, [tid]: [] }));
+    setResearchProgressByThread(prev => {
+      const next = { ...prev };
+      delete next[tid];
+      return next;
+    });
     setLastRunFailed(false);
     setSentinelBlocked(false);
     setRunningThreads(prev => ({ ...prev, [tid]: true }));
@@ -571,6 +813,7 @@ export function App() {
           botId: activeBotId,
           userText: text,
           attachments,
+          researchMode: options?.researchMode || researchMode,
           async: true,
         }),
       });
@@ -672,6 +915,7 @@ export function App() {
   const backendOnline = modelStatus ? Boolean(modelStatus?.ollama?.ok || modelStatus?.openai?.ok || navigator.onLine) : true;
   const activeStreaming = (activeThreadId && streamingByThread[activeThreadId]) || { content: '', thinking: '' };
   const activeSwarmSteps = (activeThreadId && swarmStepsByThread[activeThreadId]) || [];
+  const activeResearchProgress = (activeThreadId && researchProgressByThread[activeThreadId]) || null;
   const isCurrentThreadRunning = Boolean(activeThreadId && runningThreads[activeThreadId]);
   const mimirAvatarState = deriveMimirAvatarState({
     online: backendOnline,
@@ -690,6 +934,14 @@ export function App() {
     if (out?.space) setSpaces(prev => [...prev, out.space]);
   };
 
+  const handleUpdateSpace = async (spaceId, patch) => {
+    const out = await patchSpace(spaceId, patch);
+    const updated = out?.space || out;
+    if (updated?.id) {
+      setSpaces(prev => prev.map(s => (s.id === updated.id ? updated : s)));
+    }
+  };
+
   const handleDeleteSpace = async id => {
     await apiFetch(`/v1/spaces/${encodeURIComponent(id)}`, { method: 'DELETE' });
     setSpaces(prev => prev.filter(s => s.id !== id));
@@ -698,6 +950,9 @@ export function App() {
 
   const handleSelectSpace = space => {
     setActiveSpaceId(space.id);
+    if (space.defaultBotId && bots.some(b => b.id === space.defaultBotId)) {
+      setActiveBotId(space.defaultBotId);
+    }
     if (space.surface === 'memory') setActiveTab('map');
     else if (space.surface === 'automation') setActiveTab('routines');
     else if (space.surface === 'voice') setLiveVoiceOpen(true);
@@ -750,19 +1005,21 @@ export function App() {
   // First launch: until a model is set up (or the user skips), show device check + model install.
   if (mode !== 'spotlight' && mode !== 'popout' && settings && !settings.modelSetupDone && !settings.firstRunDismissed) {
     return (
-      <FirstRunSetup
-        settings={settings}
-        onDone={async next => {
-          setSettings(next);
-          await refreshAll();
-          await probeModels();
-        }}
-        onUseCloud={async () => {
-          const next = await apiFetch('/v1/settings', { method: 'PATCH', body: JSON.stringify({ firstRunDismissed: true }) });
-          setSettings(next);
-          setActiveTab('settings');
-        }}
-      />
+      <Suspense fallback={<div className="view-scroll"><div className="view-container muted" style={{ padding: 24 }}>Loading setup...</div></div>}>
+        <FirstRunSetup
+          settings={settings}
+          onDone={async next => {
+            setSettings(next);
+            await refreshAll();
+            await probeModels();
+          }}
+          onUseCloud={async () => {
+            const next = await apiFetch('/v1/settings', { method: 'PATCH', body: JSON.stringify({ firstRunDismissed: true }) });
+            setSettings(next);
+            setActiveTab('settings');
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -796,7 +1053,7 @@ export function App() {
               size={24}
               state={isCurrentThreadRunning ? 'running' : 'idle'}
             />
-            Quick ask — {activeBot?.name || 'Mimir'}
+            Quick ask: {activeBot?.name || 'Mimir'}
           </div>
           <button type="button" className="btn btn-sm" onClick={() => window.desktop?.hideCurrentWindow()}>
             Esc
@@ -836,6 +1093,7 @@ export function App() {
           bots={bots}
           activeBotId={activeBotId}
           agentStatuses={agentStatuses}
+          onSelectBot={handleSelectBotResume}
           onSelectBotFresh={handleSelectBotFresh}
           onNewBot={() => setBotModal({})}
           onEditBot={bot => setBotModal(bot)}
@@ -850,6 +1108,7 @@ export function App() {
           modelStatus={modelStatus}
           onOpenSpotlight={() => window.desktop?.openSpotlight()}
           onOpenPopout={id => window.desktop?.openPopout(id)}
+          onOpenPalette={() => setPaletteOpen(true)}
           isMobileOpen={mobileNavOpen}
           onCloseMobile={() => setMobileNavOpen(false)}
           mimirAvatarState={mimirAvatarState}
@@ -858,7 +1117,9 @@ export function App() {
           activeSpaceId={activeSpaceId}
           onSelectSpace={handleSelectSpace}
           onCreateSpace={handleCreateSpace}
+          onUpdateSpace={handleUpdateSpace}
           onDeleteSpace={handleDeleteSpace}
+          onClearSpace={() => setActiveSpaceId('')}
           showDeveloperTools={Boolean(settings?.showDeveloperTools)}
         />
       )}
@@ -978,45 +1239,6 @@ export function App() {
           </div>
         )}
 
-        {activeTab === 'overview' && (
-          <OverviewView
-            activeBot={activeBot}
-            bots={bots}
-            modelStatus={modelStatus}
-            onNavigate={setActiveTab}
-            onRunPrompt={handleRunOverviewPrompt}
-            onOpenLiveVoice={() => setLiveVoiceOpen(true)}
-            onDeployChiefTeam={handleDeployChiefTeam}
-            onActivateGrokBot={handleActivateGrokBot}
-          />
-        )}
-
-        {activeTab === 'council' && (
-          <BoardMeetingView
-            activeBot={activeBot}
-            activeThreadId={activeThreadId}
-            councilSteps={councilSteps}
-            onDispatchToChat={handleRunOverviewPrompt}
-            onNavigate={setActiveTab}
-          />
-        )}
-
-        {activeTab === 'mimri' && <MimriStackView />}
-
-        {activeTab === 'library' && (
-          <LibraryView activeBotId={activeBotId} />
-        )}
-
-        {activeTab === 'map' && (
-          <RealmProjectMapView
-            onNavigate={setActiveTab}
-            onSelectBot={botId => {
-              skipAutoThreadSelectRef.current = false;
-              setActiveBotId(botId);
-            }}
-          />
-        )}
-
         {activeTab === 'chat' && (
           <ChatView
             bot={activeBot}
@@ -1031,6 +1253,16 @@ export function App() {
             onResolveApproval={handleResolveApproval}
             onStageFiles={handleStageFiles}
             onSwitchMode={handleSwitchMode}
+            onSwitchThreadBot={handleSwitchThreadBot}
+            onForkThread={handleForkThread}
+            onBranchEditMessage={handleBranchEditMessage}
+            onExportThread={handleExportThread}
+            onOpenInCanvas={handleOpenInCanvas}
+            researchMode={researchMode}
+            onChangeResearchMode={setResearchMode}
+            researchProgress={activeResearchProgress}
+            pendingDraftCommand={pendingDraftCommand}
+            onConsumeDraftCommand={() => setPendingDraftCommand('')}
             onOpenLiveVoice={() => setLiveVoiceOpen(true)}
             teachMode={teachMode}
             recordedSteps={recordedSteps}
@@ -1046,129 +1278,203 @@ export function App() {
           />
         )}
 
-        {activeTab === 'agents' && (
-          <AgentsView
-            bots={bots}
-            activeBotId={activeBotId}
-            agentStatuses={agentStatuses}
-            onStartNewSession={handleSelectBotFresh}
-            onResumeBot={handleResumeBotLatest}
-            onEditBot={bot => setBotModal(bot)}
-            onNewBot={() => setBotModal({})}
-            onOpenForge={() => setActiveTab('forge')}
-          />
-        )}
+        <Suspense fallback={<div className="view-scroll"><div className="view-container muted" style={{ padding: 24 }}>Loading view...</div></div>}>
+          {activeTab === 'overview' && (
+            <OverviewView
+              activeBot={activeBot}
+              bots={bots}
+              modelStatus={modelStatus}
+              onNavigate={setActiveTab}
+              onRunPrompt={handleRunOverviewPrompt}
+              onOpenLiveVoice={() => setLiveVoiceOpen(true)}
+              onDeployChiefTeam={handleDeployChiefTeam}
+              onActivateGrokBot={handleActivateGrokBot}
+            />
+          )}
 
-        {activeTab === 'forge' && <ForgeView onBotForged={handleBotForged} />}
+          {activeTab === 'council' && (
+            <BoardMeetingView
+              activeBot={activeBot}
+              activeThreadId={activeThreadId}
+              councilSteps={councilSteps}
+              onDispatchToChat={handleRunOverviewPrompt}
+              onNavigate={setActiveTab}
+            />
+          )}
 
-        {activeTab === 'rsi' && (
-          <RsiPipelineView
-            activeBotId={activeBotId}
-            settings={settings}
-            modelStatus={modelStatus}
-            onSettingsSaved={next => setSettings(next)}
-            onProbeModels={probeModels}
-          />
-        )}
+          {activeTab === 'mimri' && <MimriStackView />}
 
-        {activeTab === 'mcp' && (
-          <McpView
-            mcps={mcps}
-            onRefresh={async () => setMcps(await apiFetch('/v1/mcps'))}
-          />
-        )}
+          {activeTab === 'library' && (
+            <LibraryView activeBotId={activeBotId} />
+          )}
 
-        {activeTab === 'vault' && (
-          <VaultView
-            entries={vaultEntries}
-            onRefresh={async () => setVaultEntries(await apiFetch('/v1/vault'))}
-          />
-        )}
+          {activeTab === 'map' && (
+            <RealmProjectMapView
+              onNavigate={setActiveTab}
+              onSelectBot={botId => {
+                skipAutoThreadSelectRef.current = false;
+                setActiveBotId(botId);
+              }}
+            />
+          )}
 
-        {activeTab === 'routines' && (
-          <RoutinesView
-            routines={routines}
-            recordings={recordings}
-            bots={bots}
-            onRefresh={async () => {
-              const [r, rec] = await Promise.all([apiFetch('/v1/routines'), apiFetch('/v1/recordings')]);
-              setRoutines(r);
-              setRecordings(rec);
-            }}
-            onOpenThread={async tid => {
-              setActiveTab('chat');
-              await loadThread(tid);
-            }}
-          />
-        )}
+          {activeTab === 'agents' && (
+            <AgentsView
+              bots={bots}
+              activeBotId={activeBotId}
+              agentStatuses={agentStatuses}
+              onStartNewSession={handleSelectBotFresh}
+              onResumeBot={handleResumeBotLatest}
+              onEditBot={bot => setBotModal(bot)}
+              onNewBot={() => setBotModal({})}
+              onOpenForge={() => setActiveTab('forge')}
+            />
+          )}
 
-        {activeTab === 'settings' && settings && (
-          <SettingsView
-            settings={settings}
-            modelStatus={modelStatus}
-            onSaved={next => {
-              setSettings(next);
-              document.documentElement.setAttribute('data-theme', next.themePreference || 'dark');
-              document.documentElement.setAttribute('data-reduced-motion', next.reducedMotion ? 'true' : 'false');
-            }}
-            onProbeModels={probeModels}
-          />
-        )}
+          {activeTab === 'forge' && <ForgeView onBotForged={handleBotForged} />}
+
+          {activeTab === 'rsi' && (
+            <RsiPipelineView
+              activeBotId={activeBotId}
+              settings={settings}
+              modelStatus={modelStatus}
+              onSettingsSaved={next => setSettings(next)}
+              onProbeModels={probeModels}
+            />
+          )}
+
+          {activeTab === 'mcp' && (
+            <McpView
+              mcps={mcps}
+              onRefresh={async () => setMcps(await apiFetch('/v1/mcps'))}
+            />
+          )}
+
+          {activeTab === 'vault' && (
+            <VaultView
+              entries={vaultEntries}
+              onRefresh={async () => setVaultEntries(await apiFetch('/v1/vault'))}
+            />
+          )}
+
+          {activeTab === 'routines' && (
+            <RoutinesView
+              routines={routines}
+              recordings={recordings}
+              bots={bots}
+              onRefresh={async () => {
+                const [r, rec] = await Promise.all([apiFetch('/v1/routines'), apiFetch('/v1/recordings')]);
+                setRoutines(r);
+                setRecordings(rec);
+              }}
+              onOpenThread={async tid => {
+                setActiveTab('chat');
+                await loadThread(tid);
+              }}
+            />
+          )}
+
+          {activeTab === 'settings' && settings && (
+            <SettingsView
+              settings={settings}
+              modelStatus={modelStatus}
+              onSaved={next => {
+                setSettings(next);
+                document.documentElement.setAttribute('data-theme', next.themePreference || 'dark');
+                document.documentElement.setAttribute('data-reduced-motion', next.reducedMotion ? 'true' : 'false');
+              }}
+              onProbeModels={probeModels}
+            />
+          )}
+        </Suspense>
       </main>
 
       {mode !== 'popout' && showComputer && (
         <ComputerPane
           botId={activeBotId}
+          threadId={activeThreadId}
           computerState={computerState}
           memories={memories}
           settings={settings}
           teamOverview={teamOverview}
+          canvasTarget={canvasTarget}
           onDeployChiefTeam={handleDeployChiefTeam}
-          onSelectBot={id => handleSelectBotFresh(id)}
+          onSelectBot={id => handleSelectBotResume(id)}
           onSettingsChange={next => setSettings(next)}
           onRefresh={() => refreshBotContext(activeBotId)}
           onClose={() => setShowComputer(false)}
         />
       )}
 
-      {botModal !== null && (
-        <BotManagerModal
-          initialBot={botModal}
-          mcps={mcps}
-          meta={meta}
-          onClose={() => setBotModal(null)}
-          onSaved={async () => {
-            setBotModal(null);
-            await refreshAll();
-            await refreshBotContext(activeBotId);
-          }}
-          onDeleted={async delId => {
-            setBotModal(null);
-            await refreshAll();
-            if (activeBotId === delId) setActiveBotId('bot-grok-default');
-          }}
-        />
-      )}
+      <Suspense fallback={null}>
+        {botModal !== null && (
+          <BotManagerModal
+            initialBot={botModal}
+            mcps={mcps}
+            meta={meta}
+            onClose={() => setBotModal(null)}
+            onSaved={async () => {
+              setBotModal(null);
+              await refreshAll();
+              await refreshBotContext(activeBotId);
+            }}
+            onDeleted={async delId => {
+              setBotModal(null);
+              await refreshAll();
+              if (activeBotId === delId) setActiveBotId('bot-grok-default');
+            }}
+          />
+        )}
 
-      <VoiceLiveModal
-        isOpen={liveVoiceOpen}
-        onClose={() => {
-          setVoicePhase('idle');
-          setLiveVoiceOpen(false);
-        }}
-        activeBot={activeBot}
+        {liveVoiceOpen && (
+          <VoiceLiveModal
+            isOpen={liveVoiceOpen}
+            onClose={() => {
+              setVoicePhase('idle');
+              setLiveVoiceOpen(false);
+            }}
+            activeBot={activeBot}
+            activeThreadId={activeThreadId}
+            onStageFiles={handleStageFiles}
+            onPhaseChange={setVoicePhase}
+            onThreadUpdated={async tid => {
+              const targetId = tid || activeThreadRef.current;
+              if (targetId) {
+                await loadThread(targetId);
+              }
+              const list = await apiFetch(`/v1/threads?botId=${encodeURIComponent(activeBotRef.current)}`);
+              setThreads(list);
+            }}
+            settings={settings}
+          />
+        )}
+      </Suspense>
+
+      <CommandPaletteModal
+        isOpen={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        threads={threads}
+        spaces={spaces}
+        bots={bots}
+        commands={paletteCommands}
         activeThreadId={activeThreadId}
-        onStageFiles={handleStageFiles}
-        onPhaseChange={setVoicePhase}
-        onThreadUpdated={async tid => {
-          const targetId = tid || activeThreadRef.current;
-          if (targetId) {
-            await loadThread(targetId);
-          }
-          const list = await apiFetch(`/v1/threads?botId=${encodeURIComponent(activeBotRef.current)}`);
-          setThreads(list);
+        showComputer={showComputer}
+        showDeveloperTools={Boolean(settings?.showDeveloperTools)}
+        onNewThread={() => handleNewThread(activeBotId)}
+        onToggleComputer={() => setShowComputer(v => !v)}
+        onOpenCanvas={handleOpenInCanvas}
+        onExportThread={handleExportThread}
+        onSelectTab={setActiveTab}
+        onSelectThread={tid => {
+          setActiveTab('chat');
+          loadThread(tid);
         }}
-        settings={settings}
+        onSelectSpace={handleSelectSpace}
+        onSelectBot={handleSelectBotResume}
+        onInsertCommand={cmdText => {
+          setActiveTab('chat');
+          setPendingDraftCommand(cmdText);
+        }}
       />
     </div>
   );

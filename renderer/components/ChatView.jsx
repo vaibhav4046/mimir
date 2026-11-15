@@ -1,10 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { apiFetch, encodeFilesForStaging, fetchArtifactBlob, isFileDragEvent } from '../api.js';
 import { BotAvatar } from './BotAvatar.jsx';
-import { CreativeStudioPlayer } from './CreativeStudioPlayer.jsx';
 import { HairlineCanvas } from './HairlineCanvas.jsx';
 import { IntelligentUiRenderer } from './IntelligentUiRenderer.jsx';
 import { UsageBar } from './UsageBar.jsx';
+
+const CreativeStudioPlayer = React.lazy(() =>
+  import('./CreativeStudioPlayer.jsx').then(m => ({ default: m.CreativeStudioPlayer }))
+);
 import {
   MimirAsset,
   MimirSagePortrait,
@@ -137,6 +140,52 @@ async function downloadArtifactFile(doc, titleHint = 'mimir-research-report') {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function ResearchStepper({ progress, live = false }) {
+  if (!progress) return null;
+  const phase = progress.phase || (live ? 'planning' : 'synthesizing');
+  const subQueries = Array.isArray(progress.subQueries) ? progress.subQueries : [];
+  const fetchedSources = Array.isArray(progress.fetchedSources) ? progress.fetchedSources : [];
+  const isOffline = progress.offlineFallback || progress.mode === 'offline';
+  const modeLabel = isOffline
+    ? 'Mode: Offline Corpus'
+    : progress.mode === 'live'
+      ? 'Mode: Live Web'
+      : 'Mode: Auto';
+
+  return (
+    <details className="research-stepper" data-testid="research-stepper" open={live}>
+      <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <span>Research progress: {phase}</span>
+        <span className={`pill ${isOffline ? 'is-gold' : 'is-cyan'}`} style={{ fontSize: 10 }}>
+          {modeLabel}
+        </span>
+      </summary>
+      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {subQueries.length > 0 && (
+          <div className="research-step-row">
+            <span className="muted" style={{ fontSize: 11 }}>Queries:</span>
+            <span>{subQueries.join(' · ')}</span>
+          </div>
+        )}
+        {fetchedSources.map((src, idx) => (
+          <div key={src.url || src.title || idx} className="research-step-row">
+            <span className={`pill ${src.status === 'verified' || src.status === 'ok' ? 'is-emerald' : 'is-gold'}`} style={{ fontSize: 10 }}>
+              {src.status || 'checked'}
+            </span>
+            <span style={{ fontWeight: 600 }}>{src.title || src.url || 'Source'}</span>
+            {src.snippet && <span className="muted" style={{ fontSize: 11 }}>{src.snippet}</span>}
+          </div>
+        ))}
+        {typeof progress.verifiedClaims === 'number' && (
+          <div className="muted" style={{ fontSize: 11 }}>
+            Verified claims: {progress.verifiedClaims}
+          </div>
+        )}
+      </div>
+    </details>
+  );
 }
 
 function ChatInsightCards({ m }) {
@@ -292,111 +341,135 @@ function ChatInsightCards({ m }) {
         </div>
       )}
 
-      {m.researchCard && (
-        <div className="chat-insight-card chat-research-card" data-testid="chat-research-card">
-          <div className="insight-card-head">
-            <div>
-              <strong>{m.researchCard.title || `Research Report · ${m.researchCard.packId || 'all'}`}</strong>
-              <div className="muted num">
-                {m.researchCard.topicsCount || 1} topics · {m.researchCard.totalSources || 0} checked sources ·{' '}
-                {m.researchCard.knowledgeIngestion?.chunksAdded || 0} saved notes · Sources checked
+      {m.researchCard && (() => {
+        const rc = m.researchCard;
+        const isOffline = Boolean(rc.offlineFallback || rc.mode === 'offline');
+        const verifiedCount = Array.isArray(rc.verifiedUrls)
+          ? rc.verifiedUrls.length
+          : Number(rc.verifiedUrls || 0);
+        const corpusCount = Array.isArray(rc.corpusHits)
+          ? rc.corpusHits.length
+          : Number(rc.corpusHits || 0);
+        const hasCounts = rc.verifiedUrls !== undefined || rc.corpusHits !== undefined;
+        const modeText = isOffline ? 'Offline Corpus' : rc.mode === 'live' ? 'Live Web' : 'Auto';
+        return (
+          <div className="chat-insight-card chat-research-card" data-testid="chat-research-card">
+            <div className="insight-card-head">
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <strong>{rc.title || `Research Report · ${rc.packId || 'all'}`}</strong>
+                  <span className={`pill ${isOffline ? 'is-gold' : 'is-cyan'}`} style={{ fontSize: 10 }}>
+                    {modeText}
+                  </span>
+                </div>
+                <div className="muted num">
+                  {rc.topicsCount || 1} topics ·{' '}
+                  {hasCounts
+                    ? `${verifiedCount} verified web URLs · ${corpusCount} corpus notes`
+                    : `${rc.totalSources || 0} ${isOffline ? 'corpus entries' : 'web sources'}`}{' '}
+                  · {rc.knowledgeIngestion?.chunksAdded || 0} saved notes
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  data-testid="research-copy-md-btn"
+                  onClick={handleCopyMarkdown}
+                >
+                  {copiedMd ? 'Copied' : 'Copy text'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  data-testid="research-reader-toggle"
+                  onClick={() => setReaderOpen(v => !v)}
+                >
+                  {readerOpen ? 'Hide reader' : 'Read here'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  data-testid="research-automate-btn"
+                  disabled={autoState === 'saving' || autoState === 'done'}
+                  onClick={() => triggerHourlyAutomate(rc.packId)}
+                >
+                  {autoState === 'done'
+                    ? 'Runs every hour'
+                    : autoState === 'saving'
+                      ? 'Saving...'
+                      : autoState === 'error'
+                        ? 'Try again'
+                        : 'Run every hour'}
+                </button>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="btn btn-sm"
-                data-testid="research-copy-md-btn"
-                onClick={handleCopyMarkdown}
-              >
-                {copiedMd ? 'Copied' : 'Copy text'}
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm"
-                data-testid="research-reader-toggle"
-                onClick={() => setReaderOpen(v => !v)}
-              >
-                {readerOpen ? 'Hide reader' : 'Read here'}
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm"
-                data-testid="research-automate-btn"
-                disabled={autoState === 'saving' || autoState === 'done'}
-                onClick={() => triggerHourlyAutomate(m.researchCard.packId)}
-              >
-                {autoState === 'done'
-                  ? 'Runs every hour'
-                  : autoState === 'saving'
-                    ? 'Saving...'
-                    : autoState === 'error'
-                      ? 'Try again'
-                      : 'Run every hour'}
-              </button>
-            </div>
-          </div>
 
-          <div className="research-doc-shelf" data-testid="research-doc-downloads">
-            <div className="research-doc-shelf-head">
-              <span className="muted" style={{ fontSize: 11.5, fontWeight: 600 }}>
-                Download report files ({Object.keys(docsByFmt).length}/9 ready)
-              </span>
-              <button
-                type="button"
-                className="btn btn-sm btn-primary"
-                data-testid="research-export-all-btn"
-                disabled={Boolean(busyFmt)}
-                onClick={handleExportAll}
-              >
-                {busyFmt === 'all' ? 'Creating all...' : 'Create all 9 files'}
-              </button>
+            {(rc.fetchedSources?.length > 0 || rc.subQueries?.length > 0) && (
+              <ResearchStepper progress={rc} />
+            )}
+
+            <div className="research-doc-shelf" data-testid="research-doc-downloads">
+              <div className="research-doc-shelf-head">
+                <span className="muted" style={{ fontSize: 11.5, fontWeight: 600 }}>
+                  Download report files ({Object.keys(docsByFmt).length}/9 ready)
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  data-testid="research-export-all-btn"
+                  disabled={Boolean(busyFmt)}
+                  onClick={handleExportAll}
+                >
+                  {busyFmt === 'all' ? 'Creating all...' : 'Create all 9 files'}
+                </button>
+              </div>
+              <div className="research-doc-pills">
+                {RESEARCH_EXPORT_FORMATS.map(({ fmt, label, title }) => {
+                  const readyDoc = docsByFmt[fmt];
+                  const isBusy = busyFmt === fmt;
+                  const isPrimary = fmt === 'md' || fmt === 'docx' || fmt === 'pdf';
+                  return (
+                    <button
+                      key={fmt}
+                      type="button"
+                      className={`research-doc-pill ${readyDoc ? 'is-ready' : ''} ${isPrimary ? 'is-primary' : ''}`}
+                      data-testid={`research-dl-${fmt}`}
+                      title={`${title}${readyDoc?.size_bytes ? ` (${Math.max(1, Math.round(readyDoc.size_bytes / 1024))} KB)` : ': click to generate & download'}`}
+                      disabled={Boolean(busyFmt)}
+                      onClick={() => handleDownloadFormat(fmt)}
+                    >
+                      <span>{isBusy ? '...' : label}</span>
+                      {readyDoc && (
+                        <span className="num" style={{ opacity: 0.78, fontSize: 10 }}>
+                          {Math.max(1, Math.round((readyDoc.size_bytes || 1024) / 1024))}K
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {exportStatus && (
+                <div className="muted" style={{ fontSize: 11.5 }} data-testid="research-export-status">
+                  {exportStatus}
+                </div>
+              )}
             </div>
-            <div className="research-doc-pills">
-              {RESEARCH_EXPORT_FORMATS.map(({ fmt, label, title }) => {
-                const readyDoc = docsByFmt[fmt];
-                const isBusy = busyFmt === fmt;
-                const isPrimary = fmt === 'md' || fmt === 'docx' || fmt === 'pdf';
-                return (
-                  <button
-                    key={fmt}
-                    type="button"
-                    className={`research-doc-pill ${readyDoc ? 'is-ready' : ''} ${isPrimary ? 'is-primary' : ''}`}
-                    data-testid={`research-dl-${fmt}`}
-                    title={`${title}${readyDoc?.size_bytes ? ` (${Math.max(1, Math.round(readyDoc.size_bytes / 1024))} KB)` : ' — click to generate & download'}`}
-                    disabled={Boolean(busyFmt)}
-                    onClick={() => handleDownloadFormat(fmt)}
-                  >
-                    <span>{isBusy ? '...' : label}</span>
-                    {readyDoc && (
-                      <span className="num" style={{ opacity: 0.78, fontSize: 10 }}>
-                        {Math.max(1, Math.round((readyDoc.size_bytes || 1024) / 1024))}K
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {exportStatus && (
-              <div className="muted" style={{ fontSize: 11.5 }} data-testid="research-export-status">
-                {exportStatus}
+
+            {readerOpen && (
+              <div className="research-reader-panel" data-testid="research-reader-panel">
+                {renderFormattedText(rc.reportMarkdown || m.content || '')}
+              </div>
+            )}
+
+            {rc.csvPath && (
+              <div className="muted" style={{ fontSize: 11.5 }}>
+                Workspace CSV: <code>{rc.csvPath}</code>
               </div>
             )}
           </div>
-
-          {readerOpen && (
-            <div className="research-reader-panel" data-testid="research-reader-panel">
-              {renderFormattedText(m.researchCard.reportMarkdown || m.content || '')}
-            </div>
-          )}
-
-          {m.researchCard.csvPath && (
-            <div className="muted" style={{ fontSize: 11.5 }}>
-              Workspace CSV: <code>{m.researchCard.csvPath}</code>
-            </div>
-          )}
-        </div>
-      )}
+        );
+      })()}
 
       {m.brutalReport && (
         <div className="chat-insight-card chat-brutal-card" data-testid="chat-brutal-card">
@@ -462,7 +535,7 @@ function TimelineStepIcon({ icon }) {
 // Original lines written for this app's Mimir (not taken from any game script).
 const MIMIR_GREETINGS = [
   'The well runs deep today. What shall we look into?',
-  'Ask plainly and I will answer plainly — and tell you what I have not checked.',
+  'Ask plainly and I will answer plainly, and tell you what I have not checked.',
   'One place for all your work. Where do we start?',
   'A good memory makes work easy. Put mine to work.',
   'Tell me what you need and I will walk you through it.',
@@ -755,7 +828,7 @@ function parseMarkdownBlock(chunk, keyPrefix) {
   return nodes;
 }
 
-function CodeBlock({ lang, code }) {
+function CodeBlock({ lang, code, onOpenInCanvas }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -766,11 +839,28 @@ function CodeBlock({ lang, code }) {
   };
   return (
     <div className="code-block-wrap" style={{ margin: '8px 0' }}>
-      <div className="code-block-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, color: 'var(--ink-subtle)', padding: '4px 10px', borderBottom: '1px solid var(--border-soft)' }}>
+      <div className="code-block-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, color: 'var(--ink-subtle)', padding: '4px 10px', borderBottom: '1px solid var(--border-soft, var(--rule))' }}>
         <span>{lang || 'code'}</span>
-        <button type="button" className="btn btn-sm" onClick={copy} data-testid="copy-code-btn">
-          {copied ? 'Copied' : 'Copy'}
-        </button>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          {onOpenInCanvas && (
+            <button
+              type="button"
+              className="btn btn-sm"
+              data-testid="open-in-canvas-btn"
+              onClick={() => onOpenInCanvas({
+                path: '',
+                content: code,
+                language: lang || 'text',
+                title: lang ? `${lang} snippet` : 'Code snippet',
+              })}
+            >
+              Open in Canvas
+            </button>
+          )}
+          <button type="button" className="btn btn-sm" onClick={copy} data-testid="copy-code-btn">
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
       </div>
       <pre className="code-block" style={{ margin: 0, borderTop: 'none', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
         <code>{code}</code>
@@ -779,7 +869,7 @@ function CodeBlock({ lang, code }) {
   );
 }
 
-function renderFormattedText(text) {
+function renderFormattedText(text, onOpenInCanvas = null) {
   const str = String(text || '');
   const parts = str.split(/```([\s\S]*?)```/g);
   return parts.map((chunk, i) => {
@@ -787,10 +877,47 @@ function renderFormattedText(text) {
       const firstNewline = chunk.indexOf('\n');
       const lang = firstNewline > -1 ? chunk.slice(0, firstNewline).trim() : '';
       const code = (firstNewline > -1 ? chunk.slice(firstNewline + 1) : chunk).trimEnd();
-      return <CodeBlock key={i} lang={lang} code={code} />;
+      return <CodeBlock key={i} lang={lang} code={code} onOpenInCanvas={onOpenInCanvas} />;
     }
     return <div key={i} className="md-block">{parseMarkdownBlock(chunk, `md-${i}`)}</div>;
   });
+}
+
+function resolveActiveBranchMessages(thread) {
+  const msgs = Array.isArray(thread?.messages) ? thread.messages : [];
+  if (msgs.length === 0) return [];
+  if (!thread.activeLeafId && !msgs.some(m => m?.parentId !== undefined)) {
+    return msgs;
+  }
+  const byId = new Map();
+  const indexById = new Map();
+  msgs.forEach((m, idx) => {
+    if (m?.id) {
+      byId.set(m.id, m);
+      indexById.set(m.id, idx);
+    }
+  });
+  const targetLeafId =
+    (thread.activeLeafId && byId.has(thread.activeLeafId) ? thread.activeLeafId : null) ||
+    msgs[msgs.length - 1]?.id ||
+    null;
+  if (!targetLeafId) return msgs;
+
+  const chain = [];
+  const visited = new Set();
+  let curId = targetLeafId;
+  while (curId && byId.has(curId) && !visited.has(curId)) {
+    visited.add(curId);
+    const node = byId.get(curId);
+    chain.push(node);
+    if (node.parentId !== undefined) {
+      curId = node.parentId;
+    } else {
+      const idx = indexById.get(curId);
+      curId = idx > 0 ? msgs[idx - 1]?.id || null : null;
+    }
+  }
+  return chain.length > 0 ? chain.reverse() : msgs;
 }
 
 export function ChatView({
@@ -806,6 +933,16 @@ export function ChatView({
   onResolveApproval,
   onStageFiles,
   onSwitchMode,
+  onSwitchThreadBot,
+  onForkThread,
+  onBranchEditMessage,
+  onExportThread,
+  onOpenInCanvas,
+  researchMode = 'auto',
+  onChangeResearchMode,
+  researchProgress = null,
+  pendingDraftCommand = '',
+  onConsumeDraftCommand,
   onOpenLiveVoice,
   teachMode,
   recordedSteps,
@@ -825,14 +962,25 @@ export function ChatView({
   const [sendError, setSendError] = useState('');
   const [sending, setSending] = useState(false);
   const [modeBusy, setModeBusy] = useState(false);
+  const [personaBusy, setPersonaBusy] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [dropBusy, setDropBusy] = useState(false);
   const [showScrollLatest, setShowScrollLatest] = useState(false);
   const [slashIndex, setSlashIndex] = useState(0);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const [mentionDismissedQuery, setMentionDismissedQuery] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null);
   const [copiedMsgId, setCopiedMsgId] = useState('');
+  const [isNarrowViewport, setIsNarrowViewport] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= 768
+  );
+  const [mobileQuickbarsOpen, setMobileQuickbarsOpen] = useState(false);
+  const [quickMakeOpen, setQuickMakeOpen] = useState(false);
+  const [localResearchMode, setLocalResearchMode] = useState(researchMode || 'auto');
   const [greeting] = useState(() => MIMIR_GREETINGS[Math.floor(Math.random() * MIMIR_GREETINGS.length)]);
   const endRef = useRef(null);
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
   const stickToBottomRef = useRef(true);
   const fileInputRef = useRef(null);
   const recorderRef = useRef(null);
@@ -841,6 +989,28 @@ export function ChatView({
   const specialistMentions = teamBots.filter(
     b => b.id !== bot?.id && (b.parentBotId === bot?.id || b.specialistTag || b.isTeamBot)
   );
+  const effectiveResearchMode = onChangeResearchMode ? researchMode : localResearchMode;
+  const setEffectiveResearchMode = nextMode => {
+    setLocalResearchMode(nextMode);
+    onChangeResearchMode?.(nextMode);
+  };
+
+  useEffect(() => {
+    const onResize = () => setIsNarrowViewport(window.innerWidth <= 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingDraftCommand) return;
+    setDraft(pendingDraftCommand);
+    onConsumeDraftCommand?.();
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, [pendingDraftCommand, onConsumeDraftCommand]);
+
+  useEffect(() => {
+    setEditingMessage(null);
+  }, [thread?.id]);
 
   useEffect(() => {
     return () => {
@@ -938,15 +1108,37 @@ export function ChatView({
   const commandMatches = /^\/\S*$/.test(draft) ? commands.filter(c => c.cmd.startsWith(draft.toLowerCase())) : [];
   const activeSlashIdx = commandMatches.length ? Math.min(slashIndex, commandMatches.length - 1) : 0;
 
+  const mentionMatch = commandMatches.length === 0 ? draft.match(/(?:^|\s)@([^\s@]*)$/) : null;
+  const mentionQuery = mentionMatch ? mentionMatch[1].toLowerCase() : null;
+  const mentionMatches =
+    mentionQuery !== null && mentionDismissedQuery !== mentionQuery
+      ? teamBots.filter(
+          b =>
+            b.name.toLowerCase().includes(mentionQuery) ||
+            String(b.role || '').toLowerCase().includes(mentionQuery) ||
+            String(b.specialistTag || '').toLowerCase().includes(mentionQuery)
+        )
+      : [];
+  const activeMentionIdx = mentionMatches.length ? Math.min(mentionIndex, mentionMatches.length - 1) : 0;
+
+  const applyMention = chosenBot => {
+    if (!chosenBot) return;
+    setDraft(prev => prev.replace(/@[^\s@]*$/, `@${chosenBot.name} `));
+    setMentionDismissedQuery(null);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
   useEffect(() => {
     setSlashIndex(0);
-  }, [draft]);
+    setMentionIndex(0);
+    if (mentionQuery === null) setMentionDismissedQuery(null);
+  }, [draft, mentionQuery]);
 
   useEffect(() => {
     if (stickToBottomRef.current) {
       endRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [thread?.messages?.length, streaming?.content, pendingApprovals?.length]);
+  }, [thread?.messages?.length, thread?.activeLeafId, streaming?.content, pendingApprovals?.length]);
 
   const handleChatScroll = evt => {
     const el = evt.currentTarget;
@@ -960,7 +1152,12 @@ export function ChatView({
     setSendError('');
     stickToBottomRef.current = true;
     try {
-      await onSendMessage(text || 'Inspect attached files.', staged);
+      if (editingMessage && onBranchEditMessage) {
+        await onBranchEditMessage(editingMessage.id, text, { researchMode: effectiveResearchMode });
+        setEditingMessage(null);
+      } else {
+        await onSendMessage(text || 'Inspect attached files.', staged, { researchMode: effectiveResearchMode });
+      }
       setDraft('');
       setAttachments([]);
       return true;
@@ -1066,7 +1263,7 @@ export function ChatView({
     await stageAndMaybeAutoRun(evt.dataTransfer?.files, { autoSend: !evt.shiftKey });
   };
 
-  const messages = thread?.messages || [];
+  const messages = resolveActiveBranchMessages(thread);
   const activeMode = bot?.executionMode || 'agent';
   const activeModeMeta = EXECUTION_MODES.find(m => m.id === activeMode) || EXECUTION_MODES[0];
 
@@ -1126,6 +1323,69 @@ export function ChatView({
         </div>
         <div className="chat-session-meta">
           <span className="chat-mode-hint">{activeModeMeta.hint}</span>
+          {teamBots.length > 1 && onSwitchThreadBot && (
+            <select
+              className="select"
+              data-testid="persona-switcher"
+              aria-label="Switch teammate for this chat"
+              title="Switch persona without clearing chat history"
+              disabled={personaBusy || isRunning}
+              value={bot?.id || ''}
+              style={{ width: 'auto', minHeight: 28, padding: '2px 8px', fontSize: 11.5 }}
+              onChange={async e => {
+                const nextId = e.target.value;
+                if (!nextId || nextId === bot?.id) return;
+                setPersonaBusy(true);
+                try {
+                  await onSwitchThreadBot(nextId);
+                } finally {
+                  setPersonaBusy(false);
+                }
+              }}
+            >
+              {teamBots.map(b => (
+                <option key={b.id} value={b.id}>
+                  Persona: {b.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <select
+            className="select"
+            data-testid="research-mode-select"
+            aria-label="Research mode"
+            title="Choose whether research uses live web or offline corpus"
+            value={effectiveResearchMode}
+            style={{ width: 'auto', minHeight: 28, padding: '2px 8px', fontSize: 11.5 }}
+            onChange={e => setEffectiveResearchMode(e.target.value)}
+          >
+            <option value="auto">Research: Auto</option>
+            <option value="live">Research: Live Web</option>
+            <option value="offline">Research: Offline Corpus</option>
+          </select>
+          {thread?.id && messages.length > 0 && onForkThread && (
+            <button
+              type="button"
+              className="btn btn-sm"
+              data-testid="fork-thread-btn"
+              title="Fork conversation into a new branch thread"
+              disabled={isRunning}
+              onClick={() => onForkThread(messages[messages.length - 1]?.id)}
+            >
+              Fork
+            </button>
+          )}
+          {thread?.id && messages.length > 0 && onExportThread && (
+            <button
+              type="button"
+              className="btn btn-sm"
+              data-testid="export-thread-md-btn"
+              title="Export conversation as Markdown (.md)"
+              onClick={() => onExportThread('md')}
+            >
+              Export .md
+            </button>
+          )}
           {bot?.specialistTag && (
             <span className="status-pill badge-specialist">
               {bot.specialistTag === 'chief-of-staff'
@@ -1173,7 +1433,7 @@ export function ChatView({
                   key={card.title}
                   type="button"
                   className="smart-prompt-card"
-                  onClick={() => onSendMessage(card.prompt, [])}
+                  onClick={() => onSendMessage(card.prompt, [], { researchMode: effectiveResearchMode })}
                 >
                   <span className="smart-prompt-title">{card.title}</span>
                   <span className="smart-prompt-sub">{card.subtitle}</span>
@@ -1318,10 +1578,10 @@ export function ChatView({
                       isNew={msgIdx === messages.length - 1}
                       isError={Boolean(m.isError)}
                     >
-                      {renderFormattedText(m.content)}
+                      {renderFormattedText(m.content, onOpenInCanvas)}
                     </PixelGlitchResponse>
                   ) : (
-                    <div>{renderFormattedText(m.content)}</div>
+                    <div>{renderFormattedText(m.content, onOpenInCanvas)}</div>
                   ))}
                 {pendingToolCalls.length > 0 && (
                   <div className="chip-list" style={{ marginTop: hasText ? 8 : 0 }}>
@@ -1349,15 +1609,22 @@ export function ChatView({
               )}
               {Array.isArray(m.artifacts) && m.artifacts.length > 0 && (
                 <div className="chat-artifacts-stack" data-testid="chat-artifacts-stack">
-                  {m.artifacts.map(art => (
-                    <CreativeStudioPlayer key={art.id} artifact={art} compact />
-                  ))}
+                  <Suspense fallback={null}>
+                    {m.artifacts.map(art => (
+                      <CreativeStudioPlayer key={art.id} artifact={art} compact />
+                    ))}
+                  </Suspense>
                 </div>
               )}
               {/* Receipts stay internal; only a reply that claims work it did not do is flagged. */}
               {m.role === 'assistant' && m.receipt?.unbackedClaims?.length > 0 && (
                 <div className="unbacked-warning" role="alert" data-testid="unbacked-claim-warning">
                   This reply mentions actions that did not run: {m.receipt.unbackedClaims.map(c => c.label || c.text).join('; ')}
+                </div>
+              )}
+              {(m.branchGroupId || m.branchCount > 1) && (
+                <div className="msg-branch-bar">
+                  <span>Branch {m.branchIndex || 1}{m.branchCount ? ` of ${m.branchCount}` : ''}</span>
                 </div>
               )}
               <div className="msg-meta">
@@ -1385,7 +1652,11 @@ export function ChatView({
                     type="button"
                     className="speak-btn"
                     data-testid="edit-msg-btn"
-                    onClick={() => setDraft(String(m.content || ''))}
+                    onClick={() => {
+                      setEditingMessage({ id: m.id, content: String(m.content || '') });
+                      setDraft(String(m.content || ''));
+                      requestAnimationFrame(() => inputRef.current?.focus());
+                    }}
                   >
                     Edit
                   </button>
@@ -1404,6 +1675,16 @@ export function ChatView({
                     </button>
                   );
                 })()}
+                {!isRunning && onForkThread && (
+                  <button
+                    type="button"
+                    className="speak-btn"
+                    data-testid="fork-msg-btn"
+                    onClick={() => onForkThread(m.id)}
+                  >
+                    Fork
+                  </button>
+                )}
                 {m.role === 'assistant' && hasText && (
                   <SpeakButton text={m.content} autoPlay={Boolean(m.voice) && msgIdx === messages.length - 1} />
                 )}
@@ -1411,6 +1692,12 @@ export function ChatView({
             </div>
           );
         })}
+
+        {isRunning && researchProgress && (
+          <div className="msg-row assistant">
+            <ResearchStepper progress={researchProgress} live />
+          </div>
+        )}
 
         {isRunning && swarmSteps.length > 0 && (
           <div className="msg-row assistant">
@@ -1424,7 +1711,7 @@ export function ChatView({
                     <TimelineStepIcon icon={step.icon || 'subagent'} />
                     <span>
                       {step.label}
-                      {step.detail ? ` — ${step.detail}` : ''}
+                      {step.detail ? `: ${step.detail}` : ''}
                     </span>
                   </div>
                 ))}
@@ -1442,7 +1729,7 @@ export function ChatView({
                 </div>
               )}
               <PixelGlitchResponse streaming>
-                {renderFormattedText(streaming.content || '...')}
+                {renderFormattedText(streaming.content || '...', onOpenInCanvas)}
               </PixelGlitchResponse>
             </div>
           </div>
@@ -1495,7 +1782,7 @@ export function ChatView({
               {card?.timestampLabel && <span style={{ fontSize: 11, color: 'var(--ink-subtle)' }}>{card.timestampLabel}</span>}
             </div>
             <div className="dialogue-card-title">
-              {card?.title || <>Needs your OK — <code>{apr.toolName}</code></>}
+              {card?.title || <>Needs your OK: <code>{apr.toolName}</code></>}
             </div>
             <div className="dialogue-card-sub">{card?.subtitle || apr.reason}</div>
             <details>
@@ -1599,6 +1886,23 @@ export function ChatView({
             </div>
           )}
 
+          {editingMessage && (
+            <div className="branch-edit-banner" data-testid="branch-edit-banner" role="status">
+              <span>Editing message to create a new branch</span>
+              <button
+                type="button"
+                className="btn btn-sm"
+                data-testid="cancel-branch-edit-btn"
+                onClick={() => {
+                  setEditingMessage(null);
+                  setDraft('');
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
           {commandMatches.length > 0 && (
             <ul className="command-suggest" role="listbox" aria-label="Mimir commands" data-testid="command-suggest">
               {commandMatches.map((c, sIdx) => (
@@ -1608,7 +1912,10 @@ export function ChatView({
                     role="option"
                     aria-selected={sIdx === activeSlashIdx}
                     className={`command-suggest-item ${sIdx === activeSlashIdx ? 'is-active' : ''}`}
-                    onClick={() => setDraft(`${c.cmd} `)}
+                    onClick={() => {
+                      setDraft(`${c.cmd} `);
+                      requestAnimationFrame(() => inputRef.current?.focus());
+                    }}
                   >
                     <code>{c.syntax}</code>
                     <span>{c.desc}</span>
@@ -1618,7 +1925,41 @@ export function ChatView({
             </ul>
           )}
 
-          {specialistMentions.length > 0 && (
+          {mentionMatches.length > 0 && (
+            <ul className="mention-suggest" role="listbox" aria-label="Mention teammate" data-testid="mention-suggest">
+              {mentionMatches.map((mBot, mIdx) => (
+                <li key={mBot.id}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={mIdx === activeMentionIdx}
+                    className={`mention-suggest-item ${mIdx === activeMentionIdx ? 'is-active' : ''}`}
+                    onClick={() => applyMention(mBot)}
+                  >
+                    <span className="work-color-sq" style={{ background: mBot.color || 'var(--frost)' }} />
+                    <strong>@{mBot.name}</strong>
+                    <span className="muted" style={{ fontSize: 11 }}>{mBot.role}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {isNarrowViewport ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 4 }}>
+              <button
+                type="button"
+                className="btn btn-sm composer-quickbars-toggle"
+                data-testid="composer-quickbars-toggle"
+                aria-expanded={mobileQuickbarsOpen}
+                onClick={() => setMobileQuickbarsOpen(v => !v)}
+              >
+                {mobileQuickbarsOpen ? 'Hide quick tools' : 'Teammates & Quick make'}
+              </button>
+            </div>
+          ) : null}
+
+          {(!isNarrowViewport || mobileQuickbarsOpen) && specialistMentions.length > 0 && (
             <div className="mention-quickbar" data-testid="mention-quickbar">
               <span style={{ fontSize: 11, color: 'var(--ink-subtle)', fontWeight: 600 }}>
                 Ask a teammate:
@@ -1638,28 +1979,52 @@ export function ChatView({
             </div>
           )}
 
-          <div className="mention-quickbar" data-testid="studio-chat-quickbar">
-            <span style={{ fontSize: 11, color: 'var(--ink-subtle)', fontWeight: 600 }}>
-              Quick make:
-            </span>
-            {[
-              { label: 'Music', cmd: 'Create an ambient synthwave music track at 110 BPM' },
-              { label: 'App', cmd: 'Build an expense-tracking web app with authentication, charts and export' },
-              { label: '3D model', cmd: 'Create a 3D model of a Valkyrie Starfighter' },
-              { label: 'Picture', cmd: 'Generate HD artwork of the Cosmic Odin Observatory' },
-              { label: 'Video', cmd: 'Create a motion clip animation mp4 of a hyperdrive pulse loop' },
-              { label: 'Game', cmd: 'Create a playable arcade space shooter game' },
-            ].map(item => (
+          {(!isNarrowViewport && !quickMakeOpen) ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <button
-                key={item.label}
                 type="button"
-                className="mention-quick-btn"
-                onClick={() => setDraft(item.cmd)}
+                className="mention-quick-btn composer-quickbars-toggle"
+                data-testid="composer-quickbars-toggle"
+                aria-expanded={false}
+                onClick={() => setQuickMakeOpen(true)}
               >
-                {item.label}
+                Quick make +
               </button>
-            ))}
-          </div>
+            </div>
+          ) : (!isNarrowViewport || mobileQuickbarsOpen) ? (
+            <div className="mention-quickbar" data-testid="studio-chat-quickbar">
+              <span style={{ fontSize: 11, color: 'var(--ink-subtle)', fontWeight: 600 }}>
+                Quick make:
+              </span>
+              {[
+                { label: 'Music', cmd: 'Create an ambient synthwave music track at 110 BPM' },
+                { label: 'App', cmd: 'Build an expense-tracking web app with authentication, charts and export' },
+                { label: '3D model', cmd: 'Create a 3D model of a Valkyrie Starfighter' },
+                { label: 'Picture', cmd: 'Generate HD artwork of the Cosmic Odin Observatory' },
+                { label: 'Video', cmd: 'Create a motion clip animation mp4 of a hyperdrive pulse loop' },
+                { label: 'Game', cmd: 'Create a playable arcade space shooter game' },
+              ].map(item => (
+                <button
+                  key={item.label}
+                  type="button"
+                  className="mention-quick-btn"
+                  onClick={() => setDraft(item.cmd)}
+                >
+                  {item.label}
+                </button>
+              ))}
+              {!isNarrowViewport && (
+                <button
+                  type="button"
+                  className="mention-quick-btn"
+                  aria-label="Hide quick make bar"
+                  onClick={() => setQuickMakeOpen(false)}
+                >
+                  Hide
+                </button>
+              )}
+            </div>
+          ) : null}
 
           {(() => {
             const draftIntent = detectDraftIntent(draft);
@@ -1688,7 +2053,8 @@ export function ChatView({
               ref={fileInputRef}
               type="file"
               multiple
-              style={{ display: 'none' }}
+              tabIndex={-1}
+              className="sr-only"
               onChange={handleHtmlFiles}
             />
             <button
@@ -1702,12 +2068,13 @@ export function ChatView({
               <PlusPixelSvg size={16} />
             </button>
             <textarea
+              ref={inputRef}
               className="composer-textarea"
               data-testid="chat-input"
               aria-label={`Message ${bot?.name || 'Mimir'}`}
               title="Enter to send, Shift+Enter for newline, or drop files anywhere"
               rows={2}
-              placeholder={`Message ${bot?.name || 'Mimir'} or drop files anywhere...`}
+              placeholder={editingMessage ? 'Edit message and press Enter to branch...' : `Message ${bot?.name || 'Mimir'} or drop files anywhere...`}
               value={draft}
               onChange={e => setDraft(e.target.value)}
               onPaste={async evt => {
@@ -1739,6 +2106,31 @@ export function ChatView({
                     if (chosen && draft.toLowerCase() !== chosen.cmd) {
                       e.preventDefault();
                       setDraft(`${chosen.cmd} `);
+                      return;
+                    }
+                  }
+                }
+                if (mentionMatches.length > 0) {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setMentionIndex(prev => (prev + 1) % mentionMatches.length);
+                    return;
+                  }
+                  if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setMentionIndex(prev => (prev - 1 + mentionMatches.length) % mentionMatches.length);
+                    return;
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    setMentionDismissedQuery(mentionQuery);
+                    return;
+                  }
+                  if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
+                    const chosen = mentionMatches[activeMentionIdx];
+                    if (chosen) {
+                      e.preventDefault();
+                      applyMention(chosen);
                       return;
                     }
                   }

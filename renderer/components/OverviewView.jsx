@@ -16,29 +16,29 @@ const WORKFLOW_CASES = [
   {
     id: 'triage',
     title: 'Inbox & PR Triage',
-    tag: 'Read -> Gate -> Act',
-    desc: 'Summarize GitHub and Gmail activity, then pause for approval before any outbound reply.',
+    tag: 'Draft then approve',
+    desc: 'Summarize GitHub and Gmail activity, then pause for your approval before sending any reply.',
     prompt: 'Check connected GitHub and Gmail status, summarize open items, and ask before any outbound write.',
   },
   {
     id: 'briefing',
-    title: 'Foundry Multi-Format Pack',
-    tag: 'PDF + DOCX + PPTX + XLSX',
-    desc: 'Generate verified deliverables saved directly into Library.',
+    title: 'Multi-Format Reports',
+    tag: 'PDF, Word, Slides, Excel',
+    desc: 'Generate polished deliverables saved directly into your Library.',
     prompt: '/forge Create an executive PDF and XLSX summary of the current workspace status.',
   },
   {
     id: 'web-rsi',
-    title: '2026 Web + Knowledge Research',
-    tag: 'CRAG + Self-RAG',
-    desc: 'Search live 2026 sources with prompt-injection fencing and cite grounded snippets.',
+    title: 'Web & File Research',
+    tag: 'Grounded citations',
+    desc: 'Search live sources alongside local workspace files and cite grounded snippets.',
     prompt: '/research 2026 local model quantization updates and runtime benchmarks',
   },
   {
     id: 'own-pc',
-    title: 'Dedicated Browser & Desktop',
-    tag: 'Takeover + CDP',
-    desc: 'Drive embedded Chromium, attach to Chrome/Edge CDP, or pause safely for manual login.',
+    title: 'Browser & Desktop Control',
+    tag: 'Live screen',
+    desc: 'Browse pages in a dedicated window, attach to an existing browser, or pause for manual login.',
     prompt: 'Inspect active desktop windows or open the configured Realm Preview URL.',
   },
 ];
@@ -91,13 +91,13 @@ export function OverviewView({
             <MimirAsset category="characters" name="mimir-head" size={72} alt="Mimir Norse sage emblem" />
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--brass)' }}>
-                Mimir Autonomous Workforce · Overview
+                Overview
               </div>
               <h2 style={{ margin: '4px 0 6px', fontSize: 21 }}>
-                Delegate to a 24/7 Local Agent Team, Not a Single Prompt Box
+                Delegate tasks to a local AI team, with you in control
               </h2>
               <p style={{ margin: 0, color: 'var(--ink-muted)', maxWidth: '60ch', fontSize: 13 }}>
-                Active bot: <strong>{activeBot?.name || 'Mimir'}</strong> ({activeBot?.modelOverride || 'local runtime'}) · {liveModels} Ollama model(s) live · Chief-of-Staff delegation + Reversibility Approval Gates.
+                Active assistant: <strong>{activeBot?.name || 'Mimir'}</strong> ({activeBot?.modelOverride || 'local runtime'}) · {liveModels} Ollama model(s) live · Approval checks before external actions.
               </p>
             </div>
           </div>
@@ -116,18 +116,6 @@ export function OverviewView({
               <ChiefCrownPixelSvg size={14} />
               <span>{teamDeployed ? 'Open #Growth Team' : deployingTeam ? 'Deploying...' : 'Deploy Chief Team'}</span>
             </button>
-            <button type="button" className="btn" onClick={() => onNavigate('council')}>
-              Boardroom
-            </button>
-            <button type="button" className="btn" onClick={() => onOpenLiveVoice?.()}>
-              Live Voice
-            </button>
-            <button type="button" className="btn" data-testid="open-mimri-stack-btn" onClick={() => onNavigate('mimri')}>
-              Mimri 14x Stack
-            </button>
-            <a href="./landing/index.html" target="_blank" rel="noopener noreferrer" className="btn">
-              Showcase
-            </a>
           </div>
         </section>
 
@@ -140,7 +128,7 @@ export function OverviewView({
                 </strong>
               </div>
               <span style={{ fontSize: 12, color: 'var(--ink-muted)' }}>
-                Adds a team lead and 5 helpers, 4 group chats (Growth, Product launch, Updates, Team meeting prep) and a few starter skills, in one click.
+                Adds a team lead and 5 helpers, 4 group chats (Growth, Product launch, Updates, Team meeting prep) and starter skills, in one click.
               </span>
             </div>
             <button
@@ -151,20 +139,20 @@ export function OverviewView({
               onClick={handleActivateReplacement}
             >
               <ChiefCrownPixelSvg size={14} />
-              <span>{activatingBundle ? 'Setting up…' : 'Set up ready-made team'}</span>
+              <span>{activatingBundle ? 'Setting up...' : 'Set up ready-made team'}</span>
             </button>
           </div>
           {bundleNotice && (
-            <div style={{ fontSize: 11.5, color: '#5cf2b4', fontFamily: 'var(--sand-mono)' }} data-testid="grokbot-bundle-notice">
+            <div style={{ fontSize: 11.5, color: 'var(--ok)', fontFamily: 'var(--sand-mono)' }} data-testid="grokbot-bundle-notice">
               {bundleNotice}
             </div>
           )}
         </section>
 
-        <section className="card" data-testid="golden-path-strip" aria-label="First-Run Golden Path" style={{ padding: '12px 14px', gap: 10 }}>
+        <section className="card" data-testid="golden-path-strip" aria-label="Getting started" style={{ padding: '12px 14px', gap: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <strong style={{ fontSize: 12.5, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--brass)' }}>
-              First-Run Golden Path
+              Getting started
             </strong>
             <span className="pill is-emerald" style={{ fontSize: 10 }}>
               {liveModels > 0 ? `${liveModels} Local Model${liveModels === 1 ? '' : 's'} Ready` : 'Local Fallback Ready'}
@@ -172,31 +160,31 @@ export function OverviewView({
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
             <button type="button" className="btn btn-sm" onClick={() => onNavigate('settings')} style={{ justifyContent: 'flex-start' }}>
-              1. Preflight &amp; Runtime
+              1. Check Runtime
             </button>
             <button type="button" className="btn btn-sm" onClick={() => onNavigate('settings')} style={{ justifyContent: 'flex-start' }}>
-              2. Model Fit ({activeBot?.modelOverride || 'auto'})
+              2. Pick Model ({activeBot?.modelOverride || 'auto'})
             </button>
             <button type="button" className="btn btn-sm" onClick={handleDeploy} disabled={deployingTeam} style={{ justifyContent: 'flex-start' }}>
-              3. {teamDeployed ? 'Chief Ready' : 'Deploy Chief'}
+              3. {teamDeployed ? 'Team Ready' : 'Deploy Team'}
             </button>
             <button type="button" className="btn btn-sm" onClick={() => onNavigate('vault')} style={{ justifyContent: 'flex-start' }}>
-              4. Gate &amp; Vault
+              4. Review Approvals
             </button>
             <button type="button" className="btn btn-primary btn-sm" onClick={() => onNavigate('chat')} style={{ justifyContent: 'flex-start' }}>
-              5. Run &amp; Receipt
+              5. Start Chatting
             </button>
           </div>
         </section>
 
         <section className="overview-triplet" aria-label="Quick launch capabilities">
           <article className="overview-card">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#e54868', fontWeight: 700 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink)', fontWeight: 700 }}>
               <TeamTopologySvg size={16} />
-              <span>Chief of Staff Topology (6 Bots)</span>
+              <span>Team Delegation (6 Assistants)</span>
             </div>
             <p style={{ margin: 0, fontSize: 12.5, color: 'var(--ink-muted)', flex: 1 }}>
-              Deploy Klaus (Chief of Staff) + 5 specialists (@Mara Scout, @Cole Copy, @Rina Design, @Vince Ops, @Jonathan CFO) with async @mention delegation.
+              Work with Klaus as lead plus 5 specialists (research, copy, design, ops, finance) passing tasks cleanly in shared channels.
             </p>
             <div>
               <button
@@ -213,10 +201,10 @@ export function OverviewView({
           <article className="overview-card">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--brass)', fontWeight: 700 }}>
               <CouncilRuneSvg size={16} />
-              <span>Model Council Boardroom</span>
+              <span>Multi-Model Boardroom</span>
             </div>
             <p style={{ margin: 0, fontSize: 12.5, color: 'var(--ink-muted)', flex: 1 }}>
-              Pit local models and bots against each other in Stage 1 parallel opinions, blind Stage 2 Borda ranking, and Stage 3 Chairman synthesis.
+              Compare answers from several local models side by side, score them anonymously, and get one clear synthesis.
             </p>
             <div>
               <button
@@ -233,10 +221,10 @@ export function OverviewView({
           <article className="overview-card">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--frost)', fontWeight: 700 }}>
               <VoiceOrbSvg size={16} />
-              <span>Live Duplex Voice</span>
+              <span>Live Voice</span>
             </div>
             <p style={{ margin: 0, fontSize: 12.5, color: 'var(--ink-muted)', flex: 1 }}>
-              Hands-free turn-taking with RMS silence detection, faster-whisper STT, and neural or offline SAPI5 speech playback.
+              Hands-free voice chat with automatic pause detection, local speech recognition, and spoken replies.
             </p>
             <div>
               <button
@@ -251,37 +239,37 @@ export function OverviewView({
           </article>
         </section>
 
-        <section className="grid-2" aria-label="Architecture pillars">
+        <section className="grid-2" aria-label="Safety and storage">
           <article className="card" data-testid="reversibility-matrix-card">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <strong style={{ fontSize: 13.5, color: 'var(--brass)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Reversibility Approval Matrix
+                Action Safety Rules
               </strong>
               <span className="pill" style={{ fontSize: 10.5 }}>Safety Rule</span>
             </div>
-            <div className="matrix-split">
-              <div className="matrix-col is-reversible">
+            <div className="matrix-split" style={{ gap: 16 }}>
+              <div className="matrix-col is-reversible" style={{ border: 'none', background: 'transparent', padding: '4px 0' }}>
                 <div className="matrix-col-head">
                   <ReversibleShieldSvg size={15} />
-                  <span>Reversible · Autonomous</span>
+                  <span>Safe local work (Automatic)</span>
                 </div>
                 <ul className="matrix-list">
-                  <li>Web research &amp; competitor sweeps</li>
-                  <li>Drafting outreach copy &amp; reports locally</li>
-                  <li>Generating pixel SVGs &amp; UI mockups</li>
-                  <li>Organizing <code>/workspace/&#123;bin,config,skills,state&#125;</code></li>
+                  <li>Web research and reading sources</li>
+                  <li>Drafting copy and reports locally</li>
+                  <li>Creating diagrams, charts, and mockups</li>
+                  <li>Organizing workspace scripts and notes</li>
                 </ul>
               </div>
-              <div className="matrix-col is-irreversible">
+              <div className="matrix-col is-irreversible" style={{ border: 'none', borderTop: '1px solid var(--rule)', background: 'transparent', padding: '10px 0 4px' }}>
                 <div className="matrix-col-head">
                   <IrreversibleGateSvg size={15} />
-                  <span>Irreversible · Mandatory Human OK</span>
+                  <span>External actions (Approval needed)</span>
                 </div>
                 <ul className="matrix-list">
-                  <li>Sending external emails, DMs, or posts</li>
-                  <li>Financial spend, billing, or payouts</li>
-                  <li>Production DB writes or host shell commands</li>
-                  <li>Security/auth changes &amp; Vault secret access</li>
+                  <li>Sending emails, messages, or posts</li>
+                  <li>Purchases, billing, or payouts</li>
+                  <li>Database writes or system commands</li>
+                  <li>Security changes and saved credentials</li>
                 </ul>
               </div>
             </div>
@@ -291,28 +279,28 @@ export function OverviewView({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <strong style={{ fontSize: 13.5, color: 'var(--frost)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <HybridStackSvg size={15} />
-                <span>Hybrid AI Stack &amp; Persistence</span>
+                <span>Local Runtime &amp; Persistence</span>
               </strong>
-              <span className="pill" style={{ fontSize: 10.5 }}>6 Systems Ready</span>
+              <span className="pill" style={{ fontSize: 10.5 }}>Workspace Ready</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
-              <div className="hybrid-box">
-                <div className="hybrid-tag">24/7 Local / Fleet</div>
-                <strong>Mimir Autonomous Daemon</strong>
-                <span>Continuous WAL routines, CDP browser, multi-bot delegation &amp; compiled <code>/workspace/skills/*.md</code>.</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+              <div className="hybrid-box" style={{ border: 'none', background: 'var(--bg-inset, var(--bg-surface))', padding: '10px 12px', borderRadius: 6 }}>
+                <div className="hybrid-tag">Background Runner</div>
+                <strong>Local Task Daemon</strong>
+                <span>Scheduled routines, live browser sessions, team delegation, and reusable workspace skills.</span>
               </div>
-              <div className="hybrid-box">
-                <div className="hybrid-tag">Dev Session / IDE</div>
-                <strong>Local Ollama + CLI</strong>
-                <span>Deep repository refactoring, code execution &amp; local BYOK endpoints synced via shared workspace state.</span>
+              <div className="hybrid-box" style={{ border: 'none', background: 'var(--bg-inset, var(--bg-surface))', padding: '10px 12px', borderRadius: 6 }}>
+                <div className="hybrid-tag">Models &amp; Tools</div>
+                <strong>Ollama + Local CLI</strong>
+                <span>Repository editing, local command runs, and local or BYOK endpoints sharing one workspace.</span>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 4, fontSize: 11.5, color: 'var(--ink-muted)' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <WorkspaceVaultCrateSvg size={14} /> <code>/workspace</code> persistent crates
+                <WorkspaceVaultCrateSvg size={14} /> Shared workspace folder
               </span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <SessionHandoffSvg size={14} /> Zero-password 2FA handoff
+                <SessionHandoffSvg size={14} /> Pause for manual sign-in anytime
               </span>
             </div>
           </article>

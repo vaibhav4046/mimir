@@ -33,13 +33,13 @@
   "artifacts": [
     {
       "path": "package.json",
-      "bytes": 1980,
-      "sha256": "8c2ac86fca492879b6d78434dda3897538542dbd2fcc4c43e7c084611e09c59e"
+      "bytes": 2032,
+      "sha256": "dad52885e9a0a9a4e68654173d21f795a36e84656e2ce42cef5d2c4bffa42488"
     },
     {
       "path": "daemon/coordinator.mjs",
-      "bytes": 107882,
-      "sha256": "dc8e4118cad8be4df09cdc037c41d10bfb88e1e530763495e31e1d0ab799a32d"
+      "bytes": 132929,
+      "sha256": "45e7678d01a43dcfbe5171b2badf37aeffe287d57dc37525f3ab5892e455ebbc"
     },
     {
       "path": "daemon/receipt.mjs",
@@ -48,8 +48,8 @@
     },
     {
       "path": "daemon/deep-research.mjs",
-      "bytes": 75576,
-      "sha256": "aeacb830a2ffe1958e5547b420594a2bafa5ffddc47a03a8821935d9fc36d9c6"
+      "bytes": 78931,
+      "sha256": "f6fe3a54e79144ee91f6b88181ebd5871dc34b6d41acb9699bfa15401ce0f5c0"
     },
     {
       "path": "docs/eval-results.json",

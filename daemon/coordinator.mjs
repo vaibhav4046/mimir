@@ -16,7 +16,7 @@ import {
 } from './store.mjs';
 import { VaultManager } from './vault.mjs';
 import { McpManager } from './mcp-manager.mjs';
-import { LocalExecEngine, REVERSIBILITY_MATRIX } from './local-exec.mjs';
+import { LocalExecEngine, REVERSIBILITY_MATRIX, resolveSafePath } from './local-exec.mjs';
 import { AgentRunner } from './agent-runner.mjs';
 import { RoutineManager } from './routines.mjs';
 import { ProactiveEngine } from './proactive.mjs';
@@ -134,6 +134,121 @@ const TEAM_BOT_TEMPLATES = [
   },
 ];
 
+const WORKSPACE_FILE_MIME_MAP = {
+  '.html': 'text/html; charset=utf-8',
+  '.htm': 'text/html; charset=utf-8',
+  '.svg': 'image/svg+xml; charset=utf-8',
+  '.md': 'text/markdown; charset=utf-8',
+  '.markdown': 'text/markdown; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.cjs': 'text/javascript; charset=utf-8',
+  '.jsx': 'text/jsx; charset=utf-8',
+  '.ts': 'text/typescript; charset=utf-8',
+  '.tsx': 'text/tsx; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.py': 'text/x-python; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
+  '.csv': 'text/csv; charset=utf-8',
+  '.yaml': 'text/yaml; charset=utf-8',
+  '.yml': 'text/yaml; charset=utf-8',
+  '.xml': 'application/xml; charset=utf-8',
+};
+
+function resolveBotWorkspaceFile(store, botId, rawPath) {
+  const rel = String(rawPath || '').trim();
+  if (!rel || rel === '.') {
+    throw Object.assign(new Error('path must point to a file inside the bot workspace'), { status: 400 });
+  }
+  const wsDir = store.getBotWorkspace(botId);
+  fs.mkdirSync(wsDir, { recursive: true });
+  let absPath;
+  try {
+    absPath = resolveSafePath(wsDir, rel);
+  } catch (err) {
+    throw Object.assign(new Error(err.message), { status: 403 });
+  }
+  const baseAbs = path.resolve(wsDir);
+  if (absPath === baseAbs) {
+    throw Object.assign(new Error('path must point to a file inside the bot workspace'), { status: 400 });
+  }
+  const normalizedRel = path.relative(baseAbs, absPath).replace(/\\/g, '/');
+  return { wsDir: baseAbs, absPath, relPath: normalizedRel };
+}
+
+function resolveActiveBranchMessages(thread) {
+  const msgs = Array.isArray(thread?.messages) ? thread.messages : [];
+  if (!msgs.length) return [];
+  if (!thread?.activeLeafId) return msgs;
+  const byId = new Map(msgs.map(m => [m.id, m]));
+  if (!byId.has(thread.activeLeafId)) return msgs;
+  const chain = [];
+  const seen = new Set();
+  let cur = byId.get(thread.activeLeafId);
+  while (cur && !seen.has(cur.id)) {
+    seen.add(cur.id);
+    chain.push(cur);
+    cur = cur.parentId ? byId.get(cur.parentId) : null;
+  }
+  return chain.reverse();
+}
+
+function computeLineDiffSummary(beforeText, afterText) {
+  const a = String(beforeText || '').split(/\r?\n/);
+  const b = String(afterText || '').split(/\r?\n/);
+  let prefix = 0;
+  while (prefix < a.length && prefix < b.length && a[prefix] === b[prefix]) prefix += 1;
+  let aEnd = a.length - 1;
+  let bEnd = b.length - 1;
+  while (aEnd >= prefix && bEnd >= prefix && a[aEnd] === b[bEnd]) {
+    aEnd -= 1;
+    bEnd -= 1;
+  }
+  const removed = Math.max(0, aEnd - prefix + 1);
+  const added = Math.max(0, bEnd - prefix + 1);
+  const hunks = removed === 0 && added === 0
+    ? []
+    : [{
+        startLine: prefix + 1,
+        removedLines: a.slice(prefix, aEnd + 1),
+        addedLines: b.slice(prefix, bEnd + 1),
+      }];
+  const diffSummary = removed === 0 && added === 0
+    ? 'No changes'
+    : `Changed lines starting at L${prefix + 1} (+${added} / -${removed})`;
+  return { diffSummary, hunks };
+}
+
+function parseCanvasEditResponse(rawText, originalContent) {
+  const text = String(rawText || '').trim();
+  if (!text) return { updatedContent: originalContent, diffSummary: 'No changes returned' };
+  const tryJson = candidate => {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (parsed && typeof parsed.updatedContent === 'string') {
+        return {
+          updatedContent: parsed.updatedContent,
+          diffSummary: typeof parsed.diffSummary === 'string' ? parsed.diffSummary.trim() : '',
+        };
+      }
+    } catch {}
+    return null;
+  };
+  const direct = tryJson(text);
+  if (direct) return direct;
+  const jsonFence = text.match(/```json\s*([\s\S]*?)```/i);
+  if (jsonFence) {
+    const fromFence = tryJson(jsonFence[1].trim());
+    if (fromFence) return fromFence;
+  }
+  const codeFence = text.match(/```[a-zA-Z0-9_-]*\s*\n([\s\S]*?)```/);
+  if (codeFence) {
+    return { updatedContent: codeFence[1].replace(/\n$/, ''), diffSummary: '' };
+  }
+  return { updatedContent: text, diffSummary: '' };
+}
+
 function json(res, status, data) {
   const body = JSON.stringify(data);
   res.writeHead(status, {
@@ -166,8 +281,10 @@ function buildOriginChecker(extraOrigins = []) {
     .filter(Boolean);
   const allowedSet = new Set([...DEFAULT_WEB_ORIGINS, ...envOrigins, ...extraOrigins]);
   return function isAllowedOrigin(origin) {
+    if (origin === undefined || origin === null || origin === '') return true;
     if (origin === 'null') return false;
-    if (!origin || origin.startsWith('file://')) return true;
+    if (origin === 'file://') return true;
+    if (origin.startsWith('file://')) return false;
     if (/^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i.test(origin)) return true;
     return allowedSet.has(origin);
   };
@@ -183,7 +300,15 @@ export async function startCoordinator(options = {}) {
   const pairingRequests = new Map();
   const pairingSessions = new Map();
   const retiredSessions = new Set();
+  const wsTickets = new Map();
   let pairingExchangeFailures = 0;
+
+  const pruneWsTickets = () => {
+    const now = Date.now();
+    for (const [k, v] of wsTickets) {
+      if (now >= v.expiresAt) wsTickets.delete(k);
+    }
+  };
 
   const makePairingCode = () => {
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -446,7 +571,7 @@ export async function startCoordinator(options = {}) {
     if (origin && origin !== 'null') {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Mimir-User, X-User-Id');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
       res.setHeader('Vary', 'Origin');
     }
     if (req.headers['access-control-request-private-network'] === 'true') {
@@ -633,8 +758,18 @@ export async function startCoordinator(options = {}) {
     }
 
     if (req.method === 'GET' && p === '/v1/browser-lab') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-      return res.end(renderBrowserLabHtml());
+      const labHtml = renderBrowserLabHtml();
+      const scriptMatch = labHtml.match(/<script>([\s\S]*?)<\/script>/);
+      const scriptSrc = scriptMatch
+        ? `'sha256-${crypto.createHash('sha256').update(scriptMatch[1], 'utf8').digest('base64')}'`
+        : "'none'";
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Security-Policy': `default-src 'none'; script-src ${scriptSrc}; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'`,
+      });
+      return res.end(labHtml);
     }
 
     const authHeader = req.headers.authorization || '';
@@ -642,6 +777,23 @@ export async function startCoordinator(options = {}) {
     const authCheck = verifyBearer(bearer);
     if (!authCheck.ok) {
       return json(res, 401, { error: authCheck.error, code: authCheck.code });
+    }
+
+    if (req.method === 'GET' && p === '/v1/auth/ws-ticket') {
+      pruneWsTickets();
+      if (wsTickets.size >= 256) {
+        const oldestKey = wsTickets.keys().next().value;
+        if (oldestKey) wsTickets.delete(oldestKey);
+      }
+      const ticket = `ws_tkt_${crypto.randomBytes(24).toString('hex')}`;
+      const expiresInMs = 30_000;
+      const expiresAt = Date.now() + expiresInMs;
+      wsTickets.set(ticket, {
+        expiresAt,
+        mode: authCheck.mode,
+        sessionToken: authCheck.session?.token || null,
+      });
+      return json(res, 200, { ok: true, ticket, expiresInMs, expiresAt });
     }
 
     if (req.method === 'GET' && p === '/v1/pairing/status') {
@@ -653,6 +805,9 @@ export async function startCoordinator(options = {}) {
       });
     }
     if (req.method === 'GET' && p === '/v1/pairing/pending') {
+      if (authCheck.mode === 'session') {
+        return json(res, 403, { error: 'Master or local authority required to list pending pairing codes.' });
+      }
       prunePairingState();
       return json(res, 200, {
         pending: [...pairingRequests.values()].map(r => ({
@@ -856,6 +1011,137 @@ export async function startCoordinator(options = {}) {
         const bId = decodeURIComponent(wsExportMatch[1]);
         return json(res, 200, store.exportGrokBotBundle(bId));
       }
+      const wsFileMatch = p.match(/^\/v1\/workspace\/([^/]+)\/file$/);
+      if (wsFileMatch) {
+        const bId = decodeURIComponent(wsFileMatch[1]);
+        if (req.method === 'GET') {
+          const rawPath = urlObj.searchParams.get('path') || '';
+          const { absPath, relPath } = resolveBotWorkspaceFile(store, bId, rawPath);
+          if (!fs.existsSync(absPath)) return json(res, 404, { error: 'File not found' });
+          const st = fs.statSync(absPath);
+          if (!st.isFile()) return json(res, 400, { error: 'Target is not a regular file' });
+          if (st.size > 2 * 1024 * 1024) {
+            return json(res, 413, { error: 'File exceeds 2 MB canvas editor limit' });
+          }
+          const content = fs.readFileSync(absPath, 'utf8');
+          const mime = WORKSPACE_FILE_MIME_MAP[path.extname(absPath).toLowerCase()] || 'text/plain; charset=utf-8';
+          return json(res, 200, {
+            ok: true,
+            path: relPath,
+            content,
+            mime,
+            size: st.size,
+            mtimeMs: st.mtimeMs,
+          });
+        }
+        if (req.method === 'PUT') {
+          const body = await readBody(req);
+          if (typeof body.content !== 'string') {
+            return json(res, 400, { error: 'content string is required' });
+          }
+          const { absPath, relPath } = resolveBotWorkspaceFile(store, bId, body.path);
+          fs.mkdirSync(path.dirname(absPath), { recursive: true });
+          const tmpPath = `${absPath}.tmp-${crypto.randomBytes(4).toString('hex')}`;
+          try {
+            fs.writeFileSync(tmpPath, body.content, 'utf8');
+            fs.renameSync(tmpPath, absPath);
+          } catch (writeErr) {
+            try { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); } catch {}
+            throw writeErr;
+          }
+          const st = fs.statSync(absPath);
+          let receipt = null;
+          if (body.threadId || body.recordReceipt) {
+            receipt = store.appendReceipt({
+              botId: bId,
+              threadId: body.threadId || null,
+              userId,
+              runId: `canvas-save-${Date.now()}`,
+              verdict: 'verified',
+              summary: `Saved workspace file ${relPath} (${st.size} bytes)`,
+              files: [{ path: relPath, bytes: st.size }],
+              model: { provider: 'mimir-canvas', name: 'workspace-editor', leftThisComputer: false },
+            });
+            if (receipt) broadcast('receipt:created', { botId: bId, threadId: body.threadId || null, receipt });
+          }
+          broadcast('workspace:updated', { botId: bId, path: relPath, size: st.size, mtimeMs: st.mtimeMs });
+          return json(res, 200, {
+            ok: true,
+            path: relPath,
+            size: st.size,
+            mtimeMs: st.mtimeMs,
+            ...(receipt ? { receipt } : {}),
+          });
+        }
+      }
+      if (req.method === 'POST' && p === '/v1/canvas/edit') {
+        const body = await readBody(req);
+        const instruction = String(body.instruction || '').trim();
+        if (!instruction) return json(res, 400, { error: 'instruction is required' });
+        const botId = body.botId || store.listBots()[0]?.id || 'bot-grok-default';
+        let originalContent = typeof body.content === 'string' ? body.content : null;
+        let relPath = body.path ? String(body.path).trim() : '';
+        if (originalContent === null && relPath) {
+          const { absPath, relPath: safeRel } = resolveBotWorkspaceFile(store, botId, relPath);
+          relPath = safeRel;
+          if (!fs.existsSync(absPath)) return json(res, 404, { error: 'Workspace file not found' });
+          originalContent = fs.readFileSync(absPath, 'utf8');
+        }
+        originalContent = originalContent ?? '';
+        const s = store.getSettings();
+        const bot = store.getBot(botId);
+        const gate = sentinel.evaluateToolRequest({
+          agentId: bot?.norseRoleId || 'mimir',
+          toolName: 'fs_write',
+          args: { path: relPath || 'canvas-buffer.txt', instruction },
+          bot,
+          executionMode: body.executionMode || bot?.executionMode || 'agent',
+          approvalPolicy: 'auto-approve',
+          localOnly: Boolean(s.localOnly),
+          approved: true,
+          runId: `canvas-edit-${Date.now()}`,
+        });
+        if (gate.decision === 'DENY') {
+          return json(res, 403, { ok: false, gate, error: gate.reason });
+        }
+        const sel = body.selection && typeof body.selection === 'object' ? body.selection : null;
+        let selectionNote = '';
+        if (sel && Number.isFinite(Number(sel.startLine)) && Number.isFinite(Number(sel.endLine))) {
+          const lines = originalContent.split(/\r?\n/);
+          const startIdx = Math.max(0, Number(sel.startLine) - 1);
+          const endIdx = Math.min(lines.length, Number(sel.endLine));
+          selectionNote = `\nFocus on lines ${startIdx + 1}-${endIdx}:\n\`\`\`\n${lines.slice(startIdx, endIdx).join('\n')}\n\`\`\`\n`;
+        }
+        const messages = [
+          {
+            role: 'system',
+            content: 'You are Mimir Canvas Editor. Apply the user instruction to the provided file/code content and respond ONLY with a JSON object: {"updatedContent":"<full updated file text>","diffSummary":"<one concise sentence summarizing the edit>"}. Preserve unmodified sections intact.',
+          },
+          {
+            role: 'user',
+            content: `File: ${relPath || '(untitled)'}\nInstruction: ${instruction}${selectionNote}\nOriginal Content:\n\`\`\`\n${originalContent}\n\`\`\``,
+          },
+        ];
+        try {
+          const llmOut = await runChatTurn({
+            settings: s,
+            modelOverride: body.model || bot?.model || null,
+            messages,
+          });
+          const parsed = parseCanvasEditResponse(llmOut?.content || '', originalContent);
+          const computed = computeLineDiffSummary(originalContent, parsed.updatedContent);
+          return json(res, 200, {
+            ok: true,
+            path: relPath || null,
+            updatedContent: parsed.updatedContent,
+            diffSummary: parsed.diffSummary || computed.diffSummary,
+            hunks: computed.hunks,
+          });
+        } catch (err) {
+          const status = err?.status || (err?.name === 'LocalOnlyBlockedError' ? 403 : 500);
+          return json(res, status, { error: err?.message || 'Canvas edit failed' });
+        }
+      }
       const botMemMatch = p.match(/^\/v1\/bots\/([^/]+)\/memories(?:\/([^/]+))?$/);
       if (botMemMatch) {
         const botId = decodeURIComponent(botMemMatch[1]);
@@ -863,7 +1149,42 @@ export async function startCoordinator(options = {}) {
         if (req.method === 'GET') return json(res, 200, store.getMemories(botId, userId));
         if (req.method === 'POST') {
           const body = await readBody(req);
-          return json(res, 200, store.saveMemory(botId, body.key, body.value, { userId }));
+          return json(res, 200, store.saveMemory(botId, body.key, body.value, {
+            userId,
+            ...(body.scope ? { scope: body.scope } : {}),
+            ...(body.spaceId !== undefined ? { spaceId: body.spaceId } : {}),
+            ...(body.pinned !== undefined ? { pinned: Boolean(body.pinned) } : {}),
+          }));
+        }
+        if (req.method === 'PATCH' && key) {
+          const body = await readBody(req);
+          if (typeof store.updateBotMemory === 'function') {
+            const updated = store.updateBotMemory({
+              botId,
+              key,
+              value: body.value,
+              scope: body.scope,
+              spaceId: body.spaceId,
+              pinned: body.pinned,
+              userId,
+            });
+            if (!updated) return json(res, 404, { error: 'Memory entry not found' });
+            return json(res, 200, { ok: true, memory: updated, memories: store.getMemories(botId, userId) });
+          }
+          const existing = store.getMemories(botId, userId).find(m => m.key === key || m.id === key);
+          if (!existing && body.value === undefined) {
+            return json(res, 404, { error: 'Memory entry not found' });
+          }
+          const nextValue = body.value !== undefined ? String(body.value) : existing.value;
+          const list = store.saveMemory(botId, existing?.key || key, nextValue, { userId, provenance: existing?.provenance || 'user' });
+          const target = list.find(m => m.key === (existing?.key || key));
+          if (target) {
+            if (body.scope !== undefined) target.scope = body.scope;
+            if (body.spaceId !== undefined) target.spaceId = body.spaceId || null;
+            if (body.pinned !== undefined) target.pinned = Boolean(body.pinned);
+            store.save?.();
+          }
+          return json(res, 200, { ok: true, memory: target || null, memories: list });
         }
         if (req.method === 'DELETE' && key) return json(res, 200, store.deleteMemory(botId, key, { userId }));
       }
@@ -882,12 +1203,136 @@ export async function startCoordinator(options = {}) {
 
       // Threads
       if (req.method === 'GET' && p === '/v1/threads') {
-        const botId = urlObj.searchParams.get('botId');
-        return json(res, 200, store.listThreads(botId, userId));
+        const botId = urlObj.searchParams.get('botId') || null;
+        const spaceId = urlObj.searchParams.get('spaceId') || null;
+        const includeSubagents = urlObj.searchParams.get('includeSubagents') === '1';
+        let list = store.listThreads(botId, userId, { spaceId, includeSubagents });
+        if (!includeSubagents) list = list.filter(t => !t.isSubagent);
+        if (spaceId) list = list.filter(t => t.spaceId === spaceId);
+        return json(res, 200, list);
       }
       if (req.method === 'POST' && p === '/v1/threads') {
         const body = await readBody(req);
-        return json(res, 201, store.createThread({ ...body, userId }));
+        const created = store.createThread({ ...body, spaceId: body.spaceId || null, userId });
+        if (body.spaceId && created && created.spaceId !== body.spaceId) {
+          created.spaceId = body.spaceId;
+          store.save?.();
+        }
+        return json(res, 201, created);
+      }
+      const thrActionMatch = p.match(/^\/v1\/threads\/([^/]+)\/(fork|branch-edit|export)$/);
+      if (thrActionMatch) {
+        const id = decodeURIComponent(thrActionMatch[1]);
+        const op = thrActionMatch[2];
+        const scopedThread = store.getThread(id, userId);
+        if (!scopedThread) return json(res, 404, { error: 'Not found' });
+        if (op === 'fork' && req.method === 'POST') {
+          if (typeof store.forkThread !== 'function') {
+            return json(res, 501, { error: 'forkThread is not available on store' });
+          }
+          const body = await readBody(req);
+          const forked = store.forkThread({
+            threadId: id,
+            fromMessageId: body.fromMessageId || null,
+            newUserText: body.newUserText,
+            userId,
+            title: body.title,
+          });
+          if (!forked) return json(res, 404, { error: 'Thread or message not found' });
+          broadcast('thread:created', { thread: forked });
+          return json(res, 201, { ok: true, thread: forked });
+        }
+        if (op === 'branch-edit' && req.method === 'POST') {
+          if (typeof store.branchEditMessage !== 'function') {
+            return json(res, 501, { error: 'branchEditMessage is not available on store' });
+          }
+          const body = await readBody(req);
+          if (!body.messageId || typeof body.newContent !== 'string') {
+            return json(res, 400, { error: 'messageId and newContent are required' });
+          }
+          const updated = store.branchEditMessage({
+            threadId: id,
+            messageId: body.messageId,
+            newContent: body.newContent,
+            userId,
+          });
+          if (!updated) return json(res, 404, { error: 'Thread or message not found' });
+          const threadObj = updated.thread || updated;
+          broadcast('thread:updated', { threadId: id, thread: threadObj });
+          let started = false;
+          if (body.run && typeof runner?.runTurn === 'function' && !runner.activeRuns?.has(id)) {
+            started = true;
+            runner.runTurn({
+              threadId: id,
+              botId: body.botId || threadObj.botId,
+              userText: body.newContent,
+              userId,
+              trustedUserInput: true,
+              skipUserAppend: true,
+              ...(body.researchMode ? { researchMode: body.researchMode } : {}),
+              ...(body.executionMode ? { executionMode: body.executionMode } : {}),
+            }).catch(() => {});
+          }
+          return json(res, 200, {
+            ok: true,
+            thread: threadObj,
+            ...(started ? { started: true, runStarted: true } : {}),
+            ...(updated.editedMessage ? { editedMessage: updated.editedMessage } : {}),
+            ...(updated.branchGroupId ? { branchGroupId: updated.branchGroupId } : {}),
+            ...(updated.activeMessages ? { activeMessages: updated.activeMessages } : {}),
+          });
+        }
+        if (op === 'export' && req.method === 'GET') {
+          const format = (urlObj.searchParams.get('format') || 'md').toLowerCase();
+          const messages = resolveActiveBranchMessages(scopedThread);
+          const slug = String(scopedThread.title || scopedThread.id)
+            .toLowerCase()
+            .replace(/[^a-z0-9_-]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 48) || scopedThread.id;
+          if (format === 'json') {
+            const payload = JSON.stringify({
+              id: scopedThread.id,
+              title: scopedThread.title,
+              botId: scopedThread.botId,
+              spaceId: scopedThread.spaceId || null,
+              createdAt: scopedThread.createdAt,
+              updatedAt: scopedThread.updatedAt,
+              activeLeafId: scopedThread.activeLeafId || null,
+              messages,
+            }, null, 2);
+            res.writeHead(200, {
+              'Content-Type': 'application/json; charset=utf-8',
+              'Content-Disposition': `attachment; filename="${slug}.json"`,
+              'Content-Length': String(Buffer.byteLength(payload, 'utf8')),
+              'X-Content-Type-Options': 'nosniff',
+              'Cache-Control': 'no-store',
+            });
+            return res.end(payload);
+          }
+          const lines = [
+            `# ${scopedThread.title || 'Mimir Thread'}`,
+            '',
+            `- Thread ID: \`${scopedThread.id}\``,
+            `- Bot ID: \`${scopedThread.botId}\``,
+            ...(scopedThread.spaceId ? [`- Space ID: \`${scopedThread.spaceId}\``] : []),
+            `- Updated: ${scopedThread.updatedAt || ''}`,
+            '',
+          ];
+          for (const m of messages) {
+            const roleLabel = m.role === 'user' ? 'User' : m.role === 'assistant' ? 'Assistant' : String(m.role || 'Message');
+            lines.push(`## ${roleLabel}${m.createdAt ? ` (${m.createdAt})` : ''}`, '', String(m.content || ''), '');
+          }
+          const mdText = lines.join('\n');
+          res.writeHead(200, {
+            'Content-Type': 'text/markdown; charset=utf-8',
+            'Content-Disposition': `attachment; filename="${slug}.md"`,
+            'Content-Length': String(Buffer.byteLength(mdText, 'utf8')),
+            'X-Content-Type-Options': 'nosniff',
+            'Cache-Control': 'no-store',
+          });
+          return res.end(mdText);
+        }
       }
       const thrMatch = p.match(/^\/v1\/threads\/([^/]+)$/);
       if (thrMatch) {
@@ -898,7 +1343,19 @@ export async function startCoordinator(options = {}) {
         if (req.method === 'PATCH') {
           const body = await readBody(req);
           const updated = store.updateThread(id, body);
-          return updated ? json(res, 200, updated) : json(res, 404, { error: 'Not found' });
+          if (!updated) return json(res, 404, { error: 'Not found' });
+          let extraSaved = false;
+          if ('botId' in body && body.botId && updated.botId !== body.botId) {
+            updated.botId = String(body.botId);
+            extraSaved = true;
+          }
+          if ('spaceId' in body && updated.spaceId !== (body.spaceId || null)) {
+            updated.spaceId = body.spaceId || null;
+            extraSaved = true;
+          }
+          if (extraSaved) store.save?.();
+          broadcast('thread:updated', { threadId: id, thread: updated });
+          return json(res, 200, updated);
         }
         if (req.method === 'DELETE') {
           return json(res, 200, { ok: store.deleteThread(id) });
@@ -938,8 +1395,32 @@ export async function startCoordinator(options = {}) {
         return json(res, 200, { facts: store.getMemories(SHARED_MEMORY_SCOPE) });
       }
       const sharedMemMatch = p.match(/^\/v1\/memory\/shared\/([^/]+)$/);
-      if (req.method === 'DELETE' && sharedMemMatch) {
-        return json(res, 200, { facts: store.deleteMemory(SHARED_MEMORY_SCOPE, decodeURIComponent(sharedMemMatch[1])) });
+      if (sharedMemMatch) {
+        const key = decodeURIComponent(sharedMemMatch[1]);
+        if (req.method === 'PATCH') {
+          const body = await readBody(req);
+          if (typeof store.updateBotMemory === 'function') {
+            const updated = store.updateBotMemory({
+              botId: SHARED_MEMORY_SCOPE,
+              key,
+              value: body.value,
+              scope: body.scope,
+              spaceId: body.spaceId,
+              pinned: body.pinned,
+              userId,
+            });
+            if (!updated) return json(res, 404, { error: 'Shared memory entry not found' });
+            return json(res, 200, { ok: true, memory: updated, facts: store.getMemories(SHARED_MEMORY_SCOPE) });
+          }
+          const existing = store.getMemories(SHARED_MEMORY_SCOPE).find(m => m.key === key || m.id === key);
+          if (!existing && body.value === undefined) return json(res, 404, { error: 'Shared memory entry not found' });
+          const nextValue = body.value !== undefined ? String(body.value) : existing.value;
+          const facts = store.saveMemory(SHARED_MEMORY_SCOPE, existing?.key || key, nextValue, { provenance: existing?.provenance || 'user' });
+          return json(res, 200, { ok: true, facts });
+        }
+        if (req.method === 'DELETE') {
+          return json(res, 200, { facts: store.deleteMemory(SHARED_MEMORY_SCOPE, key) });
+        }
       }
       if (req.method === 'POST' && p === '/v1/agent/run') {
         const raw = await readBody(req);
@@ -1139,7 +1620,8 @@ export async function startCoordinator(options = {}) {
         }
         if (req.method === 'POST' && op === 'action') {
           const body = await readBody(req);
-          return json(res, 200, await localExec.browser.action(botId, body));
+          const normalized = { ...body, action: body.action || body.type };
+          return json(res, 200, await localExec.browser.action(botId, normalized));
         }
         if (req.method === 'POST' && op === 'screenshot') {
           return json(res, 200, await localExec.browser.screenshot(botId));
@@ -1465,6 +1947,22 @@ export async function startCoordinator(options = {}) {
       }
       if (req.method === 'POST' && p === '/v1/desktop/action') {
         const body = await readBody(req);
+        const s = store.getSettings();
+        const bot = body.botId ? store.getBot(body.botId) : null;
+        const gate = sentinel.evaluateToolRequest({
+          agentId: body.agentId || bot?.norseRoleId || 'mimir',
+          toolName: 'desktop_control',
+          args: body,
+          bot,
+          executionMode: body.executionMode || s.executionMode || 'agent',
+          approvalPolicy: s.approvalPolicy || 'ask-writes',
+          localOnly: Boolean(s.localOnly),
+          approved: Boolean(body.approved),
+          runId: body.runId || `desktop-${Date.now()}`,
+        });
+        if (gate.decision !== 'ALLOW') {
+          return json(res, gate.decision === 'DENY' ? 403 : 202, { ok: false, gate, error: gate.reason });
+        }
         return json(res, 200, await runDesktopAction(body));
       }
       if (req.method === 'GET' && p === '/v1/voice/status') {
@@ -2254,11 +2752,39 @@ export async function startCoordinator(options = {}) {
         broadcast('spaces:updated', store.listSpaces(userId));
         return json(res, 201, { ok: true, space });
       }
-      const spaceDeleteMatch = p.match(/^\/v1\/spaces\/([a-zA-Z0-9_-]+)$/);
-      if (req.method === 'DELETE' && spaceDeleteMatch) {
-        const deleted = store.deleteSpace(spaceDeleteMatch[1], userId);
-        broadcast('spaces:updated', store.listSpaces(userId));
-        return json(res, deleted ? 200 : 404, { ok: deleted, deleted });
+      const spaceItemMatch = p.match(/^\/v1\/spaces\/([a-zA-Z0-9_-]+)$/);
+      if (spaceItemMatch) {
+        const spaceId = spaceItemMatch[1];
+        if (req.method === 'PATCH') {
+          const body = await readBody(req);
+          let space = null;
+          if (typeof store.updateSpace === 'function') {
+            space = store.updateSpace(spaceId, body, userId);
+          } else {
+            const list = store.listSpaces(userId);
+            space = list.find(s => s.id === spaceId) || null;
+            if (space) {
+              if ('title' in body && body.title !== undefined) space.title = String(body.title || 'Custom Space').trim().slice(0, 48);
+              if ('surface' in body && body.surface !== undefined) space.surface = String(body.surface || 'chat').trim().toLowerCase();
+              if ('icon' in body && body.icon !== undefined) space.icon = String(body.icon || 'layers').trim();
+              if ('description' in body && body.description !== undefined) space.description = String(body.description || '').trim().slice(0, 160);
+              if ('pinned' in body) space.pinned = Boolean(body.pinned);
+              if ('systemPrompt' in body) space.systemPrompt = String(body.systemPrompt || '');
+              if ('attachedPaths' in body) space.attachedPaths = Array.isArray(body.attachedPaths) ? body.attachedPaths.map(String) : [];
+              if ('defaultBotId' in body) space.defaultBotId = body.defaultBotId ? String(body.defaultBotId) : null;
+              if ('memoryScope' in body) space.memoryScope = body.memoryScope === 'global' ? 'global' : 'space';
+              store.save?.();
+            }
+          }
+          if (!space) return json(res, 404, { error: 'Space not found' });
+          broadcast('spaces:updated', store.listSpaces(userId));
+          return json(res, 200, { ok: true, space });
+        }
+        if (req.method === 'DELETE') {
+          const deleted = store.deleteSpace(spaceId, userId);
+          broadcast('spaces:updated', store.listSpaces(userId));
+          return json(res, deleted ? 200 : 404, { ok: deleted, deleted });
+        }
       }
 
       return json(res, 404, { error: `Unknown route: ${req.method} ${p}` });
@@ -2286,7 +2812,24 @@ export async function startCoordinator(options = {}) {
       socket.destroy();
       return;
     }
-    const wsAuth = verifyBearer(urlObj.searchParams.get('token') || '');
+    const ticketParam = urlObj.searchParams.get('ticket') || '';
+    let wsAuth;
+    if (ticketParam) {
+      pruneWsTickets();
+      const entry = wsTickets.get(ticketParam);
+      wsTickets.delete(ticketParam);
+      if (!entry || Date.now() >= entry.expiresAt) {
+        wsAuth = { ok: false, code: 'WS_TICKET_INVALID' };
+      } else if (entry.mode === 'session' && (!entry.sessionToken || !pairingSessions.has(entry.sessionToken))) {
+        wsAuth = { ok: false, code: 'SESSION_EXPIRED' };
+      } else {
+        wsAuth = { ok: true, mode: entry.mode };
+      }
+    } else {
+      const headerAuth = String(req.headers.authorization || '');
+      const bearerTok = headerAuth.startsWith('Bearer ') ? headerAuth.slice(7).trim() : '';
+      wsAuth = verifyBearer(urlObj.searchParams.get('token') || bearerTok || '');
+    }
     if (!wsAuth.ok) {
       socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
       socket.destroy();

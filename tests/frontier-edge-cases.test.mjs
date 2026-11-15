@@ -13,6 +13,7 @@ import { DagSwarmEngine } from '../daemon/dag-swarm.mjs';
 import { ModelCouncilEngine } from '../daemon/model-council.mjs';
 import { VaultManager } from '../daemon/vault.mjs';
 import { AppStore } from '../daemon/store.mjs';
+import { DeepResearchEngine } from '../daemon/deep-research.mjs';
 import { startCoordinator } from '../daemon/coordinator.mjs';
 
 function makeTmp(prefix = 'mimir-frontier-') {
@@ -439,5 +440,269 @@ test('VaultManager backs up corrupt file, AppStore preserves >300 receipt chain 
   } finally {
     await coord.close();
     cleanup(tmpCoord);
+  }
+});
+
+test('Sentinel inspects leaf strings for .env/secrets, blocks IPv6 metadata, tightens null policy writes, and flushes async audit log', async () => {
+  const tmp = makeTmp('mimir-sentinel-leaf-');
+  try {
+    const store = new AppStore(tmp);
+    const bot = store.listBots()[0];
+    const sentinel = new SentinelPolicyService({ dataDir: tmp });
+
+    for (const args of [
+      { path: '.env' },
+      { nested: { target: '/app/secrets/vault.enc' } },
+      { files: ['readme.md', '/home/user/.ssh/id_rsa'] },
+      { file: 'config/credentials.json' },
+    ]) {
+      const dec = sentinel.evaluateToolRequest({ bot, toolName: 'fs_read', args });
+      assert.equal(dec.decision, 'DENY', `Expected DENY for ${JSON.stringify(args)}, got ${dec.decision}`);
+    }
+
+    for (const url of ['http://[fd00:ec2::254]/latest/meta-data', 'http://[fe80::1]/status']) {
+      const dec = sentinel.evaluateToolRequest({ bot, toolName: 'browser_open', args: { target: url } });
+      assert.equal(dec.decision, 'DENY', `Expected DENY for IPv6 metadata ${url}`);
+      assert.match(dec.reason, /metadata/i);
+    }
+
+    const writeNullPolicy = sentinel.evaluateToolRequest({
+      bot,
+      toolName: 'fs_write',
+      args: { path: 'notes.txt', content: 'ok' },
+      approvalPolicy: null,
+    });
+    assert.equal(writeNullPolicy.decision, 'REQUIRE_APPROVAL');
+
+    const readNullPolicy = sentinel.evaluateToolRequest({
+      bot,
+      toolName: 'fs_read',
+      args: { path: 'notes.txt' },
+      approvalPolicy: null,
+    });
+    assert.equal(readNullPolicy.decision, 'ALLOW');
+
+    // In-memory ring buffer is synchronously updated while file writes are queued asynchronously
+    const events = sentinel.listAuditEvents(10);
+    assert.ok(events.length >= 7);
+    await sentinel.flushAuditLog();
+    const auditText = fs.readFileSync(path.join(tmp, 'sentinel-audit.jsonl'), 'utf8');
+    const lines = auditText.trim().split('\n').filter(Boolean);
+    assert.ok(lines.length >= 7);
+  } finally {
+    cleanup(tmp);
+  }
+});
+
+test('AppStore supports forkThread, branchEditMessage, isSubagent filtering, space schema, and updateBotMemory provenance', () => {
+  const tmp = makeTmp('mimir-store-branch-');
+  try {
+    const store = new AppStore(tmp);
+    const bot = store.listBots()[0];
+
+    const space = store.createSpace({
+      name: 'Research Lab',
+      systemPrompt: 'Follow strict citation discipline.',
+      attachedPaths: ['docs/spec.md', 'src/index.mjs'],
+      defaultBotId: bot.id,
+      memoryScope: 'space',
+    });
+    assert.equal(space.systemPrompt, 'Follow strict citation discipline.');
+    assert.deepEqual(space.attachedPaths, ['docs/spec.md', 'src/index.mjs']);
+    assert.equal(space.defaultBotId, bot.id);
+    assert.equal(space.memoryScope, 'space');
+
+    const mem = store.updateBotMemory({
+      botId: bot.id,
+      key: 'project_codename',
+      value: 'Project Atlas',
+      scope: 'space',
+      spaceId: space.id,
+      provenance: 'user:explicit',
+      verified: true,
+      confidence: 0.95,
+    });
+    assert.equal(mem.provenance, 'user:explicit');
+    assert.equal(mem.scope, 'space');
+    assert.equal(mem.spaceId, space.id);
+
+    const otherSpaceMem = store.updateBotMemory({
+      botId: bot.id,
+      key: 'other_space_only',
+      value: 'Secret Beta',
+      scope: 'space',
+      spaceId: 'space-other',
+    });
+    assert.equal(otherSpaceMem.spaceId, 'space-other');
+
+    const botScopedMem = store.updateBotMemory({
+      botId: bot.id,
+      key: 'bot_pref',
+      value: 'concise',
+      scope: 'bot',
+    });
+    assert.equal(botScopedMem.scope, 'bot');
+
+    const scopedMems = store.getMemories(bot.id, 'local-owner', { spaceId: space.id });
+    assert.ok(scopedMems.some(m => m.key === 'project_codename'));
+    assert.ok(!scopedMems.some(m => m.key === 'other_space_only'));
+
+    const mainThread = store.createThread({ botId: bot.id, spaceId: space.id, title: 'Main Branch' });
+    const m1 = store.appendMessage(mainThread.id, { role: 'user', content: 'First question' }).messages.at(-1);
+    const m2 = store.appendMessage(mainThread.id, { role: 'assistant', content: 'First answer' }).messages.at(-1);
+    const m3 = store.appendMessage(mainThread.id, { role: 'user', content: 'Second question' }).messages.at(-1);
+    assert.equal(store.getThread(mainThread.id).activeLeafId, m3.id);
+
+    // Branch edit m2 -> creates sibling branch excluding m3 from activeMessages
+    const edited = store.branchEditMessage({
+      threadId: mainThread.id,
+      messageId: m2.id,
+      newContent: 'Edited first answer',
+    });
+    assert.equal(edited.editedMessage.parentId, m1.id);
+    assert.ok(edited.editedMessage.branchGroupId);
+    const activeIds = store.getActiveMessages(mainThread.id).map(m => m.id);
+    assert.deepEqual(activeIds, [m1.id, edited.editedMessage.id]);
+
+    // Fork from m1 with a new user prompt
+    const forked = store.forkThread({
+      threadId: mainThread.id,
+      fromMessageId: m1.id,
+      newUserText: 'Alternative follow-up',
+    });
+    assert.equal(forked.parentThreadId, mainThread.id);
+    assert.equal(forked.forkedFromMessageId, m1.id);
+    assert.equal(forked.spaceId, space.id);
+    assert.equal(forked.messages.length, 2);
+    assert.equal(forked.messages[1].content, 'Alternative follow-up');
+
+    // Subagent thread filtering
+    const sub = store.createThread({
+      botId: bot.id,
+      isSubagent: true,
+      parentThreadId: mainThread.id,
+      title: 'Subagent: helper',
+    });
+    assert.ok(store.getThread(sub.id));
+    assert.ok(!store.listThreads().some(t => t.id === sub.id));
+    assert.ok(store.listThreads({ includeSubagents: true }).some(t => t.id === sub.id));
+  } finally {
+    cleanup(tmp);
+  }
+});
+
+test('AgentRunner injects Space context, filters subagent threads, runs bounded parallel @mentions, and DeepResearch auto falls back', async () => {
+  const tmp = makeTmp('mimir-runner-space-');
+  const seenSystems = [];
+  const server = await startCustomOpenAiServer(async (_req, res, body) => {
+    const sys = (body.messages || []).find(m => m.role === 'system')?.content || '';
+    seenSystems.push(sys);
+    const lastUser = [...(body.messages || [])].reverse().find(m => m.role === 'user')?.content || '';
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      choices: [{ message: { role: 'assistant', content: `Ack: ${String(lastUser).slice(0, 40)}` } }],
+    }));
+  });
+  try {
+    const store = new AppStore(tmp);
+    store.updateSettings({
+      provider: 'openai-compat',
+      openaiBaseUrl: server.baseUrl,
+      openaiModel: 'test-model',
+      approvalPolicy: 'reversibility',
+      localOnly: false,
+    });
+    const bots = store.listBots();
+    const lead = bots[0];
+    const allyA = store.createBot({ name: 'AtlasA', role: 'Analyst A', systemPrompt: 'You are AtlasA.' });
+    const allyB = store.createBot({ name: 'AtlasB', role: 'Analyst B', systemPrompt: 'You are AtlasB.' });
+
+    const space = store.createSpace({
+      name: 'Apollo Space',
+      systemPrompt: 'SPACE_DIRECTIVE_ALPHA: Always cite workspace artifacts.',
+      attachedPaths: ['specs/apollo.md'],
+      defaultBotId: lead.id,
+      memoryScope: 'space',
+    });
+    store.updateBotMemory({
+      botId: lead.id,
+      key: 'apollo_budget',
+      value: '12M',
+      scope: 'space',
+      spaceId: space.id,
+      provenance: 'user:test',
+    });
+
+    const events = [];
+    const runner = new AgentRunner({
+      store,
+      localExec: new LocalExecEngine({ store }),
+      mcpManager: { getToolSchemasForBot: async () => ({ schemas: [], dispatchMap: new Map() }) },
+      broadcast: (ev, data) => events.push({ ev, data }),
+    });
+
+    const thread = store.createThread({ botId: lead.id, spaceId: space.id, title: 'Apollo Thread' });
+    const out = await runner.runTurn({
+      threadId: thread.id,
+      botId: lead.id,
+      userText: 'Check launch readiness with @AtlasA and @AtlasB',
+      trustedUserInput: true,
+    });
+
+    assert.ok(out.reply);
+    assert.ok(seenSystems.some(s => s.includes('SPACE_DIRECTIVE_ALPHA')));
+    assert.ok(seenSystems.some(s => s.includes('specs/apollo.md')));
+    assert.ok(seenSystems.some(s => s.includes('apollo_budget: 12M')));
+
+    // Both @AtlasA and @AtlasB reported in order, followed by lead assistant reply
+    const msgs = store.getThread(thread.id).messages;
+    assert.equal(msgs[1].speakerName, 'AtlasA');
+    assert.equal(msgs[2].speakerName, 'AtlasB');
+    assert.equal(msgs[3].role, 'assistant');
+
+    // Subagent threads exist via getThread but are excluded from default listThreads()
+    const visibleIds = new Set(store.listThreads().map(t => t.id));
+    assert.ok(visibleIds.has(thread.id));
+    assert.equal(store.listThreads().filter(t => t.isSubagent).length, 0);
+    assert.ok(store.listThreads({ includeSubagents: true }).filter(t => t.isSubagent).length >= 2);
+
+    // DeepResearch 'auto' mode emits research:progress phases and falls back offline cleanly on web error
+    const researchProgress = [];
+    const dr = new DeepResearchEngine({
+      store,
+      searchFn: async () => { throw new Error('network unreachable'); },
+      broadcast: (ev, data) => {
+        if (ev === 'research:progress') researchProgress.push(data);
+      },
+    });
+    const res = await dr.runResearch({
+      query: 'local-first encryption security',
+      mode: 'auto',
+      threadId: thread.id,
+      maxSources: 4,
+    });
+    assert.equal(res.requestedMode, 'auto');
+    assert.equal(res.offlineFallback, true);
+    assert.ok(res.corpusHits >= 1);
+    const phases = new Set(researchProgress.map(p => p.phase));
+    for (const reqPhase of ['planning', 'searching', 'reading', 'synthesizing']) {
+      assert.ok(phases.has(reqPhase), `Expected phase ${reqPhase}`);
+    }
+    const synthEvt = [...researchProgress].reverse().find(p => p.phase === 'synthesizing');
+    assert.ok(Array.isArray(synthEvt?.fetchedSources));
+    assert.ok(synthEvt.fetchedSources.length >= 1);
+    assert.equal(synthEvt.fetchedSources[0].status, 'verified');
+
+    // skipUserAppend re-run (e.g. branch-edit rerun) appends assistant without duplicating user message
+    const branchThread = store.createThread({ botId: lead.id, title: 'Branch Rerun' });
+    store.appendMessage(branchThread.id, { role: 'user', content: 'Original prompt' });
+    const countBefore = store.getThread(branchThread.id).messages.length;
+    await runner.run({ threadId: branchThread.id, botId: lead.id, skipUserAppend: true });
+    const branchMsgs = store.getThread(branchThread.id).messages;
+    assert.equal(branchMsgs.length, countBefore + 1);
+    assert.equal(branchMsgs.at(-1).role, 'assistant');
+  } finally {
+    await server.close();
+    cleanup(tmp);
   }
 });

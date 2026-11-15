@@ -158,6 +158,31 @@ async function main() {
     const selectedOptions = await page.locator('[data-testid="command-suggest"] [aria-selected="true"]').count();
     assert.equal(selectedOptions, 1, 'ArrowDown in slash menu must update aria-selected');
     await page.press('[data-testid="chat-input"]', 'Escape');
+    if (await page.isVisible('[data-testid="cancel-branch-edit-btn"]')) {
+      await page.click('[data-testid="cancel-branch-edit-btn"]');
+    }
+
+    // Verify Bot pill resume (restores latest thread without modal/new thread) vs agent-new-session fresh session
+    const beforeResumeCount = await page.evaluate(async base => {
+      const list = await (await fetch(`${base}/v1/threads?botId=bot-grok-default`)).json();
+      return Array.isArray(list) ? list.length : 0;
+    }, coord.url);
+    await page.click('[data-testid="bot-list"] button.bot-pill:has-text("Brok Custom Forge")');
+    await page.waitForFunction(
+      () => !document.querySelector('[data-testid="chat-messages"]')?.textContent?.includes('e2e-note.txt'),
+      { timeout: 10000 }
+    );
+    await page.click('[data-testid="bot-pill-bot-grok-default"]');
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="chat-messages"]')?.textContent?.includes('e2e-note.txt'),
+      { timeout: 10000 }
+    );
+    assert.equal(await page.$('.modal-backdrop'), null, 'Bot pill resume must not open configure modal');
+    const afterResumeCount = await page.evaluate(async base => {
+      const list = await (await fetch(`${base}/v1/threads?botId=bot-grok-default`)).json();
+      return Array.isArray(list) ? list.length : 0;
+    }, coord.url);
+    assert.equal(afterResumeCount, beforeResumeCount, 'Bot pill resume must reuse latest thread instead of creating a new one');
 
     // Verify Agents Roster, fresh session switch (never opens Configure modal), RSI view & responsive widths
     await page.click('[data-testid="nav-agents"]');
@@ -165,6 +190,34 @@ async function main() {
     await page.click('[data-testid="agent-new-session-bot-grok-default"]');
     await page.waitForSelector('[data-testid="chat-input"]');
     assert.equal(await page.$('.modal-backdrop'), null, 'Clicking agent New Session must not open rename/configure modal');
+    await page.waitForFunction(
+      () => !document.querySelector('[data-testid="chat-messages"]')?.textContent?.includes('e2e-note.txt'),
+      { timeout: 10000 }
+    );
+    const afterFreshCount = await page.evaluate(async base => {
+      const list = await (await fetch(`${base}/v1/threads?botId=bot-grok-default`)).json();
+      return Array.isArray(list) ? list.length : 0;
+    }, coord.url);
+    assert.equal(afterFreshCount, beforeResumeCount + 1, 'Agent New Session must create a fresh thread');
+
+    // Verify Ctrl+K Command Palette: ArrowDown navigation, Escape close, and Enter to Open Canvas
+    await page.keyboard.press('Control+k');
+    await page.waitForSelector('[data-testid="command-palette"] [role="dialog"].cmd-palette-dialog');
+    await page.waitForFunction(
+      () => document.activeElement?.getAttribute('data-testid') === 'command-palette-input',
+      { timeout: 5000 }
+    );
+    await page.keyboard.press('ArrowDown');
+    await page.waitForSelector('[data-testid="command-palette-list"] [data-palette-idx="1"][aria-selected="true"]');
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.querySelector('[data-testid="command-palette"]'));
+
+    await page.keyboard.press('Control+k');
+    await page.waitForSelector('[data-testid="command-palette-input"]');
+    await page.fill('[data-testid="command-palette-input"]', 'Open Canvas');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => !document.querySelector('[data-testid="command-palette"]'));
+    await page.waitForSelector('[data-testid="canvas-pane"].canvas-pane');
 
     await page.click('[data-testid="nav-rsi"]');
     await page.waitForSelector('[data-testid="rsi-view"]');
@@ -272,6 +325,28 @@ async function main() {
     await page.click('[data-testid="computer-pane"] button[role="tab"]:has-text("Files")');
     await page.waitForSelector('[data-testid="workspace-persistence-pane"]');
 
+    // Verify Canvas tab in Work View (ComputerPane): Code <-> Preview toggle, edit, and workspace save
+    await page.click('#preview-tab-canvas');
+    await page.waitForSelector('[data-testid="canvas-pane"].canvas-pane');
+    if (await page.isVisible('[data-testid="canvas-new-html-btn"]')) {
+      await page.click('[data-testid="canvas-new-html-btn"]');
+    } else {
+      await page.fill('[data-testid="canvas-path-input"]', 'scratch/prototype.html');
+    }
+    await page.waitForSelector('[data-testid="canvas-mode-code"]');
+    await page.click('[data-testid="canvas-mode-code"]');
+    await page.waitForSelector('[data-testid="canvas-editor"].canvas-editor');
+    await page.fill(
+      '[data-testid="canvas-editor"]',
+      '<!doctype html><html><body><h1>Mimir Canvas Edited</h1><p>Live preview content</p></body></html>'
+    );
+    await page.click('[data-testid="canvas-save-btn"]');
+    await page.waitForSelector('[data-testid="canvas-notice"]');
+    await page.click('[data-testid="canvas-mode-preview"]');
+    await page.waitForSelector('iframe[data-testid="canvas-preview-frame"].canvas-preview-frame');
+    const previewSrcDoc = await page.getAttribute('iframe[data-testid="canvas-preview-frame"]', 'srcdoc');
+    assert.ok(previewSrcDoc?.includes('Mimir Canvas Edited'), 'Canvas Preview iframe srcdoc must reflect edited HTML');
+
     await page.click('[data-testid="nav-overview"]');
     await page.waitForSelector('[data-testid="reversibility-matrix-card"]');
     await page.waitForSelector('[data-testid="hybrid-stack-card"]');
@@ -300,6 +375,24 @@ async function main() {
 
     await page.click('[data-testid="nav-chat"]');
     await page.screenshot({ path: path.join(shotsDir, 'viewport-1280x800.png'), fullPage: false });
+
+    // Verify Light theme toggle ([data-theme="light"]) renders cleanly with zero overflow & zero errors
+    await page.click('[data-testid="nav-settings"]');
+    await page.waitForSelector('[data-testid="settings-view"]');
+    await page.selectOption('[data-testid="settings-view"] label:has-text("Colors") select', 'light');
+    await page.click('[data-testid="settings-view"] form:has(label:has-text("Colors")) button[type="submit"]');
+    await page.waitForSelector('html[data-theme="light"]');
+    await page.click('[data-testid="nav-chat"]');
+    await page.waitForSelector('[data-testid="chat-input"]');
+    const lightOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    assert.ok(lightOverflow <= 2, `Expected zero overflow in light theme at 1280x800, got ${lightOverflow}px`);
+    await page.screenshot({ path: path.join(shotsDir, 'light-theme-1280x800.png'), fullPage: false });
+    await page.click('[data-testid="nav-settings"]');
+    await page.waitForSelector('[data-testid="settings-view"]');
+    await page.selectOption('[data-testid="settings-view"] label:has-text("Colors") select', 'dark');
+    await page.click('[data-testid="settings-view"] form:has(label:has-text("Colors")) button[type="submit"]');
+    await page.waitForSelector('html[data-theme="dark"]');
+    await page.click('[data-testid="nav-chat"]');
 
     // Verify Browser Automation controls (real local navigation, Enlarge, Take Control)
     await page.click('#preview-tab-screen');
@@ -531,6 +624,88 @@ async function main() {
       await offlineCoord.close();
       await new Promise(done => slowSrv.close(done));
       fs.rmSync(offlineTmp, { recursive: true, force: true });
+    }
+
+    // C2. Deterministic "Open in Canvas" from Chat CodeBlock + Canvas AI revise/Apply/Undo flow
+    const canvasTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mimir-e2e-canvas-'));
+    const canvasMockSrv = http.createServer(async (req, res) => {
+      const chunks = [];
+      for await (const c of req) chunks.push(c);
+      const rawBody = Buffer.concat(chunks).toString('utf8');
+      let parsed = {};
+      try {
+        parsed = JSON.parse(rawBody || '{}');
+      } catch {}
+      const sysPrompt = String(parsed.messages?.[0]?.content || '');
+      const replyContent = sysPrompt.includes('Mimir Canvas Editor')
+        ? JSON.stringify({
+            updatedContent: '<section><h1>Revised Canvas</h1></section>',
+            diffSummary: 'Updated heading to Revised Canvas.',
+          })
+        : 'Here is your widget:\n\n```html\n<section><h1>Snippet Preview</h1></section>\n```';
+      if (parsed.stream) {
+        res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache' });
+        res.write(
+          `data: ${JSON.stringify({ model: 'canvas-mock', choices: [{ delta: { content: replyContent }, finish_reason: 'stop' }] })}\n\n`
+        );
+        res.write('data: [DONE]\n\n');
+        return res.end();
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ model: 'canvas-mock', choices: [{ message: { content: replyContent } }] }));
+    });
+    await new Promise(r => canvasMockSrv.listen(0, '127.0.0.1', r));
+    const canvasCoord = await startCoordinator({ dataDir: canvasTmp, enableScheduler: false });
+    canvasCoord.store.updateSettings({
+      firstRunDismissed: true,
+      provider: 'openai-compat',
+      openaiBaseUrl: `http://127.0.0.1:${canvasMockSrv.address().port}/v1`,
+      openaiApiKey: 'mock-key',
+      openaiModel: 'canvas-mock',
+    });
+    const canvasCtx = await browser.newContext({ viewport: { width: 1366, height: 840 } });
+    const canvasPage = await canvasCtx.newPage();
+    const canvasConsoleErrors = [];
+    canvasPage.on('pageerror', err => pageErrors.push(`canvasPage: ${err.message}`));
+    canvasPage.on('console', msg => {
+      if (msg.type() === 'error') canvasConsoleErrors.push(msg.text());
+    });
+    try {
+      await canvasPage.goto(`http://127.0.0.1:${uiSrv.address().port}/?coordinator=${encodeURIComponent(canvasCoord.url)}`, {
+        waitUntil: 'networkidle',
+      });
+      await canvasPage.waitForSelector('[data-testid="chat-input"]');
+      await canvasPage.fill('[data-testid="chat-input"]', 'Show me a small HTML snippet.');
+      await canvasPage.click('[data-testid="send-btn"]');
+      await canvasPage.waitForSelector('[data-testid="open-in-canvas-btn"]', { timeout: 15000 });
+      await canvasPage.click('[data-testid="open-in-canvas-btn"]');
+      await canvasPage.waitForSelector('[data-testid="canvas-pane"].canvas-pane');
+      await canvasPage.waitForSelector('iframe[data-testid="canvas-preview-frame"].canvas-preview-frame');
+      const openSrcDoc = await canvasPage.getAttribute('iframe[data-testid="canvas-preview-frame"]', 'srcdoc');
+      assert.ok(openSrcDoc?.includes('Snippet Preview'), 'Open in Canvas must render code block snippet in Preview');
+
+      await canvasPage.click('[data-testid="canvas-mode-code"]');
+      await canvasPage.waitForSelector('[data-testid="canvas-editor"].canvas-editor');
+      const codeVal = await canvasPage.inputValue('[data-testid="canvas-editor"]');
+      assert.ok(codeVal.includes('Snippet Preview'), 'Code mode editor must show snippet source');
+
+      await canvasPage.fill('[data-testid="canvas-revise-input"]', 'Change heading to Revised Canvas');
+      await canvasPage.click('[data-testid="canvas-revise-btn"]');
+      await canvasPage.waitForSelector('[data-testid="canvas-diff-banner"]', { timeout: 15000 });
+      await canvasPage.click('[data-testid="canvas-apply-diff-btn"]');
+      const revisedVal = await canvasPage.inputValue('[data-testid="canvas-editor"]');
+      assert.ok(revisedVal.includes('Revised Canvas'), 'Apply must update Canvas editor content');
+
+      await canvasPage.waitForSelector('[data-testid="canvas-undo-btn"]');
+      await canvasPage.click('[data-testid="canvas-undo-btn"]');
+      const revertedVal = await canvasPage.inputValue('[data-testid="canvas-editor"]');
+      assert.ok(revertedVal.includes('Snippet Preview'), 'Undo revision must restore prior Canvas content');
+      assert.equal(canvasConsoleErrors.length, 0, `Canvas flow console errors: ${canvasConsoleErrors.join('; ')}`);
+    } finally {
+      await canvasCtx.close();
+      await canvasCoord.close();
+      await new Promise(done => canvasMockSrv.close(done));
+      fs.rmSync(canvasTmp, { recursive: true, force: true });
     }
 
     // D. Real App Restart: close coord, launch fresh coordRestart on SAME tmpDir, reopen persisted task

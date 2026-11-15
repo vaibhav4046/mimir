@@ -16,10 +16,48 @@ const PROMPT_INJECTION_PATTERNS = [
 ];
 
 const DESTRUCTIVE_SHELL_RE = /\b(rm\s+-rf|del\s+\/f|format\s+[a-z]:|cipher\s+\/w|reg\s+delete|shutdown|taskkill\s+\/f)\b/i;
-const SENSITIVE_PATH_RE = /(?:^|[\\/])(?:\.vault|vault\.enc|\.ssh|\.aws|id_rsa|\.env(?:\.local)?)(?:$|[\\/])/i;
-const PRIVATE_METADATA_IP_RE = /^https?:\/\/(?:169\.254\.169\.254|metadata\.google\.internal|100\.100\.100\.200)/i;
+const SENSITIVE_PATH_RE = /(?:^|[\\/\s"'])(?:\.vault|vault\.enc(?:\.json)?|\.ssh|\.aws|id_rsa(?:\.pub)?|id_ed25519(?:\.pub)?|credentials\.json|\.env(?:\.[a-z0-9_.-]+)?)(?:$|[\\/\s"'])/i;
+const PRIVATE_METADATA_IP_RE = /(?:^|[\s"'/@\[])(?:169\.254\.169\.254|metadata\.google\.internal|metadata\.goog|100\.100\.100\.200|fd00:ec2::254|fe80:(?::|[0-9a-f]{0,4}:)[0-9a-f:.%]*)(?:$|[\s"'/:\]?#])/i;
+const PRIVATE_METADATA_HOST_RE = /^(?:169\.254\.169\.254|metadata\.google\.internal|metadata\.goog|100\.100\.100\.200|fd00:ec2::254|fe80:.*)$/i;
+
+function collectLeafStrings(value, out = [], seen = new WeakSet(), depth = 0) {
+  if (depth > 10 || value === null || value === undefined) return out;
+  if (typeof value === 'string') {
+    if (value) out.push(value);
+    return out;
+  }
+  if (typeof value !== 'object') return out;
+  if (seen.has(value)) return out;
+  seen.add(value);
+  if (Array.isArray(value)) {
+    for (const item of value) collectLeafStrings(item, out, seen, depth + 1);
+  } else {
+    for (const v of Object.values(value)) collectLeafStrings(v, out, seen, depth + 1);
+  }
+  return out;
+}
+
+function findMetadataSsrfTarget(leafStrings) {
+  for (const raw of leafStrings) {
+    if (PRIVATE_METADATA_IP_RE.test(raw)) return raw;
+    const urlCandidates = raw.match(/https?:\/\/[^\s"'<>]+/gi) || [];
+    for (const candidate of urlCandidates) {
+      try {
+        const host = new URL(candidate).hostname.replace(/^\[|\]$/g, '').toLowerCase();
+        if (PRIVATE_METADATA_HOST_RE.test(host)) return candidate;
+      } catch {
+        // ignore unparseable URL fragments
+      }
+    }
+  }
+  return null;
+}
 
 export class SentinelPolicyService {
+  #pendingAuditLines = [];
+  #auditFlushPromise = null;
+  #auditDirReady = false;
+
   constructor({ dataDir, onAuditEvent } = {}) {
     this.dataDir = dataDir ? path.resolve(dataDir) : null;
     this.auditPath = this.dataDir ? path.join(this.dataDir, 'sentinel-audit.jsonl') : null;
@@ -44,6 +82,53 @@ export class SentinelPolicyService {
     }
   }
 
+  #enqueueAuditWrite(line) {
+    if (!this.auditPath) return;
+    this.#pendingAuditLines.push(line);
+    if (!this.#auditFlushPromise) {
+      this.#auditFlushPromise = this.#drainAuditQueue().finally(() => {
+        this.#auditFlushPromise = null;
+        if (this.#pendingAuditLines.length > 0) {
+          this.#enqueueDrainKick();
+        }
+      });
+    }
+  }
+
+  #enqueueDrainKick() {
+    if (!this.auditPath || this.#auditFlushPromise || this.#pendingAuditLines.length === 0) return;
+    this.#auditFlushPromise = this.#drainAuditQueue().finally(() => {
+      this.#auditFlushPromise = null;
+      if (this.#pendingAuditLines.length > 0) {
+        this.#enqueueDrainKick();
+      }
+    });
+  }
+
+  async #drainAuditQueue() {
+    while (this.#pendingAuditLines.length > 0) {
+      const batch = this.#pendingAuditLines.splice(0, this.#pendingAuditLines.length).join('');
+      try {
+        if (!this.#auditDirReady) {
+          await fs.promises.mkdir(path.dirname(this.auditPath), { recursive: true });
+          this.#auditDirReady = true;
+        }
+        await fs.promises.appendFile(this.auditPath, batch, 'utf8');
+      } catch {
+        // non-fatal disk write error
+      }
+    }
+  }
+
+  async flushAuditLog() {
+    if (this.#pendingAuditLines.length > 0 && !this.#auditFlushPromise) {
+      this.#enqueueDrainKick();
+    }
+    if (this.#auditFlushPromise) {
+      await this.#auditFlushPromise;
+    }
+  }
+
   recordAuditEvent(entry) {
     const record = {
       id: `sent-${crypto.randomUUID().slice(0, 8)}`,
@@ -53,12 +138,7 @@ export class SentinelPolicyService {
     this.events.push(record);
     if (this.events.length > 500) this.events = this.events.slice(-500);
     if (this.auditPath) {
-      try {
-        fs.mkdirSync(path.dirname(this.auditPath), { recursive: true });
-        fs.appendFileSync(this.auditPath, `${JSON.stringify(record)}\n`, 'utf8');
-      } catch {
-        // non-fatal disk write error
-      }
+      this.#enqueueAuditWrite(`${JSON.stringify(record)}\n`);
     }
     if (this.onAuditEvent) {
       try {
@@ -132,25 +212,33 @@ export class SentinelPolicyService {
       return finalize('DENY', 'SENTINEL_CAPABILITY_SCOPE', `Tool "${cleanTool}" is outside "${role.name}" capability profile (${role.allowedTools.join(', ')}).`, 'high');
     }
 
-    // 3. Block sensitive credential/vault paths or secret dumping
+    // 3. Block sensitive credential/vault paths or secret dumping across all leaf string values
+    const leafStrings = collectLeafStrings(args);
     const serializedArgs = JSON.stringify(args || {});
-    if (SENSITIVE_PATH_RE.test(serializedArgs)) {
+    if (leafStrings.some(s => SENSITIVE_PATH_RE.test(s)) || SENSITIVE_PATH_RE.test(serializedArgs)) {
       return finalize('DENY', 'SENTINEL_SECRET_BOUNDARY', 'Access to raw Vault, SSH keys, or .env secret files is blocked by Sentinel.', 'critical');
     }
 
-    // 4. Block cloud metadata SSRF targets
-    const targetUrl = String(args?.url || args?.href || '');
-    if (targetUrl && PRIVATE_METADATA_IP_RE.test(targetUrl)) {
-      return finalize('DENY', 'SENTINEL_SSRF_METADATA', `Cloud metadata URL blocked: ${targetUrl}`, 'critical');
+    // 4. Block cloud metadata & link-local SSRF targets across all string arguments (IPv4 + IPv6)
+    const ssrfTarget = findMetadataSsrfTarget(leafStrings);
+    if (ssrfTarget) {
+      return finalize('DENY', 'SENTINEL_SSRF_METADATA', `Cloud metadata URL blocked: ${ssrfTarget}`, 'critical');
     }
 
     // 5. Block local-only outbound network violations
+    const targetUrl = String(args?.url || args?.href || args?.uri || args?.endpoint || args?.target || '');
+    const allUrlCandidates = [
+      ...(targetUrl ? [targetUrl] : []),
+      ...leafStrings.flatMap(s => s.match(/https?:\/\/[^\s"'<>]+/gi) || []),
+    ];
     if (localOnly && ['web_search', 'web_fetch', 'browser_open', 'browser_search', 'browser_fetch', 'browser_navigate', 'browser_act'].includes(cleanTool)) {
-      const isLoopback = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?/i.test(targetUrl);
-      if (targetUrl && !isLoopback) {
-        return finalize('DENY', 'SENTINEL_LOCAL_ONLY', `External URL "${targetUrl}" blocked while Local-Only mode is active.`, 'high');
+      for (const u of allUrlCandidates) {
+        const isLoopback = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:[/?#]|$)/i.test(u);
+        if (!isLoopback) {
+          return finalize('DENY', 'SENTINEL_LOCAL_ONLY', `External URL "${u}" blocked while Local-Only mode is active.`, 'high');
+        }
       }
-      if (!targetUrl && (cleanTool === 'web_search' || cleanTool === 'browser_search')) {
+      if (!allUrlCandidates.length && (cleanTool === 'web_search' || cleanTool === 'browser_search')) {
         return finalize('DENY', 'SENTINEL_LOCAL_ONLY', 'Public web search blocked while Local-Only mode is active.', 'high');
       }
     }
@@ -169,8 +257,8 @@ export class SentinelPolicyService {
       }
     }
 
-    // 8. Check standard approval classifier
-    const effectivePolicy = approvalPolicy || (['ask-writes', 'always-ask', 'reversibility', 'auto-approve'].includes(executionMode) ? executionMode : 'auto-approve');
+    // 8. Check standard approval classifier (never silently auto-approve writes when policy is null)
+    const effectivePolicy = approvalPolicy || (['ask-writes', 'always-ask', 'reversibility', 'auto-approve'].includes(executionMode) ? executionMode : 'ask-writes');
     const baseApproval = classifyToolApproval(cleanTool, args, effectivePolicy, { bot });
     if (baseApproval?.needsApproval && !approved) {
       return finalize('REQUIRE_APPROVAL', 'SENTINEL_ACTION_APPROVAL', baseApproval.reason || `Tool "${cleanTool}" requires user approval.`, baseApproval.tier || 'high');

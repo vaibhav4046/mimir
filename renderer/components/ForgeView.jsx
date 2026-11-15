@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '../api.js';
 import { ForgeAnvilSvg } from './Icons.jsx';
 import { BotAvatar } from './BotAvatar.jsx';
@@ -66,6 +66,7 @@ function TickCard({ label, checked, onToggle }) {
 }
 
 export function ForgeView({ onBotForged }) {
+  const uploadInputRef = useRef(null);
   const [scannedFiles, setScannedFiles] = useState([]);
   const [selectedLocalPaths, setSelectedLocalPaths] = useState([]);
   const [sourceApp, setSourceApp] = useState('claude');
@@ -108,26 +109,41 @@ export function ForgeView({ onBotForged }) {
   const handleUploadExport = async evt => {
     const file = evt.target.files?.[0];
     if (!file) return;
-    const text = await file.text();
-    const parsed = await apiFetch('/v1/memory-import/parse', {
-      method: 'POST',
-      body: JSON.stringify({ source: sourceApp, filename: file.name, text }),
-    });
-    if (parsed.items?.length) {
-      setImportedChunks(prev => [...prev, parsed]);
+    setError('');
+    try {
+      const text = await file.text();
+      const parsed = await apiFetch('/v1/memory-import/parse', {
+        method: 'POST',
+        body: JSON.stringify({ source: sourceApp, filename: file.name, text }),
+      });
+      if (parsed.items?.length) {
+        setImportedChunks(prev => [...prev, parsed]);
+      } else {
+        setError(`No importable memory items were found in ${file.name}.`);
+      }
+    } catch (err) {
+      setError(err?.message || 'Could not import that file. Check its format and try again.');
+    } finally {
+      evt.target.value = '';
     }
-    evt.target.value = '';
   };
 
   const handleAddPasted = async () => {
     if (!pasteText.trim()) return;
-    const parsed = await apiFetch('/v1/memory-import/parse', {
-      method: 'POST',
-      body: JSON.stringify({ source: sourceApp, filename: `${sourceApp}-notes.txt`, text: pasteText }),
-    });
-    if (parsed.items?.length) {
-      setImportedChunks(prev => [...prev, parsed]);
-      setPasteText('');
+    setError('');
+    try {
+      const parsed = await apiFetch('/v1/memory-import/parse', {
+        method: 'POST',
+        body: JSON.stringify({ source: sourceApp, filename: `${sourceApp}-notes.txt`, text: pasteText }),
+      });
+      if (parsed.items?.length) {
+        setImportedChunks(prev => [...prev, parsed]);
+        setPasteText('');
+      } else {
+        setError('Could not extract notes from the pasted text. Try adding clear bullet points or instructions.');
+      }
+    } catch (err) {
+      setError(err?.message || 'Could not parse pasted notes. Check that the local daemon is running.');
     }
   };
 
@@ -256,12 +272,12 @@ export function ForgeView({ onBotForged }) {
             <span>Import memory &amp; set up a helper</span>
           </h2>
           <p style={{ margin: 0, color: 'var(--ink-muted)' }}>
-            Bring in notes or instructions from Claude, Antigravity, or ChatGPT so Mimir can set up a helper for you — or just answer 4 quick questions.
+            Bring in notes or instructions from Claude, Antigravity, or ChatGPT so Mimir can set up a helper for you, or just answer 4 quick questions.
           </p>
         </div>
 
         {error && (
-          <div className="tool-card" style={{ borderColor: 'var(--sand-red)', color: '#ff9c78' }}>
+          <div className="error-banner" role="alert">
             {error}
           </div>
         )}
@@ -306,10 +322,23 @@ export function ForgeView({ onBotForged }) {
               <div className="field-label">
                 <span>Upload a file (.json, .md, .txt)</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 8px', background: 'var(--bg-surface)', border: '1px solid var(--rule)', borderRadius: 2 }}>
-                  <input id="forge-export-upload" type="file" accept=".json,.md,.txt,.csv" style={{ display: 'none' }} onChange={handleUploadExport} />
-                  <label htmlFor="forge-export-upload" className="btn btn-sm">
+                  <input
+                    ref={uploadInputRef}
+                    id="forge-export-upload"
+                    type="file"
+                    accept=".json,.md,.txt,.csv"
+                    className="sr-only"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    onChange={handleUploadExport}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={() => uploadInputRef.current?.click()}
+                  >
                     Choose file
-                  </label>
+                  </button>
                   <span style={{ fontSize: 12, color: 'var(--ink-subtle)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {importedChunks[0]?.filename || 'No file chosen yet'}
                   </span>
@@ -355,7 +384,7 @@ export function ForgeView({ onBotForged }) {
               </button>
               <button
                 type="button"
-                className="btn btn-gold"
+                className="btn btn-primary"
                 data-testid="start-4q-wizard-btn"
                 onClick={() => {
                   setProposal(null);
@@ -387,7 +416,7 @@ export function ForgeView({ onBotForged }) {
 
             <div className="chip-list">
               {(proposal.detectedDomains || []).map((d, i) => (
-                <span key={i} className="chip" style={{ borderColor: 'var(--sand-gold)', color: 'var(--sand-gold)' }}>
+                <span key={i} className="chip" style={{ borderColor: 'var(--brass)', color: 'var(--brass-ink, var(--brass))' }}>
                   {d}
                 </span>
               ))}
@@ -426,7 +455,7 @@ export function ForgeView({ onBotForged }) {
         {wizardActive && (
           <div className="card" data-testid="forge-wizard-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 className="card-title">Quick setup — Question {wizardStep} of 4</h3>
+              <h3 className="card-title">Quick setup: Question {wizardStep} of 4</h3>
               <span className="status-pill">4-step setup</span>
             </div>
 
@@ -540,7 +569,7 @@ export function ForgeView({ onBotForged }) {
               ) : (
                 <button
                   type="button"
-                  className="btn btn-gold"
+                  className="btn btn-primary"
                   data-testid="wizard-finish-btn"
                   disabled={forging}
                   onClick={finishWizard}

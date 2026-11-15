@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:4567 http://localhost:4567; object-src 'none'; base-uri 'self'; form-action 'none';" />
   <title>Mimir — Your Local AI Workspace for Getting Things Done</title>
   <meta name="description" content="Type, speak, or attach a task. Mimir plans steps, asks approval before risky actions, runs local Ollama models and tools on your hardware, and delivers downloadable files with SHA-256 receipts." />
   <link rel="canonical" href="/landing/index.html" />
@@ -782,7 +783,7 @@
             <p>89 MB installer. The build is unsigned, so Windows SmartScreen will warn: choose <em>More info → Run anyway</em>.</p>
             <code style="font-size:11px;word-break:break-all;">SHA-256 dd2b6eb09c1b921f0df7e487469eb165b6f0438649cdb5def508ecb859f4273a</code>
             <div style="margin-top:auto;padding-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
-              <a class="btn" data-testid="download-windows" href="https://github.com/vaibhav4046/mimir/releases/download/v1.0.3/Mimir-Setup-1.0.3.exe">Download for Windows</a>
+              <a class="btn" data-testid="download-windows" href="https://github.com/vaibhav4046/mimir/releases/download/v1.0.3/Mimir%20Setup%201.0.3.exe" download="Mimir Setup 1.0.3.exe" rel="noopener noreferrer">Download for Windows</a>
               <a class="btn ghost" href="https://github.com/vaibhav4046/mimir" rel="noopener noreferrer">Source on GitHub</a>
             </div>
           </article>
@@ -951,9 +952,27 @@
             metaEl.textContent = 'Version ' + (manifest.version || '1.0.3') + ' · Updated ' + (manifest.generatedAt || 'locally');
           }
           if (tbody) {
-            tbody.innerHTML = manifest.artifacts.map(function (a) {
-              return '<tr><td><code>' + String(a.path) + '</code></td><td>' + Number(a.bytes || 0).toLocaleString() + '</td><td><code>' + String(a.sha256 || '') + '</code></td></tr>';
-            }).join('');
+            var rows = manifest.artifacts.map(function (a) {
+              var tr = document.createElement('tr');
+              var tdPath = document.createElement('td');
+              var codePath = document.createElement('code');
+              codePath.textContent = String(a && a.path != null ? a.path : '');
+              tdPath.appendChild(codePath);
+
+              var tdBytes = document.createElement('td');
+              tdBytes.textContent = Number((a && a.bytes) || 0).toLocaleString();
+
+              var tdSha = document.createElement('td');
+              var codeSha = document.createElement('code');
+              codeSha.textContent = String(a && a.sha256 != null ? a.sha256 : '');
+              tdSha.appendChild(codeSha);
+
+              tr.appendChild(tdPath);
+              tr.appendChild(tdBytes);
+              tr.appendChild(tdSha);
+              return tr;
+            });
+            tbody.replaceChildren.apply(tbody, rows);
           }
         })
         .catch(function () {});
@@ -1037,18 +1056,29 @@
       var stepsEl = document.getElementById('sbx-steps');
       var jsonEl = document.getElementById('sbx-json');
 
-      function renderSandbox(payload, stepLabels, badgeText, summaryHtml, isLive) {
+      function renderSandbox(payload, stepLabels, badgeText, summaryBuilder, isLive) {
         lastPayload = payload;
         if (badgeEl) {
           badgeEl.textContent = badgeText;
           badgeEl.style.borderColor = isLive ? 'var(--ok)' : 'var(--gold)';
           badgeEl.className = 'pill ' + (isLive ? 'ok' : 'warn');
         }
-        if (summaryEl) summaryEl.innerHTML = summaryHtml;
+        if (summaryEl) {
+          summaryEl.replaceChildren();
+          if (typeof summaryBuilder === 'function') {
+            summaryBuilder(summaryEl);
+          } else if (summaryBuilder != null) {
+            summaryEl.textContent = String(summaryBuilder);
+          }
+        }
         if (stepsEl) {
-          stepsEl.innerHTML = stepLabels.map(function (s) {
-            return '<span class="sandbox-step ' + (isLive ? 'is-live' : 'is-demo') + '">' + s + '</span>';
-          }).join('');
+          var stepNodes = stepLabels.map(function (s) {
+            var span = document.createElement('span');
+            span.className = 'sandbox-step ' + (isLive ? 'is-live' : 'is-demo');
+            span.textContent = String(s);
+            return span;
+          });
+          stepsEl.replaceChildren.apply(stepsEl, stepNodes);
         }
         if (jsonEl) jsonEl.textContent = JSON.stringify(payload, null, 2);
       }
@@ -1061,7 +1091,14 @@
           preset.fixture(goal, policy),
           preset.steps,
           'Static Demo Fixture (NOT Live)',
-          'Mode: <strong style="color:var(--gold-hi);">Simulated Fixture Preview</strong> · ' + (reason || 'No live coordinator called. Open /app.html to run locally.'),
+          function (container) {
+            container.appendChild(document.createTextNode('Mode: '));
+            var strong = document.createElement('strong');
+            strong.style.color = 'var(--gold-hi)';
+            strong.textContent = 'Simulated Fixture Preview';
+            container.appendChild(strong);
+            container.appendChild(document.createTextNode(' · ' + (reason || 'No live coordinator called. Open /app.html to run locally.')));
+          },
           false
         );
       }
@@ -1091,11 +1128,24 @@
           fetch(coordUrl + '/v1/health')
             .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
             .then(function (health) {
+              var modelLabel = String((health && health.ollamaModel) || 'configured');
               renderSandbox(
                 { executionMode: 'live-health-probe', isLiveExecution: true, coordinator: 'http://127.0.0.1:4567', health: health },
                 ['1. Loopback Reachable', '2. Health Checked', '3. Auth Ready: ' + (health.authRequired ? 'Pairing Needed' : 'Open Local'), '4. Launch /app.html to Execute'],
                 'Live Local Coordinator Detected',
-                'Local coordinator reachable (<strong style="color:var(--frost);">Ollama model: ' + (health.ollamaModel || 'configured') + '</strong>). Open <a href="/app.html">/app.html</a> to pair and execute real tasks.',
+                function (container) {
+                  container.appendChild(document.createTextNode('Local coordinator reachable ('));
+                  var strong = document.createElement('strong');
+                  strong.style.color = 'var(--frost)';
+                  strong.textContent = 'Ollama model: ' + modelLabel;
+                  container.appendChild(strong);
+                  container.appendChild(document.createTextNode('). Open '));
+                  var link = document.createElement('a');
+                  link.href = '/app.html';
+                  link.textContent = '/app.html';
+                  container.appendChild(link);
+                  container.appendChild(document.createTextNode(' to pair and execute real tasks.'));
+                },
                 true
               );
             })

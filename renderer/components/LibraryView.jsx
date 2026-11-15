@@ -121,6 +121,7 @@ export function LibraryView({ activeBotId }) {
   const [studioPrompt, setStudioPrompt] = useState('');
   const [studioFormat, setStudioFormat] = useState('glb');
   const [forgingPreset, setForgingPreset] = useState('');
+  const [quickMakeOpen, setQuickMakeOpen] = useState(false);
   const [form, setForm] = useState({
     title: '',
     subtitle: '',
@@ -342,95 +343,113 @@ export function LibraryView({ activeBotId }) {
           ))}
         </div>
 
-        {err && <div className="tool-card is-error">{err}</div>}
+        {err && (
+          <div className="error-banner" role="alert">
+            {err}
+          </div>
+        )}
 
         <section className="harness-studio-bar" data-testid="harness-creative-studio">
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
             <div>
               <strong>Quick make</strong>
               <span className="muted" style={{ fontSize: 12, marginLeft: 8 }}>
-                Pick an example or describe what you want: a 3D model, picture, video, app or game
+                Start from a preset or describe a 3D model, picture, video, app, or document
               </span>
             </div>
-            {forgingPreset && <span className="pill">Making it now...</span>}
-          </div>
-
-          <div className="harness-studio-presets">
-            {STUDIO_PRESETS.map(p => (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {forgingPreset && <span className="pill">Making it now...</span>}
               <button
-                key={p.id}
                 type="button"
-                className="btn btn-sm btn-ghost"
-                data-testid={p.testId}
-                disabled={Boolean(forgingPreset)}
-                onClick={() =>
-                  forgeWithStudio({
-                    title: p.title,
-                    prompt: p.prompt,
-                    format: p.format,
-                    creative: p.creative,
-                    presetId: p.id,
-                  })
-                }
+                className="btn btn-sm"
+                aria-expanded={quickMakeOpen}
+                onClick={() => setQuickMakeOpen(v => !v)}
               >
-                {forgingPreset === p.id ? 'Making...' : p.label}
+                {quickMakeOpen ? 'Hide presets' : 'Quick presets & prompt'}
               </button>
-            ))}
+            </div>
           </div>
 
-          <form
-            className="harness-studio-form"
-            onSubmit={e => {
-              e.preventDefault();
-              if (!studioPrompt.trim()) return;
-              forgeWithStudio({
-                prompt: studioPrompt.trim(),
-                format: studioFormat,
-                presetId: 'custom',
-              });
-            }}
-          >
-            <input
-              type="text"
-              className="input"
-              data-testid="studio-prompt-input"
-              placeholder="Describe what you want, e.g. a picture of a red tractor at sunrise"
-              aria-label="Describe what you want Mimir to make"
-              value={studioPrompt}
-              onChange={e => setStudioPrompt(e.target.value)}
-              style={{ flex: 1, minWidth: 240 }}
-            />
-            <select
-              className="select"
-              data-testid="studio-format-select"
-              aria-label="What kind of file to make"
-              value={studioFormat}
-              onChange={e => setStudioFormat(e.target.value)}
-            >
-              <option value="glb">3D model</option>
-              <option value="obj">3D model (simple, .obj)</option>
-              <option value="stl">3D model for printing</option>
-              <option value="png">Picture</option>
-              <option value="svg">Drawing (logo or icon)</option>
-              <option value="webm">Video</option>
-              <option value="mp4">Video (.mp4)</option>
-              <option value="gif">Moving picture (GIF)</option>
-              <option value="webapp">App</option>
-              <option value="game">Game</option>
-              <option value="pdf">Document (PDF)</option>
-              <option value="docx">Word document</option>
-              <option value="pptx">Slides</option>
-              <option value="xlsx">Spreadsheet</option>
-            </select>
-            <button
-              type="submit"
-              className="btn btn-primary btn-sm"
-              data-testid="studio-forge-submit"
-              disabled={Boolean(forgingPreset) || !studioPrompt.trim()}
-            >
-              {forgingPreset === 'custom' ? 'Making...' : 'Make'}
-            </button>
-          </form>
+          {(quickMakeOpen || Boolean(forgingPreset)) && (
+            <>
+              <div className="harness-studio-presets">
+                {STUDIO_PRESETS.map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="btn btn-sm"
+                    data-testid={p.testId}
+                    disabled={Boolean(forgingPreset)}
+                    onClick={() =>
+                      forgeWithStudio({
+                        title: p.title,
+                        prompt: p.prompt,
+                        format: p.format,
+                        creative: p.creative,
+                        presetId: p.id,
+                      })
+                    }
+                  >
+                    {forgingPreset === p.id ? 'Making...' : p.label}
+                  </button>
+                ))}
+              </div>
+
+              <form
+                className="harness-studio-form"
+                onSubmit={e => {
+                  e.preventDefault();
+                  if (!studioPrompt.trim()) return;
+                  forgeWithStudio({
+                    prompt: studioPrompt.trim(),
+                    format: studioFormat,
+                    presetId: 'custom',
+                  });
+                }}
+              >
+                <input
+                  type="text"
+                  className="input"
+                  data-testid="studio-prompt-input"
+                  placeholder="Describe what you want, e.g. a picture of a red tractor at sunrise"
+                  aria-label="Describe what you want Mimir to make"
+                  value={studioPrompt}
+                  onChange={e => setStudioPrompt(e.target.value)}
+                  style={{ flex: 1, minWidth: 240 }}
+                />
+                <select
+                  className="select"
+                  data-testid="studio-format-select"
+                  aria-label="What kind of file to make"
+                  value={studioFormat}
+                  onChange={e => setStudioFormat(e.target.value)}
+                >
+                  <option value="glb">3D model</option>
+                  <option value="obj">3D model (simple, .obj)</option>
+                  <option value="stl">3D model for printing</option>
+                  <option value="png">Picture</option>
+                  <option value="svg">Drawing (logo or icon)</option>
+                  <option value="webm">Video</option>
+                  <option value="mp4">Video (.mp4)</option>
+                  <option value="gif">Moving picture (GIF)</option>
+                  <option value="webapp">App</option>
+                  <option value="game">Game</option>
+                  <option value="pdf">Document (PDF)</option>
+                  <option value="docx">Word document</option>
+                  <option value="pptx">Slides</option>
+                  <option value="xlsx">Spreadsheet</option>
+                </select>
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-sm"
+                  data-testid="studio-forge-submit"
+                  disabled={Boolean(forgingPreset) || !studioPrompt.trim()}
+                >
+                  {forgingPreset === 'custom' ? 'Making...' : 'Make'}
+                </button>
+              </form>
+            </>
+          )}
         </section>
 
         {activeStudioArtifact && (
@@ -441,7 +460,41 @@ export function LibraryView({ activeBotId }) {
         )}
 
         {loading ? (
-          <div className="card">Loading your files...</div>
+          <div role="status" aria-live="polite" aria-label="Loading files">
+            <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginBottom: 10 }}>
+              Loading your saved files...
+            </div>
+            <div className="library-grid" aria-hidden="true">
+              {[0, 1, 2].map(idx => (
+                <div key={idx} className="library-card" style={{ gap: 10 }}>
+                  <div
+                    style={{
+                      height: 88,
+                      borderRadius: 6,
+                      background: 'var(--bg-inset, var(--bg-surface))',
+                      border: '1px solid var(--rule)',
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: 14,
+                      width: '68%',
+                      borderRadius: 4,
+                      background: 'var(--bg-inset, var(--bg-surface))',
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: 12,
+                      width: '44%',
+                      borderRadius: 4,
+                      background: 'var(--bg-inset, var(--bg-surface))',
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         ) : filtered.length === 0 ? (
           <div className="card" style={{ alignItems: 'center', textAlign: 'center', padding: 28 }}>
             <MimirAsset category="ui" name="empty-realm" size={32} />
@@ -491,7 +544,7 @@ export function LibraryView({ activeBotId }) {
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                     <button
                       type="button"
-                      className="btn btn-sm btn-ghost"
+                      className="btn btn-sm"
                       data-testid={`open-studio-${art.id}`}
                       onClick={() => setActiveStudioArtifact(art)}
                     >

@@ -272,13 +272,17 @@ function canonicalUrl(rawUrl) {
   }
 }
 
-export function buildResearchObjective({ query, mode = 'offline', maxSources = 8, userId = 'local-owner' } = {}) {
+export function buildResearchObjective({ query, mode = 'offline', maxSources = 8, userId = 'local-owner', localOnly = false } = {}) {
   const cleanQuery = String(query || '').trim();
-  const cleanMode = mode === 'live' ? 'live' : 'offline';
+  const requestedMode = mode === 'live' ? 'live' : mode === 'auto' ? 'auto' : 'offline';
+  const cleanMode = requestedMode === 'auto'
+    ? (localOnly ? 'offline' : 'live')
+    : (localOnly && requestedMode === 'live' ? 'offline' : requestedMode);
   return {
     id: `res-${crypto.randomBytes(6).toString('hex')}`,
     query: cleanQuery,
     mode: cleanMode,
+    requestedMode,
     maxSources: Math.max(2, Math.min(20, Number(maxSources) || 8)),
     userId: String(userId || 'local-owner'),
     acceptanceCriteria: [
@@ -428,13 +432,14 @@ export function validateResearchCitations(reportText, evidenceSpans = []) {
 }
 
 export class DeepResearchEngine {
-  constructor({ store, knowledge = null, ragEngine = null, foundry = null, searchFn = null, fetchUrlFn = null } = {}) {
+  constructor({ store, knowledge = null, ragEngine = null, foundry = null, searchFn = null, fetchUrlFn = null, broadcast = null } = {}) {
     this.store = store;
     this.knowledge = knowledge;
     this.ragEngine = ragEngine;
     this.foundry = foundry;
     this.searchFn = searchFn || fetchMultiEngineSearch;
     this.fetchUrlFn = fetchUrlFn || fetchUrlText;
+    this.broadcast = typeof broadcast === 'function' ? broadcast : null;
   }
 
   #collectCodebaseTelemetryCorpus() {
@@ -550,7 +555,7 @@ export class DeepResearchEngine {
     return docs;
   }
 
-  async #retrieveForQuery(q, { mode = 'offline', localOnly = false, userId = 'local-owner', includeBuiltin = true } = {}) {
+  async #retrieveForQuery(q, { mode = 'offline', localOnly = false, userId = 'local-owner', includeBuiltin = true, stats = null } = {}) {
     const rawDocs = [];
     // Always include local/RAG hits first
     if (this.ragEngine?.retrieve) {
@@ -571,8 +576,10 @@ export class DeepResearchEngine {
     rawDocs.push(...this.#collectOfflineCorpus(q, { userId, maxDocs: 8, includeBuiltin }));
 
     if (mode === 'live' && !localOnly) {
+      if (stats) stats.webAttempted += 1;
       try {
         const webHits = await this.searchFn(q, 6);
+        if (stats && Array.isArray(webHits)) stats.webHits += webHits.length;
         for (const hit of webHits || []) {
           let body = hit.snippet || '';
           if ((!body || body.length < 120) && hit.url && this.fetchUrlFn) {
@@ -589,7 +596,9 @@ export class DeepResearchEngine {
             retrievedAt: new Date().toISOString(),
           });
         }
-      } catch {}
+      } catch {
+        if (stats) stats.webErrors += 1;
+      }
     }
 
     const qTerms = String(q).toLowerCase().split(/\W+/).filter(w => w.length >= 3);
@@ -868,18 +877,52 @@ export class DeepResearchEngine {
     exportFormats = null,
     seedCorpus = null,
     isolatedCorpusOnly = false,
+    threadId = null,
+    runId = null,
+    onProgress = null,
   } = {}) {
     const startedAt = new Date().toISOString();
     const s = this.store?.getSettings?.() || {};
     const localOnly = Boolean(s.localOnly);
-    const effectiveMode = localOnly && mode === 'live' ? 'offline' : mode === 'live' ? 'live' : 'offline';
-    const objective = buildResearchObjective({ query, mode: effectiveMode, maxSources, userId });
+    const requestedMode = mode === 'live' ? 'live' : mode === 'auto' ? 'auto' : 'offline';
+    const effectiveMode = requestedMode === 'auto'
+      ? (localOnly ? 'offline' : 'live')
+      : localOnly && requestedMode === 'live'
+        ? 'offline'
+        : requestedMode;
+    const objective = buildResearchObjective({ query, mode: requestedMode, localOnly, maxSources, userId });
     const subQuestions = decomposeResearchQuestion(objective.query);
     const plannedQueries = planBoundedQueries(subQuestions, { maxQueriesPerSub: 1, maxTotalQueries: 5 });
 
     const seenHashes = new Set();
     const seenUrls = new Set();
     const evidenceSpans = [];
+    const retrievalStats = { webAttempted: 0, webHits: 0, webErrors: 0 };
+
+    const emitProgress = (phase, extra = {}) => {
+      const payload = {
+        threadId: threadId || null,
+        runId: runId || objective.id,
+        researchId: objective.id,
+        query: objective.query,
+        requestedMode,
+        mode: effectiveMode,
+        phase,
+        subQueries: plannedQueries.map(p => p.query),
+        fetchedSources: evidenceSpans.map(s => ({
+          title: s.title,
+          url: s.urlOrPath,
+          status: 'verified',
+          snippet: String(s.quote || '').slice(0, 100),
+        })),
+        verifiedClaims: evidenceSpans.length,
+        ...extra,
+      };
+      try { onProgress?.(payload); } catch {}
+      try { this.broadcast?.('research:progress', payload); } catch {}
+    };
+
+    emitProgress('planning');
 
     const addDocument = (doc, subQuestionId = null) => {
       if (evidenceSpans.length >= objective.maxSources) return;
@@ -928,13 +971,23 @@ export class DeepResearchEngine {
     // Pass 1 bounded retrieval
     const includeBuiltin = !Array.isArray(seedCorpus);
     if (!isolatedCorpusOnly) {
+      emitProgress('searching', { currentQuery: plannedQueries[0]?.query || objective.query });
       for (const pq of plannedQueries) {
         if (evidenceSpans.length >= objective.maxSources) break;
-        const hits = await this.#retrieveForQuery(pq.query, { mode: effectiveMode, localOnly, userId, includeBuiltin });
+        const hits = await this.#retrieveForQuery(pq.query, {
+          mode: effectiveMode,
+          localOnly,
+          userId,
+          includeBuiltin,
+          stats: retrievalStats,
+        });
         for (const h of hits.slice(0, 3)) {
           addDocument(h, pq.subQuestionId);
         }
+        emitProgress('reading', { currentQuery: pq.query });
       }
+    } else {
+      emitProgress('reading');
     }
 
     // Gap analysis & selective bounded replanning (Pass 2)
@@ -947,31 +1000,49 @@ export class DeepResearchEngine {
         query: `${g.focus} ${objective.query.split(/\s+/).slice(0, 3).join(' ')}`.trim(),
         pass: 2,
       }));
+      emitProgress('searching', { pass: 2, currentQuery: replannedQueries[0]?.query || objective.query });
       for (const rq of replannedQueries) {
-        const hits = await this.#retrieveForQuery(rq.query, { mode: effectiveMode, localOnly, userId, includeBuiltin });
+        const hits = await this.#retrieveForQuery(rq.query, {
+          mode: effectiveMode,
+          localOnly,
+          userId,
+          includeBuiltin,
+          stats: retrievalStats,
+        });
         for (const h of hits.slice(0, 2)) {
           addDocument(h, rq.subQuestionId);
         }
       }
+      emitProgress('reading', { pass: 2 });
       gaps = analyzeCoverageGaps(subQuestions, evidenceSpans);
     }
 
     const contradictions = findContradictions(evidenceSpans);
+    const offlineFallback = Boolean(
+      (requestedMode === 'live' || requestedMode === 'auto') &&
+      (localOnly || (effectiveMode === 'live' && retrievalStats.webHits === 0))
+    );
 
     const status =
       evidenceSpans.length === 0
         ? 'partial'
-        : localOnly && mode === 'live'
+        : localOnly && requestedMode === 'live'
           ? 'offline-corpus-only'
-          : gaps.length > 0
-            ? 'partial'
-            : 'completed';
+          : offlineFallback && requestedMode === 'auto'
+            ? 'offline-corpus-only'
+            : gaps.length > 0
+              ? 'partial'
+              : 'completed';
 
     const structured = this.#buildStructuredReport({
       title: `Research Report: ${objective.query}`,
       query: objective.query,
       mode: effectiveMode,
-      status: localOnly && mode === 'live' ? `${status} (live web blocked by local-only policy)` : status,
+      status: localOnly && requestedMode === 'live'
+        ? `${status} (live web blocked by local-only policy)`
+        : offlineFallback
+          ? `${status} (offline corpus fallback)`
+          : status,
       subQuestions,
       evidenceSpans,
       contradictions,
@@ -979,6 +1050,11 @@ export class DeepResearchEngine {
     });
     const reportText = structured.reportText;
     const citationCheck = validateResearchCitations(reportText, evidenceSpans);
+    emitProgress('synthesizing', {
+      verifiedClaims: citationCheck.valid ? evidenceSpans.length : Math.max(0, evidenceSpans.length - (citationCheck.missingFromSources?.length || 0)),
+      contradictions: contradictions.length,
+      offlineFallback,
+    });
 
     const requestedFormats = Array.isArray(exportFormats) && exportFormats.length
       ? exportFormats
@@ -1005,7 +1081,7 @@ export class DeepResearchEngine {
     let receipt = buildReceipt({
       id: `rcpt-${crypto.randomBytes(6).toString('hex')}`,
       runId: objective.id,
-      threadId: null,
+      threadId: threadId || null,
       botId: botId || 'research-engine',
       userId,
       groups: [],
@@ -1017,20 +1093,29 @@ export class DeepResearchEngine {
         sha256: s.sha256,
       })),
       tests: [{ name: 'citation-validation', passed: citationCheck.valid }],
-      provider: effectiveMode === 'live' ? 'deep-research-live' : 'deep-research-offline',
+      provider: effectiveMode === 'live' && !offlineFallback ? 'deep-research-live' : 'deep-research-offline',
       model: 'mimir-research-v1',
       baseUrl: null,
-      isLocal: effectiveMode !== 'live',
+      isLocal: effectiveMode !== 'live' || offlineFallback,
       startedAt,
     });
     receipt = this.store?.appendReceipt?.(receipt) || receipt;
+
+    const corpusHits = evidenceSpans.filter(s => s.domainType !== 'web').length;
+    const verifiedUrls = evidenceSpans.filter(s => /^https?:\/\//i.test(String(s.urlOrPath || ''))).map(s => s.urlOrPath);
 
     const result = {
       id: objective.id,
       userId,
       query: objective.query,
       mode: effectiveMode,
-      localOnlyBlockedWeb: localOnly && mode === 'live',
+      requestedMode,
+      offlineFallback,
+      localOnlyBlockedWeb: localOnly && requestedMode === 'live',
+      corpusHits,
+      verifiedUrls,
+      webHits: retrievalStats.webHits,
+      webErrors: retrievalStats.webErrors,
       status,
       subQuestions,
       plannedQueries: [...plannedQueries, ...replannedQueries],
@@ -1112,7 +1197,12 @@ export class DeepResearchEngine {
     const startedAt = new Date().toISOString();
     const s = this.store?.getSettings?.() || {};
     const localOnly = Boolean(s.localOnly);
-    const effectiveMode = localOnly && mode === 'live' ? 'offline' : mode === 'live' ? 'live' : 'offline';
+    const requestedMode = mode === 'live' ? 'live' : mode === 'auto' ? 'auto' : 'offline';
+    const effectiveMode = requestedMode === 'auto'
+      ? (localOnly ? 'offline' : 'live')
+      : localOnly && requestedMode === 'live'
+        ? 'offline'
+        : requestedMode;
 
     const customTopics = Array.isArray(topics)
       ? topics.map(t => String(t || '').trim()).filter(Boolean).slice(0, 12)

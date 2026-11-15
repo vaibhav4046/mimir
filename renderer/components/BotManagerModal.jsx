@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { apiFetch, resolveCoordinator } from '../api.js';
 import { BotAvatar } from './BotAvatar.jsx';
 import { CHARACTER_ARCHETYPES, ACCESSORY_OPTIONS, MimirAsset } from './MimirAsset.jsx';
 
 export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDeleted }) {
   const isEdit = Boolean(initialBot?.id);
+  const modalRef = useRef(null);
+  const previousFocusRef = useRef(null);
   const [templates, setTemplates] = useState([]);
   const [coordUrl, setCoordUrl] = useState('');
   const [modalError, setModalError] = useState('');
@@ -30,11 +32,50 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
   }, []);
 
   useEffect(() => {
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const container = modalRef.current;
+    if (container) {
+      const firstFocusable = container.querySelector(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (firstFocusable instanceof HTMLElement) {
+        firstFocusable.focus();
+      } else {
+        container.focus();
+      }
+    }
+
     const onKey = e => {
-      if (e.key === 'Escape') onClose?.();
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose?.();
+        return;
+      }
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusables = Array.from(
+          modalRef.current.querySelectorAll(
+            'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter(el => el instanceof HTMLElement && el.offsetParent !== null);
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+        previousFocusRef.current.focus();
+      }
+    };
   }, [onClose]);
 
   const applyTemplate = tpl => {
@@ -106,7 +147,15 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="bot-modal-title" onClick={e => e.stopPropagation()}>
+      <div
+        ref={modalRef}
+        className="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bot-modal-title"
+        tabIndex={-1}
+        onClick={e => e.stopPropagation()}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <BotAvatar bot={form} shape={form.shape} color={form.color} size={44} />
@@ -119,7 +168,7 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
 
         {!isEdit && templates.length > 0 && (
           <div>
-            <div style={{ fontSize: 12, color: 'var(--sand-text-muted)', marginBottom: 6 }}>Quick starter templates:</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginBottom: 6 }}>Quick starter templates:</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {templates.map(tpl => (
                 <button key={tpl.key} type="button" className="btn btn-sm" onClick={() => applyTemplate(tpl)}>
@@ -131,7 +180,7 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
         )}
 
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {modalError && <div className="tool-card is-error" role="alert">{modalError}</div>}
+          {modalError && <div className="error-banner" role="alert">{modalError}</div>}
           <div className="grid-2">
             <label className="field-label">
               Name
@@ -216,7 +265,7 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
                   <button
                     key={c}
                     type="button"
-                    aria-label={`Color ${c}`}
+                    aria-label={`Choose color ${c}`}
                     aria-pressed={form.color === c}
                     onClick={() => setForm(f => ({ ...f, color: c }))}
                     style={{
@@ -224,7 +273,8 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
                       height: 24,
                       borderRadius: '50%',
                       background: c,
-                      border: form.color === c ? '2px solid #fff' : '1px solid transparent',
+                      border: form.color === c ? '2px solid var(--ink)' : '1px solid var(--rule-strong, var(--rule))',
+                      boxShadow: form.color === c ? '0 0 0 2px var(--bg-surface) inset' : 'none',
                     }}
                   />
                 ))}
@@ -277,7 +327,7 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 12.5, color: 'var(--sand-text-muted)', fontWeight: 700 }}>
+              <span style={{ fontSize: 12.5, color: 'var(--ink-muted)', fontWeight: 700 }}>
                 Instructions (what this assistant should do)
               </span>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -323,7 +373,7 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
           </div>
 
           <div>
-            <div style={{ fontSize: 12.5, color: 'var(--sand-text-muted)', marginBottom: 6 }}>What it can use:</div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-muted)', marginBottom: 6 }}>What it can use:</div>
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
               {[
                 { key: 'shell', label: 'Run commands' },
@@ -346,7 +396,7 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
 
           {mcps?.length > 0 && (
             <div>
-              <div style={{ fontSize: 12.5, color: 'var(--sand-text-muted)', marginBottom: 6 }}>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-muted)', marginBottom: 6 }}>
                 Connected apps it can use (leave unchecked for all):
               </div>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>

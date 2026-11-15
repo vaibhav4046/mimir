@@ -984,10 +984,22 @@ export class AppStore {
     return true;
   }
 
-  listThreads(botId = null, userId = null) {
-    const scope = userId ? resolveUserScope(userId) : null;
+  listThreads(botIdOrOpts = null, userId = null, extraOpts = {}) {
+    let botId = botIdOrOpts;
+    let resolvedUserId = userId;
+    let spaceId = extraOpts?.spaceId || null;
+    let includeSubagents = Boolean(extraOpts?.includeSubagents);
+    if (botIdOrOpts && typeof botIdOrOpts === 'object') {
+      botId = botIdOrOpts.botId || null;
+      resolvedUserId = botIdOrOpts.userId ?? userId ?? null;
+      spaceId = botIdOrOpts.spaceId || null;
+      includeSubagents = Boolean(botIdOrOpts.includeSubagents);
+    }
+    const scope = resolvedUserId ? resolveUserScope(resolvedUserId) : null;
     const items = this.state.threads.filter(t => {
+      if (!includeSubagents && t.isSubagent) return false;
       if (botId && t.botId !== botId) return false;
+      if (spaceId && t.spaceId !== spaceId) return false;
       if (scope) {
         const owner = resolveUserScope(t.userId || 'local-owner');
         if (owner !== scope) return false;
@@ -1006,7 +1018,57 @@ export class AppStore {
     return t;
   }
 
-  createThread({ botId, title, executionMode = null, userId = 'local-owner' }) {
+  #resolveMessageAncestors(thread, leafMessageId = null) {
+    const msgs = Array.isArray(thread?.messages) ? thread.messages : [];
+    if (!msgs.length) return [];
+    const byId = new Map();
+    const indexById = new Map();
+    msgs.forEach((m, idx) => {
+      if (m?.id) {
+        byId.set(m.id, m);
+        indexById.set(m.id, idx);
+      }
+    });
+    const targetLeafId =
+      (leafMessageId && byId.has(leafMessageId) ? leafMessageId : null) ||
+      (thread.activeLeafId && byId.has(thread.activeLeafId) ? thread.activeLeafId : null) ||
+      msgs[msgs.length - 1]?.id ||
+      null;
+    if (!targetLeafId) return [...msgs];
+
+    const chain = [];
+    const visited = new Set();
+    let curId = targetLeafId;
+    while (curId && byId.has(curId) && !visited.has(curId)) {
+      visited.add(curId);
+      const node = byId.get(curId);
+      chain.push(node);
+      if (node.parentId !== undefined) {
+        curId = node.parentId;
+      } else {
+        const idx = indexById.get(curId);
+        curId = idx > 0 ? msgs[idx - 1]?.id || null : null;
+      }
+    }
+    return chain.reverse();
+  }
+
+  getActiveMessages(threadId, userId = null) {
+    const thread = this.getThread(threadId, userId);
+    if (!thread) return [];
+    return this.#resolveMessageAncestors(thread, thread.activeLeafId || null);
+  }
+
+  createThread({
+    botId,
+    title,
+    executionMode = null,
+    userId = 'local-owner',
+    spaceId = null,
+    isSubagent = false,
+    parentThreadId = null,
+    parentRunId = null,
+  }) {
     const now = new Date().toISOString();
     const thread = {
       id: `thr-${crypto.randomBytes(5).toString('hex')}`,
@@ -1014,6 +1076,11 @@ export class AppStore {
       userId: resolveUserScope(userId),
       title: String(title || 'New Chat').trim().slice(0, 80),
       executionMode: normalizeOptionalExecutionMode(executionMode),
+      spaceId: normalizeNullableString(spaceId),
+      isSubagent: Boolean(isSubagent),
+      ...(parentThreadId ? { parentThreadId: String(parentThreadId) } : {}),
+      ...(parentRunId ? { parentRunId: String(parentRunId) } : {}),
+      activeLeafId: null,
       createdAt: now,
       updatedAt: now,
       messages: [],
@@ -1032,6 +1099,21 @@ export class AppStore {
     if ('executionMode' in patch) {
       thread.executionMode = normalizeOptionalExecutionMode(patch.executionMode);
     }
+    if ('botId' in patch && patch.botId) {
+      const nextBotId = String(patch.botId).trim();
+      if (this.getBot(nextBotId)) {
+        thread.botId = nextBotId;
+      }
+    }
+    if ('spaceId' in patch) {
+      thread.spaceId = normalizeNullableString(patch.spaceId);
+    }
+    if ('activeLeafId' in patch) {
+      const leafId = normalizeNullableString(patch.activeLeafId);
+      if (!leafId || thread.messages.some(m => m.id === leafId)) {
+        thread.activeLeafId = leafId;
+      }
+    }
     thread.updatedAt = new Date().toISOString();
     this.save();
     return thread;
@@ -1040,17 +1122,114 @@ export class AppStore {
   appendMessage(threadId, msg) {
     const t = this.getThread(threadId);
     if (!t) return null;
-    t.messages.push({
-      id: msg.id || `msg-${crypto.randomBytes(5).toString('hex')}`,
+    const msgId = msg.id || `msg-${crypto.randomBytes(5).toString('hex')}`;
+    const hasExplicitParent = 'parentId' in msg && msg.parentId !== undefined;
+    const defaultParentId =
+      t.activeLeafId && t.messages.some(m => m.id === t.activeLeafId)
+        ? t.activeLeafId
+        : (t.messages.length ? t.messages[t.messages.length - 1].id : null);
+    const entry = {
+      id: msgId,
       createdAt: msg.createdAt || new Date().toISOString(),
+      parentId: hasExplicitParent ? msg.parentId : defaultParentId,
       ...msg,
-    });
+    };
+    t.messages.push(entry);
+    t.activeLeafId = entry.id;
     if (t.title === 'New Chat' && msg.role === 'user' && msg.content) {
       t.title = String(msg.content).trim().replace(/\s+/g, ' ').slice(0, 56);
     }
     t.updatedAt = new Date().toISOString();
     this.save();
     return t;
+  }
+
+  forkThread({ threadId, id = null, fromMessageId = null, newUserText = null, userId = null, title = null } = {}) {
+    const src = this.getThread(threadId || id, userId);
+    if (!src) return null;
+    if (fromMessageId && !src.messages.some(m => m.id === fromMessageId)) {
+      const err = new Error(`Message not found in thread: ${fromMessageId}`);
+      err.status = 404;
+      throw err;
+    }
+    const targetMsgId = fromMessageId || src.activeLeafId || src.messages.at(-1)?.id || null;
+    const ancestors = this.#resolveMessageAncestors(src, targetMsgId);
+    const cloned = ancestors.map((m, idx) => {
+      const copy = JSON.parse(JSON.stringify(m));
+      copy.parentId = idx === 0 ? null : ancestors[idx - 1].id;
+      return copy;
+    });
+    const now = new Date().toISOString();
+    const forked = {
+      id: `thr-${crypto.randomBytes(5).toString('hex')}`,
+      botId: src.botId,
+      userId: resolveUserScope(userId || src.userId || 'local-owner'),
+      title: String(title || `${src.title} (Fork)`).trim().slice(0, 80),
+      executionMode: src.executionMode || null,
+      spaceId: src.spaceId || null,
+      isSubagent: Boolean(src.isSubagent),
+      parentThreadId: src.id,
+      forkedFromMessageId: targetMsgId,
+      activeLeafId: cloned.at(-1)?.id || null,
+      createdAt: now,
+      updatedAt: now,
+      messages: cloned,
+    };
+    this.state.threads.unshift(forked);
+    if (typeof newUserText === 'string' && newUserText.trim()) {
+      this.appendMessage(forked.id, { role: 'user', content: newUserText.trim() });
+    } else {
+      this.save();
+    }
+    return forked;
+  }
+
+  branchEditMessage({ threadId, id = null, messageId, newContent, userId = null } = {}) {
+    const thread = this.getThread(threadId || id, userId);
+    if (!thread) return null;
+    const idx = thread.messages.findIndex(m => m.id === messageId);
+    if (idx < 0) return null;
+
+    for (let i = 0; i <= idx; i++) {
+      if (thread.messages[i].parentId === undefined) {
+        thread.messages[i].parentId = i === 0 ? null : thread.messages[i - 1].id;
+      }
+    }
+    const target = thread.messages[idx];
+    const branchGroupId = target.branchGroupId || `bg-${crypto.randomBytes(4).toString('hex')}`;
+    target.branchGroupId = branchGroupId;
+    const edited = {
+      id: `msg-${crypto.randomBytes(5).toString('hex')}`,
+      role: target.role || 'user',
+      content: String(newContent ?? ''),
+      createdAt: new Date().toISOString(),
+      parentId: target.parentId ?? null,
+      branchGroupId,
+      editedFromMessageId: target.id,
+    };
+    thread.messages.push(edited);
+    thread.activeLeafId = edited.id;
+    thread.updatedAt = new Date().toISOString();
+    this.save();
+    return {
+      thread,
+      editedMessage: edited,
+      message: edited,
+      branchGroupId,
+      activeMessages: this.#resolveMessageAncestors(thread, edited.id),
+    };
+  }
+
+  switchThreadBranch(threadId, leafMessageId, userId = null) {
+    const thread = this.getThread(threadId, userId);
+    if (!thread || !thread.messages.some(m => m.id === leafMessageId)) return null;
+    thread.activeLeafId = leafMessageId;
+    thread.updatedAt = new Date().toISOString();
+    this.save();
+    return {
+      thread,
+      activeMessages: this.#resolveMessageAncestors(thread, leafMessageId),
+    };
   }
 
   deleteThread(id) {
@@ -1063,46 +1242,153 @@ export class AppStore {
     return false;
   }
 
-  getMemories(botId, userId = null) {
+  getMemories(botId, userId = null, opts = null) {
     const list = this.state.memories[botId] || [];
-    if (!userId) return list;
-    const scope = resolveUserScope(userId);
-    return list.filter(m => resolveUserScope(m.userId || 'local-owner') === scope);
+    const scope = userId ? resolveUserScope(userId) : null;
+    const spaceId = opts && typeof opts === 'object' ? normalizeNullableString(opts.spaceId) : null;
+    const spaceOnly = Boolean(opts && typeof opts === 'object' && opts.spaceOnly);
+    return list.filter(m => {
+      if (scope && resolveUserScope(m.userId || 'local-owner') !== scope) return false;
+      if (spaceId) {
+        if (spaceOnly) return m.spaceId === spaceId;
+        return !m.spaceId || m.spaceId === spaceId;
+      }
+      return true;
+    });
   }
 
-  saveMemory(botId, key, value, { userId = 'local-owner', provenance = 'user', verified = true, confidence = 0.9 } = {}) {
-    const scope = resolveUserScope(userId);
+  saveMemory(
+    botId,
+    key,
+    value,
+    {
+      userId = 'local-owner',
+      provenance = 'user',
+      verified = true,
+      confidence = 0.9,
+      scope = 'global',
+      spaceId = null,
+      pinned = false,
+      sourceThreadId = null,
+    } = {},
+  ) {
+    const userScope = resolveUserScope(userId);
     const cleanKey = String(key);
+    const memScope = scope === 'space' ? 'space' : scope === 'bot' ? 'bot' : 'global';
+    const cleanSpaceId = normalizeNullableString(spaceId);
     const list = this.state.memories[botId] || (this.state.memories[botId] = []);
     const now = new Date().toISOString();
     // Respect tombstones unless user explicitly saves an updated value; clear active tombstone for same key
     if (Array.isArray(this.state.memoryTombstones)) {
       this.state.memoryTombstones = this.state.memoryTombstones.filter(
-        t => !(t.botId === botId && t.key === cleanKey && resolveUserScope(t.userId || 'local-owner') === scope),
+        t => !(t.botId === botId && t.key === cleanKey && resolveUserScope(t.userId || 'local-owner') === userScope),
       );
     }
-    const existing = list.find(m => m.key === cleanKey && resolveUserScope(m.userId || 'local-owner') === scope);
+    const existing = list.find(
+      m =>
+        m.key === cleanKey &&
+        resolveUserScope(m.userId || 'local-owner') === userScope &&
+        (cleanSpaceId ? m.spaceId === cleanSpaceId : !m.spaceId),
+    );
     if (existing) {
       existing.value = String(value);
       existing.provenance = provenance;
       existing.verified = Boolean(verified);
       existing.confidence = Number(confidence) || 0.9;
+      existing.scope = memScope;
+      existing.spaceId = cleanSpaceId;
+      existing.pinned = Boolean(pinned);
+      if (sourceThreadId) existing.sourceThreadId = String(sourceThreadId);
       existing.updatedAt = now;
     } else {
       list.push({
         id: `mem-${crypto.randomBytes(4).toString('hex')}`,
         key: cleanKey,
         value: String(value),
-        userId: scope,
+        userId: userScope,
         provenance,
         verified: Boolean(verified),
         confidence: Number(confidence) || 0.9,
+        scope: memScope,
+        spaceId: cleanSpaceId,
+        pinned: Boolean(pinned),
+        sourceThreadId: normalizeNullableString(sourceThreadId),
         createdAt: now,
         updatedAt: now,
       });
     }
     this.save();
-    return this.getMemories(botId, userId ? scope : null);
+    return this.getMemories(botId, userId ? userScope : null);
+  }
+
+  updateBotMemory({
+    botId = '__shared__',
+    key,
+    value,
+    scope = 'global',
+    spaceId = null,
+    pinned,
+    provenance = 'user',
+    verified = true,
+    confidence = 0.95,
+    sourceThreadId = null,
+    userId = 'local-owner',
+  } = {}) {
+    const cleanKey = String(key || '').trim();
+    if (!cleanKey) throw new Error('Memory key is required');
+    const targetBotId = String(botId || '__shared__');
+    const userScope = resolveUserScope(userId);
+    const memScope = scope === 'space' ? 'space' : scope === 'bot' ? 'bot' : 'global';
+    const cleanSpaceId = memScope === 'space' ? normalizeNullableString(spaceId) : normalizeNullableString(spaceId);
+    const list = this.state.memories[targetBotId] || (this.state.memories[targetBotId] = []);
+    const now = new Date().toISOString();
+
+    if (Array.isArray(this.state.memoryTombstones)) {
+      this.state.memoryTombstones = this.state.memoryTombstones.filter(
+        t => !(t.botId === targetBotId && t.key === cleanKey && resolveUserScope(t.userId || 'local-owner') === userScope),
+      );
+    }
+
+    let existing =
+      list.find(
+        m =>
+          (m.key === cleanKey || m.id === cleanKey) &&
+          resolveUserScope(m.userId || 'local-owner') === userScope &&
+          (cleanSpaceId ? m.spaceId === cleanSpaceId : true),
+      ) || null;
+
+    if (existing) {
+      if (value !== undefined) existing.value = String(value);
+      existing.scope = memScope;
+      existing.spaceId = cleanSpaceId;
+      if (pinned !== undefined) existing.pinned = Boolean(pinned);
+      existing.provenance = String(provenance || existing.provenance || 'user');
+      existing.verified = Boolean(verified);
+      existing.confidence = Number(confidence ?? existing.confidence ?? 0.95);
+      if (sourceThreadId !== undefined && sourceThreadId !== null) {
+        existing.sourceThreadId = normalizeNullableString(sourceThreadId);
+      }
+      existing.updatedAt = now;
+    } else {
+      existing = {
+        id: `mem-${crypto.randomBytes(4).toString('hex')}`,
+        key: cleanKey,
+        value: String(value ?? ''),
+        userId: userScope,
+        scope: memScope,
+        spaceId: cleanSpaceId,
+        pinned: Boolean(pinned),
+        provenance: String(provenance || 'user'),
+        verified: Boolean(verified),
+        confidence: Number(confidence ?? 0.95),
+        sourceThreadId: normalizeNullableString(sourceThreadId),
+        createdAt: now,
+        updatedAt: now,
+      };
+      list.push(existing);
+    }
+    this.save();
+    return existing;
   }
 
   deleteMemory(botId, keyOrId, { userId = null, reason = 'user-deleted' } = {}) {
@@ -1293,20 +1579,79 @@ export class AppStore {
     return reclaimed;
   }
 
+  #normalizeSpace(s) {
+    if (!s || typeof s !== 'object') return s;
+    return {
+      ...s,
+      systemPrompt: typeof s.systemPrompt === 'string' ? s.systemPrompt : '',
+      attachedPaths: Array.isArray(s.attachedPaths) ? s.attachedPaths.map(p => String(p).trim()).filter(Boolean).slice(0, 50) : [],
+      defaultBotId: normalizeNullableString(s.defaultBotId),
+      memoryScope: s.memoryScope === 'global' ? 'global' : 'space',
+    };
+  }
+
   listSpaces(userId = 'local-owner') {
     if (!Array.isArray(this.state.spaces)) {
       this.state.spaces = [
-        { id: 'space-research', title: 'Research Briefs', surface: 'research', icon: 'search', pinned: true, filter: 'research', createdAt: new Date().toISOString() },
-        { id: 'space-code', title: 'Build Workbench', surface: 'code', icon: 'code', pinned: true, filter: 'code', createdAt: new Date().toISOString() },
+        {
+          id: 'space-research',
+          title: 'Research Briefs',
+          surface: 'research',
+          icon: 'search',
+          pinned: true,
+          filter: 'research',
+          systemPrompt: '',
+          attachedPaths: [],
+          defaultBotId: null,
+          memoryScope: 'space',
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'space-code',
+          title: 'Build Workbench',
+          surface: 'code',
+          icon: 'code',
+          pinned: true,
+          filter: 'code',
+          systemPrompt: '',
+          attachedPaths: [],
+          defaultBotId: null,
+          memoryScope: 'space',
+          createdAt: new Date().toISOString(),
+        },
       ];
     }
     const scope = resolveUserScope(userId);
-    return this.state.spaces.filter(s => !s.userId || resolveUserScope(s.userId) === scope);
+    return this.state.spaces
+      .filter(s => !s.userId || resolveUserScope(s.userId) === scope)
+      .map(s => this.#normalizeSpace(s));
   }
 
-  createSpace({ title, surface = 'chat', icon = 'layers', description = '', pinned = true, userId = 'local-owner' } = {}) {
+  getSpace(id, userId = null) {
+    if (!id) return null;
+    if (!Array.isArray(this.state.spaces)) this.listSpaces(userId || 'local-owner');
+    const scope = userId ? resolveUserScope(userId) : null;
+    const found = this.state.spaces.find(
+      s => s.id === id && (!scope || !s.userId || resolveUserScope(s.userId) === scope),
+    );
+    return found ? this.#normalizeSpace(found) : null;
+  }
+
+  createSpace({
+    title,
+    surface = 'chat',
+    icon = 'layers',
+    description = '',
+    pinned = true,
+    userId = 'local-owner',
+    systemPrompt = '',
+    attachedPaths = [],
+    defaultBotId = null,
+    memoryScope = 'space',
+  } = {}) {
     if (!Array.isArray(this.state.spaces)) this.listSpaces(userId);
-    const space = {
+    const now = new Date().toISOString();
+    const space = this.#normalizeSpace({
       id: `space-${crypto.randomBytes(4).toString('hex')}`,
       userId: resolveUserScope(userId),
       title: String(title || 'Custom Space').trim().slice(0, 48),
@@ -1314,11 +1659,60 @@ export class AppStore {
       icon: String(icon || 'layers').trim(),
       description: String(description || '').trim().slice(0, 160),
       pinned: Boolean(pinned),
-      createdAt: new Date().toISOString(),
-    };
+      systemPrompt: String(systemPrompt || '').slice(0, 4000),
+      attachedPaths: Array.isArray(attachedPaths) ? attachedPaths.map(p => String(p).trim()).filter(Boolean).slice(0, 50) : [],
+      defaultBotId: normalizeNullableString(defaultBotId),
+      memoryScope: memoryScope === 'global' ? 'global' : 'space',
+      createdAt: now,
+      updatedAt: now,
+    });
     this.state.spaces.push(space);
     this.save();
     return space;
+  }
+
+  updateSpace(id, patch = {}, userId = 'local-owner') {
+    if (!Array.isArray(this.state.spaces)) this.listSpaces(userId);
+    const scope = userId ? resolveUserScope(userId) : null;
+    const idx = this.state.spaces.findIndex(
+      s => s.id === id && (!scope || !s.userId || resolveUserScope(s.userId) === scope),
+    );
+    if (idx < 0) return null;
+    const cur = this.#normalizeSpace(this.state.spaces[idx]);
+    const next = { ...cur };
+    if ('title' in patch && patch.title !== undefined) {
+      next.title = String(patch.title || cur.title || 'Custom Space').trim().slice(0, 48);
+    }
+    if ('surface' in patch && patch.surface !== undefined) {
+      next.surface = String(patch.surface || 'chat').trim().toLowerCase();
+    }
+    if ('icon' in patch && patch.icon !== undefined) {
+      next.icon = String(patch.icon || 'layers').trim();
+    }
+    if ('description' in patch && patch.description !== undefined) {
+      next.description = String(patch.description || '').trim().slice(0, 160);
+    }
+    if ('pinned' in patch && patch.pinned !== undefined) {
+      next.pinned = Boolean(patch.pinned);
+    }
+    if ('systemPrompt' in patch && patch.systemPrompt !== undefined) {
+      next.systemPrompt = String(patch.systemPrompt || '').slice(0, 4000);
+    }
+    if ('attachedPaths' in patch && patch.attachedPaths !== undefined) {
+      next.attachedPaths = Array.isArray(patch.attachedPaths)
+        ? patch.attachedPaths.map(p => String(p).trim()).filter(Boolean).slice(0, 50)
+        : [];
+    }
+    if ('defaultBotId' in patch) {
+      next.defaultBotId = normalizeNullableString(patch.defaultBotId);
+    }
+    if ('memoryScope' in patch && patch.memoryScope !== undefined) {
+      next.memoryScope = patch.memoryScope === 'global' ? 'global' : 'space';
+    }
+    next.updatedAt = new Date().toISOString();
+    this.state.spaces[idx] = next;
+    this.save();
+    return next;
   }
 
   deleteSpace(id, userId = 'local-owner') {

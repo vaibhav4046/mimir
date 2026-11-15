@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch } from '../api.js';
 import {
   AttachmentFileSvg,
@@ -13,32 +13,66 @@ import {
   YggdrasilCrestSvg,
 } from './Icons.jsx';
 import { MimirAsset, RealmNavigator } from './MimirAsset.jsx';
+import { CanvasPane } from './CanvasPane.jsx';
 
-function FileTree({ nodes }) {
+function formatBrowserStateLabel(raw) {
+  const val = String(raw || '').trim();
+  if (!val) return '';
+  const lower = val.toLowerCase();
+  if (lower === 'blocked_by_challenge') return 'Sign-in needed';
+  if (lower === 'idle' || lower === 'work view idle') return 'Idle';
+  if (lower === 'authorized' || lower === 'work view authorized' || lower === 'active') return 'Ready';
+  if (lower === 'running' || lower === 'busy') return 'Running';
+  return val.replace(/_/g, ' ');
+}
+
+function FileTree({ nodes, onOpenFile }) {
   if (!nodes?.length) {
     return <div style={{ color: 'var(--ink-subtle)', fontSize: 12 }}>Workspace is empty.</div>;
   }
   return (
-    <ul style={{ listStyle: 'none', paddingLeft: 12, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <ul style={{ listStyle: 'none', paddingLeft: 10, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
       {nodes.map(n => (
         <li key={n.path}>
-          <div style={{ fontFamily: 'var(--sand-mono)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <AttachmentFileSvg size={12} />
-            <span>
-              {n.name}
-              {n.type === 'dir' ? '/' : ` (${n.size}B)`}
-            </span>
-          </div>
-          {n.children?.length > 0 && <FileTree nodes={n.children} />}
+          {n.type === 'dir' ? (
+            <div style={{ fontFamily: 'var(--sand-mono)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5, padding: '2px 4px', color: 'var(--ink-muted)' }}>
+              <AttachmentFileSvg size={12} />
+              <span>{n.name}/</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-sm"
+              data-testid={`file-tree-item-${n.path}`}
+              onClick={() => onOpenFile?.(n.path)}
+              style={{
+                width: '100%',
+                justifyContent: 'space-between',
+                textAlign: 'left',
+                fontFamily: 'var(--sand-mono)',
+                fontSize: 12,
+                padding: '4px 8px',
+                minHeight: 30,
+              }}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <AttachmentFileSvg size={12} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{n.name}</span>
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--ink-subtle)', flex: 'none' }}>{n.size}B</span>
+            </button>
+          )}
+          {n.children?.length > 0 && <FileTree nodes={n.children} onOpenFile={onOpenFile} />}
         </li>
       ))}
     </ul>
   );
 }
 
-/** Facts every bot sees in every chat. Saved when the user says "remember that …". */
-function SharedMemoryList() {
+/** Facts every bot sees in every chat. Saved when the user says "remember that ...". */
+function SharedMemoryList({ filterQuery = '' }) {
   const [facts, setFacts] = useState(null);
+  const [memErr, setMemErr] = useState('');
   const load = () => apiFetch('/v1/memory/shared').then(r => setFacts(r.facts || [])).catch(() => setFacts([]));
   useEffect(() => {
     load();
@@ -46,22 +80,47 @@ function SharedMemoryList() {
     return () => clearInterval(id);
   }, []);
   const forget = async key => {
-    await apiFetch(`/v1/memory/shared/${encodeURIComponent(key)}`, { method: 'DELETE' });
-    load();
+    setMemErr('');
+    try {
+      await apiFetch(`/v1/memory/shared/${encodeURIComponent(key)}`, { method: 'DELETE' });
+      load();
+    } catch (err) {
+      setMemErr(err?.message || 'Could not remove shared memory.');
+    }
   };
+  const q = filterQuery.trim().toLowerCase();
+  const visible = (facts || []).filter(f => {
+    if (!q) return true;
+    return `${f.key || ''} ${f.value || ''}`.toLowerCase().includes(q);
+  });
   return (
     <div data-testid="shared-memory" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
       <span style={{ fontSize: 11.5, color: 'var(--brass)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         Remembered in every chat
       </span>
+      {memErr && <div className="error-banner" role="alert">{memErr}</div>}
       {facts?.length === 0 && (
-        <div style={{ fontSize: 12.5, color: 'var(--ink-muted)' }}>Nothing yet. Say “remember that …” in any chat and every bot will know it.</div>
+        <div style={{ fontSize: 12.5, color: 'var(--ink-muted)' }}>Nothing yet. Say "remember that ..." in any chat and every bot will know it.</div>
       )}
-      {(facts || []).map(f => (
-        <div key={f.key} className="card" style={{ padding: 10, gap: 4, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 12.5 }}>{f.value}</div>
-          <button type="button" className="btn btn-icon btn-sm" aria-label={`Forget: ${f.value}`} style={{ width: 22, height: 22, flex: 'none' }} onClick={() => forget(f.key)}>
-            <CloseCrossSvg size={11} />
+      {facts?.length > 0 && visible.length === 0 && (
+        <div style={{ fontSize: 12, color: 'var(--ink-subtle)' }}>No shared memories match this filter.</div>
+      )}
+      {visible.map(f => (
+        <div key={f.key} className="card" style={{ padding: 10, gap: 6, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 12.5, wordBreak: 'break-word' }}>{f.value}</div>
+            <div style={{ fontSize: 10.5, color: 'var(--ink-subtle)', marginTop: 2 }}>
+              Scope: {f.scope || 'global'}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn btn-icon btn-sm"
+            aria-label={`Forget: ${f.value}`}
+            style={{ minWidth: 32, minHeight: 32, flex: 'none' }}
+            onClick={() => forget(f.key)}
+          >
+            <CloseCrossSvg size={12} />
           </button>
         </div>
       ))}
@@ -72,6 +131,7 @@ function SharedMemoryList() {
 const PREVIEW_TABS = [
   { id: 'team', label: 'Team', icon: 'allies' },
   { id: 'screen', label: 'Screen', icon: 'screen' },
+  { id: 'canvas', label: 'Canvas', icon: 'code-mode' },
   { id: 'files', label: 'Files', icon: 'workspace' },
   { id: 'activity', label: 'Activity', icon: 'activity' },
   { id: 'memory', label: 'Memory', icon: 'memory' },
@@ -79,10 +139,12 @@ const PREVIEW_TABS = [
 
 export function ComputerPane({
   botId,
+  threadId = null,
   computerState,
   memories,
   settings,
   teamOverview = null,
+  canvasTarget = null,
   onDeployChiefTeam = null,
   onSelectBot = null,
   onSettingsChange,
@@ -91,6 +153,7 @@ export function ComputerPane({
 }) {
   const showDevTools = Boolean(settings?.showDeveloperTools);
   const [subTab, setSubTab] = useState('screen');
+  const [activeCanvasTarget, setActiveCanvasTarget] = useState(null);
   const [expandedSkill, setExpandedSkill] = useState('');
   const [deploying, setDeploying] = useState(false);
   const [urlDraft, setUrlDraft] = useState(computerState?.browser?.url || '');
@@ -100,11 +163,19 @@ export function ComputerPane({
   const [screenErr, setScreenErr] = useState('');
   const [desktopSnap, setDesktopSnap] = useState(null);
   const [showRealms, setShowRealms] = useState(false);
+  const [showTargets, setShowTargets] = useState(false);
+  const [screenFocusHint, setScreenFocusHint] = useState(false);
   const [enlarged, setEnlarged] = useState(false);
   const [suiteReport, setSuiteReport] = useState(null);
   const [suiteRunning, setSuiteRunning] = useState(false);
   const [memKey, setMemKey] = useState('');
   const [memVal, setMemVal] = useState('');
+  const [memFilter, setMemFilter] = useState('');
+  const [editingMemKey, setEditingMemKey] = useState('');
+  const [editMemVal, setEditMemVal] = useState('');
+  const [editMemScope, setEditMemScope] = useState('bot');
+  const [editMemPinned, setEditMemPinned] = useState(false);
+  const [memBusy, setMemBusy] = useState(false);
   const [activeRealm, setActiveRealm] = useState('midgard');
   const [warping, setWarping] = useState(false);
   const [receiptsLedger, setReceiptsLedger] = useState(null);
@@ -117,6 +188,19 @@ export function ComputerPane({
   const [skillNotice, setSkillNotice] = useState('');
   const tabRefs = useRef({});
   const dragStartRef = useRef(null);
+  const screenFrameRef = useRef(null);
+
+  useEffect(() => {
+    if (!canvasTarget) return;
+    setActiveCanvasTarget(canvasTarget);
+    setSubTab('canvas');
+  }, [canvasTarget]);
+
+  const openWorkspaceFile = relPath => {
+    if (!relPath) return;
+    setActiveCanvasTarget({ path: relPath, openRequestedAt: Date.now() });
+    setSubTab('canvas');
+  };
 
   const loadSessions = async () => {
     if (!botId) return;
@@ -463,7 +547,22 @@ export function ComputerPane({
     if (!typeDraft) return;
     const text = typeDraft;
     setTypeDraft('');
-    await runAction({ action: 'type', text, submit: true, ...(userControl ? { source: 'user' } : {}) });
+    await runAction({ action: 'type', type: 'type', text, submit: true, ...(userControl ? { source: 'user' } : {}) });
+  };
+
+  const handleScreenKeyDown = async e => {
+    if (!userControl || !b?.screenshotBase64 || busy) return;
+    if (e.target !== e.currentTarget) return;
+    if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
+    e.preventDefault();
+    const isChar = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+    await runAction({
+      action: 'key',
+      type: 'key',
+      key: e.key,
+      ...(isChar ? { text: e.key } : {}),
+      source: 'user',
+    });
   };
 
   const handleModeSwitch = async nextMode => {
@@ -532,15 +631,60 @@ export function ComputerPane({
     }
   };
 
+  const startEditMem = m => {
+    setEditingMemKey(m.key);
+    setEditMemVal(m.value || '');
+    setEditMemScope(m.scope || 'bot');
+    setEditMemPinned(Boolean(m.pinned));
+  };
+
+  const saveEditedMem = async e => {
+    e.preventDefault();
+    if (!editingMemKey || !editMemVal.trim() || memBusy) return;
+    setMemBusy(true);
+    setScreenErr('');
+    try {
+      await apiFetch(`/v1/bots/${encodeURIComponent(botId)}/memories/${encodeURIComponent(editingMemKey)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          value: editMemVal.trim(),
+          scope: editMemScope,
+          pinned: editMemPinned,
+        }),
+      });
+      setEditingMemKey('');
+      setEditMemVal('');
+      await onRefresh?.();
+    } catch (err) {
+      setScreenErr(err?.message || 'Could not update memory.');
+    } finally {
+      setMemBusy(false);
+    }
+  };
+
   const delMem = async key => {
     setScreenErr('');
     try {
       await apiFetch(`/v1/bots/${encodeURIComponent(botId)}/memories/${encodeURIComponent(key)}`, { method: 'DELETE' });
+      if (editingMemKey === key) setEditingMemKey('');
       await onRefresh();
     } catch (err) {
       setScreenErr(err?.message || 'Failed deleting memory.');
     }
   };
+
+  const filteredMemories = useMemo(() => {
+    const q = memFilter.trim().toLowerCase();
+    const list = memories || [];
+    if (!q) return list;
+    return list.filter(m =>
+      `${m.key || ''} ${m.value || ''} ${m.scope || ''} ${m.spaceId || ''} ${m.provenance?.sourceThreadId || ''}`
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [memories, memFilter]);
+
+  const browserStateLabel = formatBrowserStateLabel(b?.browserState);
 
   return (
     <aside className={`computer-pane ${enlarged ? 'is-enlarged' : ''}`} data-testid="computer-pane" aria-label="Work View and Browser">
@@ -548,9 +692,9 @@ export function ComputerPane({
         <strong style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--brass)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <MimirAsset category="artifacts" name="bifrost-portal" size={16} />
           Work view
-          {b?.browserState && (
+          {browserStateLabel && (
             <span className="pill" data-testid="browser-state-pill" style={{ fontSize: 10 }}>
-              {b.browserState}
+              {browserStateLabel}
             </span>
           )}
         </strong>
@@ -632,12 +776,12 @@ export function ComputerPane({
                         disabled={busy}
                         onClick={handleRunChiefPlaybook}
                       >
-                        Run sample handoff (@Mara → @Cole)
+                        Run sample handoff (@Mara to @Cole)
                       </button>
                     </div>
                   )}
                   {playbookNotice && (
-                    <div style={{ fontSize: 11, color: '#5cf2b4', fontFamily: 'var(--sand-mono)' }} data-testid="playbook-notice">
+                    <div style={{ fontSize: 11, color: 'var(--ok)', fontFamily: 'var(--sand-mono)' }} data-testid="playbook-notice">
                       {playbookNotice}
                     </div>
                   )}
@@ -650,24 +794,24 @@ export function ComputerPane({
                   </div>
                   <svg
                     viewBox="0 0 260 112"
-                    className="team-topology-svg"
+                    className="team-topology-svg topology-svg"
                     shapeRendering="crispEdges"
                     role="img"
                     aria-label="Chief of Staff Team Topology diagram"
                   >
-                    <rect x="0" y="0" width="260" height="112" fill="#070c16" stroke="#1e2d48" />
-                    <path d="M130 34v18M32 52h196M32 52v14M81 52v14M130 52v14M179 52v14M228 52v14" stroke="#33486b" strokeWidth="2" strokeDasharray="3 3" fill="none" />
-                    <rect x="108" y="8" width="44" height="26" fill="#182238" stroke={teamOverview.chief.color || '#e54868'} strokeWidth="2" />
-                    <rect x="122" y="13" width="16" height="10" fill={teamOverview.chief.color || '#e54868'} />
-                    <rect x="126" y="16" width="3" height="3" fill="#081019" />
-                    <rect x="131" y="16" width="3" height="3" fill="#081019" />
-                    <text x="130" y="31" textAnchor="middle" fill="#e6ecf5" fontSize="6" fontFamily="monospace">
+                    <rect x="0" y="0" width="260" height="112" fill="var(--bg-canvas)" stroke="var(--rule)" />
+                    <path d="M130 34v18M32 52h196M32 52v14M81 52v14M130 52v14M179 52v14M228 52v14" stroke="var(--rule-strong)" strokeWidth="2" strokeDasharray="3 3" fill="none" />
+                    <rect x="108" y="8" width="44" height="26" fill="var(--bg-surface)" stroke={teamOverview.chief.color || 'var(--brass)'} strokeWidth="2" />
+                    <rect x="122" y="13" width="16" height="10" fill={teamOverview.chief.color || 'var(--brass)'} />
+                    <rect x="126" y="16" width="3" height="3" fill="var(--bg-canvas)" />
+                    <rect x="131" y="16" width="3" height="3" fill="var(--bg-canvas)" />
+                    <text x="130" y="31" textAnchor="middle" fill="var(--ink)" fontSize="6" fontFamily="monospace">
                       {teamOverview.chief.name.slice(0, 8)}
                     </text>
 
                     {(teamOverview.specialists || []).slice(0, 5).map((sp, i) => {
                       const cx = 32 + i * 49;
-                      const col = sp.color || '#3ac9ff';
+                      const col = sp.color || 'var(--frost)';
                       return (
                         <g
                           key={sp.id}
@@ -683,11 +827,11 @@ export function ComputerPane({
                           }}
                           style={{ cursor: 'pointer' }}
                         >
-                          <rect x={cx - 19} y="66" width="38" height="34" fill="#101829" stroke={sp.state === 'working' ? '#e6ab42' : col} strokeWidth="1.5" />
+                          <rect x={cx - 19} y="66" width="38" height="34" fill="var(--bg-elevated)" stroke={sp.state === 'working' ? 'var(--warn)' : col} strokeWidth="1.5" />
                           <rect x={cx - 7} y="71" width="14" height="10" fill={col} />
-                          <rect x={cx - 4} y="74" width="2.5" height="3" fill="#081019" />
-                          <rect x={cx + 1.5} y="74" width="2.5" height="3" fill="#081019" />
-                          <text x={cx} y="91" textAnchor="middle" fill="#dfe6f0" fontSize="6.2" fontFamily="monospace">
+                          <rect x={cx - 4} y="74" width="2.5" height="3" fill="var(--bg-canvas)" />
+                          <rect x={cx + 1.5} y="74" width="2.5" height="3" fill="var(--bg-canvas)" />
+                          <text x={cx} y="91" textAnchor="middle" fill="var(--ink)" fontSize="6.2" fontFamily="monospace">
                             {sp.name.slice(0, 7)}
                           </text>
                         </g>
@@ -854,6 +998,49 @@ export function ComputerPane({
             <div className="browser-control-bar">
               <button
                 type="button"
+                className="btn btn-sm"
+                data-testid="browser-back-btn"
+                aria-label="Browser back"
+                title="Back"
+                disabled={busy}
+                onClick={() => runAction({ action: 'back', type: 'back' })}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm"
+                data-testid="browser-forward-btn"
+                aria-label="Browser forward"
+                title="Forward"
+                disabled={busy}
+                onClick={() => runAction({ action: 'forward', type: 'forward' })}
+              >
+                Forward
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm"
+                data-testid="browser-reload-btn"
+                aria-label="Reload page"
+                title="Reload"
+                disabled={busy}
+                onClick={() => runAction({ action: 'reload', type: 'reload' })}
+              >
+                Reload
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${showTargets ? 'btn-primary' : ''}`}
+                data-testid="toggle-element-targets-btn"
+                aria-pressed={showTargets}
+                disabled={busy || !(b?.interactiveElements?.length)}
+                onClick={() => setShowTargets(v => !v)}
+              >
+                {showTargets ? 'Hide targets' : 'Show element targets'}
+              </button>
+              <button
+                type="button"
                 className={`btn btn-sm browser-take-control-btn ${userControl ? 'is-active' : ''}`}
                 data-testid="browser-take-control-btn"
                 disabled={busy || suiteRunning}
@@ -936,7 +1123,7 @@ export function ComputerPane({
             </form>
 
             {screenErr && (
-              <div style={{ padding: 8, background: 'var(--err-soft)', border: '1px solid var(--err)', fontSize: 12, color: 'var(--err)' }}>
+              <div className="error-banner" role="alert">
                 {screenErr}
               </div>
             )}
@@ -948,7 +1135,7 @@ export function ComputerPane({
                   <span>Please sign in to continue</span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink)' }}>
-                  Paused at <code>{b.challengeUrl || b.url || 'sign-in page'}</code>. Your password never goes into chat — sign in inside this browser window, then click Resume.
+                  Paused at <code>{b.challengeUrl || b.url || 'sign-in page'}</code>. Your password never goes into chat: sign in inside this browser window, then click Resume.
                 </div>
                 <div>
                   <button
@@ -976,7 +1163,7 @@ export function ComputerPane({
                   type="button"
                   className="btn btn-sm"
                   data-testid="save-session-handoff-btn"
-                  style={{ minHeight: 22, padding: '2px 8px', fontSize: 11 }}
+                  style={{ minHeight: 28, padding: '2px 8px', fontSize: 11 }}
                   disabled={busy}
                   onClick={handleSaveSessionHandoff}
                 >
@@ -984,7 +1171,7 @@ export function ComputerPane({
                 </button>
               </div>
               {handoffNotice && (
-                <div style={{ fontSize: 10.5, color: '#5cf2b4', fontFamily: 'var(--sand-mono)' }}>
+                <div style={{ fontSize: 10.5, color: 'var(--ok)', fontFamily: 'var(--sand-mono)' }}>
                   {handoffNotice}
                 </div>
               )}
@@ -998,7 +1185,7 @@ export function ComputerPane({
                         type="button"
                         className="btn btn-sm"
                         data-testid={`restore-session-${s.id}`}
-                        style={{ minHeight: 18, padding: '0 6px', fontSize: 10 }}
+                        style={{ minHeight: 24, padding: '0 6px', fontSize: 10 }}
                         disabled={busy}
                         onClick={() => handleRestoreSessionHandoff(s.id)}
                       >
@@ -1010,20 +1197,74 @@ export function ComputerPane({
               )}
             </div>
 
-            <div className="screen-frame">
+            <div
+              ref={screenFrameRef}
+              className="screen-frame"
+              tabIndex={userControl && b?.screenshotBase64 ? 0 : undefined}
+              aria-label={userControl ? 'Interactive browser screen. Focus and type keys directly.' : undefined}
+              onFocus={() => { if (userControl) setScreenFocusHint(true); }}
+              onBlur={() => setScreenFocusHint(false)}
+              onKeyDown={handleScreenKeyDown}
+            >
               {b?.screenshotBase64 ? (
                 <>
                   <img
                     src={`data:image/jpeg;base64,${b.screenshotBase64}`}
-                    alt={b.title || 'Interactive browser screen — click, drag/draw, or scroll directly'}
-                    title={userControl ? 'Manual control active: click, drag/draw, or scroll directly' : 'Click or drag directly on preview'}
-                    onMouseDown={handlePointerDown}
+                    alt={b.title || 'Interactive browser screen: click, drag, or scroll directly'}
+                    title={userControl ? 'Manual control active: click, drag, scroll, or focus and type directly' : 'Click or drag directly on preview'}
+                    onMouseDown={e => {
+                      if (userControl) screenFrameRef.current?.focus?.();
+                      handlePointerDown(e);
+                    }}
                     onMouseUp={handlePointerUp}
                     onWheel={handleScreenWheel}
                   />
                   {userControl && (
                     <div className="take-control-badge" data-testid="take-control-badge">
-                      HUMAN CONTROL ACTIVE · Click, Drag/Draw, or Scroll
+                      {screenFocusHint
+                        ? 'KEYBOARD CAPTURE ACTIVE · Type keys directly'
+                        : 'HUMAN CONTROL ACTIVE · Click screen to type, drag, or scroll'}
+                    </div>
+                  )}
+                  {showTargets && (b?.interactiveElements || []).length > 0 && (
+                    <div className="screen-element-overlay" data-testid="screen-element-overlay">
+                      {b.interactiveElements.map((el, idx) => {
+                        const leftPct = Math.max(0, Math.min(97, ((el.x - el.w / 2) / 1280) * 100));
+                        const topPct = Math.max(0, Math.min(97, ((el.y - el.h / 2) / 800) * 100));
+                        const widthPct = Math.max(1.8, Math.min(100 - leftPct, (el.w / 1280) * 100));
+                        const heightPct = Math.max(2.4, Math.min(100 - topPct, (el.h / 800) * 100));
+                        const targetNum = el.index ?? idx;
+                        return (
+                          <button
+                            key={`target-${targetNum}-${el.selector}`}
+                            type="button"
+                            className="screen-target-box"
+                            data-testid={`screen-target-box-${targetNum}`}
+                            aria-label={`Click element ${targetNum}: ${el.label || el.selector}`}
+                            title={`#${targetNum} [${el.tag}] ${el.label || el.selector}`}
+                            style={{
+                              left: `${leftPct}%`,
+                              top: `${topPct}%`,
+                              width: `${widthPct}%`,
+                              height: `${heightPct}%`,
+                            }}
+                            onMouseDown={e => e.stopPropagation()}
+                            onMouseUp={e => e.stopPropagation()}
+                            onClick={e => {
+                              e.stopPropagation();
+                              runAction({
+                                action: 'clickElement',
+                                type: 'clickElement',
+                                elementIndex: targetNum,
+                                selector: el.selector,
+                                ...(userControl ? { source: 'user' } : {}),
+                              });
+                            }}
+                          >
+                            <span>{targetNum}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                   {!userControl && agentCursor && Array.isArray(agentCursor.trail) && agentCursor.trail.length > 1 && (
@@ -1140,7 +1381,7 @@ export function ComputerPane({
             {suiteReport && (
               <div className="suite-report-card" data-testid="browser-suite-report">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, fontWeight: 700 }}>
-                  <span style={{ color: suiteReport.allPassed ? '#86efac' : 'var(--warn)' }}>
+                  <span style={{ color: suiteReport.allPassed ? 'var(--ok)' : 'var(--warn)' }}>
                     5-Tier Agentic Browser Suite: {suiteReport.passedTiers}/{suiteReport.totalTiers} Passed ({suiteReport.durationMs}ms)
                   </span>
                   <button type="button" className="btn btn-sm" onClick={() => setSuiteReport(null)}>
@@ -1169,7 +1410,7 @@ export function ComputerPane({
                       key={`${el.index}-${el.selector}`}
                       type="button"
                       className="btn btn-sm"
-                      style={{ fontSize: 11, padding: '2px 7px', minHeight: 24 }}
+                      style={{ fontSize: 11, padding: '2px 7px', minHeight: 26 }}
                       title={`Click ${el.selector} (${el.x}, ${el.y})`}
                       onClick={() => runAction({ action: 'click', selector: el.selector })}
                     >
@@ -1187,6 +1428,15 @@ export function ComputerPane({
               </div>
             )}
           </>
+        )}
+
+        {subTab === 'canvas' && (
+          <CanvasPane
+            botId={botId}
+            threadId={threadId}
+            fileTarget={activeCanvasTarget}
+            onSaved={onRefresh}
+          />
         )}
 
         {subTab === 'files' && (
@@ -1242,7 +1492,7 @@ export function ComputerPane({
                   </button>
                 </div>
                 {snapshotNotice && (
-                  <div style={{ fontSize: 10.5, color: '#5cf2b4', fontFamily: 'var(--sand-mono)' }} data-testid="snapshot-notice">
+                  <div style={{ fontSize: 10.5, color: 'var(--ok)', fontFamily: 'var(--sand-mono)' }} data-testid="snapshot-notice">
                     {snapshotNotice}
                   </div>
                 )}
@@ -1256,7 +1506,7 @@ export function ComputerPane({
                   <span>Saved repeatable tasks ({computerState.workspaceLayout.skillFiles.length})</span>
                 </div>
                 {skillNotice && (
-                  <div style={{ fontSize: 10.5, color: '#5cf2b4', fontFamily: 'var(--sand-mono)' }} data-testid="skill-run-notice">
+                  <div style={{ fontSize: 10.5, color: 'var(--ok)', fontFamily: 'var(--sand-mono)' }} data-testid="skill-run-notice">
                     {skillNotice}
                   </div>
                 )}
@@ -1272,7 +1522,7 @@ export function ComputerPane({
                           type="button"
                           className="btn btn-sm btn-primary"
                           data-testid={`run-skill-${sk.slug}`}
-                          style={{ minHeight: 22, padding: '1px 7px', fontSize: 10.5 }}
+                          style={{ minHeight: 24, padding: '1px 7px', fontSize: 10.5 }}
                           disabled={busy}
                           onClick={() => handleRunSkill(sk.slug)}
                         >
@@ -1281,7 +1531,7 @@ export function ComputerPane({
                         <button
                           type="button"
                           className="btn btn-sm"
-                          style={{ minHeight: 22, padding: '1px 6px', fontSize: 10.5 }}
+                          style={{ minHeight: 24, padding: '1px 6px', fontSize: 10.5 }}
                           onClick={() => setExpandedSkill(prev => (prev === sk.fileName ? '' : sk.fileName))}
                         >
                           {expandedSkill === sk.fileName ? 'Hide' : 'Read .md'}
@@ -1300,7 +1550,7 @@ export function ComputerPane({
                     )}
                     {Array.isArray(sk.guardrails) && sk.guardrails.length > 0 && (
                       <div className="skill-guardrails-box">
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: 10.5, color: '#5cf2b4' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: 10.5, color: 'var(--ok)' }}>
                           <ReversibleShieldSvg size={11} />
                           <span>Guardrails</span>
                         </div>
@@ -1317,7 +1567,7 @@ export function ComputerPane({
               </div>
             )}
 
-            <FileTree nodes={computerState?.files} />
+            <FileTree nodes={computerState?.files} onOpenFile={openWorkspaceFile} />
           </div>
         )}
 
@@ -1337,14 +1587,14 @@ export function ComputerPane({
                           : `Mismatch @ #${receiptsLedger.chain.brokenIndex}`}
                       </span>
                     )}
-                    <button type="button" className="btn btn-sm" style={{ minHeight: 22, fontSize: 10.5 }} onClick={loadReceipts}>
+                    <button type="button" className="btn btn-sm" style={{ minHeight: 24, fontSize: 10.5 }} onClick={loadReceipts}>
                       Check
                     </button>
                     {receiptsLedger?.receipts?.length > 0 && (
                       <button
                         type="button"
                         className="btn btn-sm"
-                        style={{ minHeight: 22, fontSize: 10.5 }}
+                        style={{ minHeight: 24, fontSize: 10.5 }}
                         onClick={() => {
                           navigator.clipboard?.writeText(JSON.stringify(receiptsLedger, null, 2));
                           setCopiedLedger(true);
@@ -1373,16 +1623,16 @@ export function ComputerPane({
                           </span>
                           {r.status === 'WAITING_FOR_APPROVAL' && (
                             <>
-                              <button type="button" className="btn btn-sm btn-primary" style={{ minHeight: 20, fontSize: 10 }} disabled={busy} onClick={() => handleRunAction(r.id, 'approve')}>
+                              <button type="button" className="btn btn-sm btn-primary" style={{ minHeight: 24, fontSize: 10 }} disabled={busy} onClick={() => handleRunAction(r.id, 'approve')}>
                                 Approve
                               </button>
-                              <button type="button" className="btn btn-sm" style={{ minHeight: 20, fontSize: 10 }} disabled={busy} onClick={() => handleRunAction(r.id, 'deny')}>
+                              <button type="button" className="btn btn-sm" style={{ minHeight: 24, fontSize: 10 }} disabled={busy} onClick={() => handleRunAction(r.id, 'deny')}>
                                 Deny
                               </button>
                             </>
                           )}
                           {(r.status === 'RUNNING' || r.status === 'WAITING_FOR_APPROVAL' || r.status === 'CLAIMED') && (
-                            <button type="button" className="btn btn-sm" style={{ minHeight: 20, fontSize: 10 }} disabled={busy} onClick={() => handleRunAction(r.id, 'cancel')}>
+                            <button type="button" className="btn btn-sm" style={{ minHeight: 24, fontSize: 10 }} disabled={busy} onClick={() => handleRunAction(r.id, 'cancel')}>
                               Cancel
                             </button>
                           )}
@@ -1443,7 +1693,7 @@ export function ComputerPane({
                       />
                       <span>{item.toolName}</span>
                     </span>
-                    <span style={{ color: item.ok ? 'var(--ok)' : 'var(--err)' }}>
+                    <span style={{ color: item.ok ? 'var(--ok)' : 'var(--err-ink, var(--err))' }}>
                       {item.ok ? 'OK' : 'FAILED'}
                     </span>
                   </div>
@@ -1455,9 +1705,18 @@ export function ComputerPane({
         )}
 
         {subTab === 'memory' && (
-          <>
-            <SharedMemoryList />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} data-testid="memory-subtab">
+            <input
+              type="search"
+              className="input"
+              data-testid="memory-search-input"
+              aria-label="Filter memories"
+              placeholder="Search memories by key, text, or scope..."
+              value={memFilter}
+              onChange={e => setMemFilter(e.target.value)}
+            />
+            <SharedMemoryList filterQuery={memFilter} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
               <MimirAsset category="artifacts" name="well-of-wisdom" size={22} />
               <span style={{ fontSize: 11.5, color: 'var(--brass)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Notes for this helper
@@ -1470,20 +1729,106 @@ export function ComputerPane({
                 Save note
               </button>
             </form>
+            {screenErr && <div className="error-banner" role="alert">{screenErr}</div>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {(memories || []).map(m => (
-                <div key={m.key} className="card" style={{ padding: 10, gap: 4 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <code style={{ fontSize: 12 }}>{m.key}</code>
-                    <button type="button" className="btn btn-icon btn-sm" aria-label={`Delete memory ${m.key}`} style={{ width: 22, height: 22 }} onClick={() => delMem(m.key)}>
-                      <CloseCrossSvg size={11} />
-                    </button>
-                  </div>
-                  <div style={{ fontSize: 12.5 }}>{m.value}</div>
+              {filteredMemories.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--ink-muted)' }}>
+                  {(memories || []).length === 0 ? 'No helper notes saved yet.' : 'No helper notes match this filter.'}
                 </div>
-              ))}
+              ) : (
+                filteredMemories.map(m => {
+                  const isEditing = editingMemKey === m.key;
+                  const provThread = m.provenance?.sourceThreadId;
+                  const provUpdated = m.provenance?.updatedAt || m.updatedAt;
+                  const provConfidence = m.provenance?.confidence;
+                  return (
+                    <div key={m.key} className="card" style={{ padding: 10, gap: 6 }} data-testid={`memory-card-${m.key}`}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', minWidth: 0 }}>
+                          <code style={{ fontSize: 12 }}>{m.key}</code>
+                          <span className="pill" style={{ fontSize: 10 }}>{m.scope || 'bot'}</span>
+                          {m.spaceId && <span className="pill is-cyan" style={{ fontSize: 10 }}>Space: {m.spaceId}</span>}
+                          {m.pinned && <span className="pill is-gold" style={{ fontSize: 10 }}>Pinned</span>}
+                        </div>
+                        <div style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+                          {!isEditing && (
+                            <button
+                              type="button"
+                              className="btn btn-sm"
+                              data-testid={`memory-edit-btn-${m.key}`}
+                              style={{ minHeight: 30, padding: '2px 8px', fontSize: 11 }}
+                              onClick={() => startEditMem(m)}
+                            >
+                              Edit
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="btn btn-icon btn-sm"
+                            aria-label={`Delete memory ${m.key}`}
+                            style={{ minWidth: 32, minHeight: 32 }}
+                            onClick={() => delMem(m.key)}
+                          >
+                            <CloseCrossSvg size={12} />
+                          </button>
+                        </div>
+                      </div>
+                      {isEditing ? (
+                        <form onSubmit={saveEditedMem} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <textarea
+                            className="textarea"
+                            rows={2}
+                            data-testid={`memory-edit-input-${m.key}`}
+                            aria-label={`Edit value for ${m.key}`}
+                            value={editMemVal}
+                            onChange={e => setEditMemVal(e.target.value)}
+                          />
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <select
+                              className="select"
+                              aria-label="Memory scope"
+                              value={editMemScope}
+                              onChange={e => setEditMemScope(e.target.value)}
+                              style={{ flex: '1 1 110px' }}
+                            >
+                              <option value="bot">Helper only</option>
+                              <option value="space">Space</option>
+                              <option value="global">Global</option>
+                            </select>
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
+                              <input
+                                type="checkbox"
+                                checked={editMemPinned}
+                                onChange={e => setEditMemPinned(e.target.checked)}
+                              />
+                              Pinned
+                            </label>
+                          </div>
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                            <button type="button" className="btn btn-sm" onClick={() => setEditingMemKey('')}>
+                              Cancel
+                            </button>
+                            <button type="submit" className="btn btn-primary btn-sm" data-testid={`memory-save-btn-${m.key}`} disabled={memBusy}>
+                              {memBusy ? 'Saving...' : 'Save'}
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <div style={{ fontSize: 12.5, wordBreak: 'break-word' }}>{m.value}</div>
+                      )}
+                      {(provThread || provUpdated || provConfidence != null) && (
+                        <div style={{ fontSize: 10.5, color: 'var(--ink-subtle)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {provThread && <span>Source thread: <code>{String(provThread).slice(0, 12)}</code></span>}
+                          {provConfidence != null && <span>Confidence: {Math.round(Number(provConfidence) * 100)}%</span>}
+                          {provUpdated && <span>Updated: {new Date(provUpdated).toLocaleDateString()}</span>}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
-          </>
+          </div>
         )}
       </div>
     </aside>
