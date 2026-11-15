@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fetchLiveSearch } from './knowledge-rsi.mjs';
+import { resolveActiveModel } from './agi-harness.mjs';
 import { ModelCouncilEngine } from './model-council.mjs';
 
 export const SWARM_RECIPES = Object.freeze([
@@ -278,9 +279,16 @@ export class DagSwarmEngine {
       build: async () => {
         const spec = ctx.outputs.elephant;
         const kbHits = ctx.outputs.search || [];
+        let wsFiles = '';
+        try {
+          const ws = bot?.id && this.store?.getBotWorkspace ? this.store.getBotWorkspace(bot.id) : null;
+          if (ws && fs.existsSync(ws)) {
+            wsFiles = fs.readdirSync(ws).slice(0, 40).join(', ');
+          }
+        } catch {}
         const execRes = await runChatFn({
           settings: { ...settings, ollamaThink: false },
-          modelOverride: settings.ollamaModel || 'qwen3.5:4b',
+          modelOverride: resolveActiveModel(settings),
           messages: [
             {
               role: 'system',
@@ -288,7 +296,7 @@ export class DagSwarmEngine {
             },
             {
               role: 'user',
-              content: `Goal: ${goal}\n\nElephant Spec:\n${spec?.specText || ''}\n\nKB Hits: ${kbHits.map(h => h.text).join('\n')}`,
+              content: `Goal: ${goal}\n\nWorkspace files: ${wsFiles || '(empty)'}\n\nElephant Spec:\n${spec?.specText || ''}\n\nKB Hits: ${kbHits.map(h => h.text).join('\n')}`,
             },
           ],
           tools: [],
@@ -335,18 +343,51 @@ export class DagSwarmEngine {
 
       goldfish: async () => {
         const specText = ctx.outputs.elephant?.specText || goal;
-        const targetSummary = ctx.outputs.build?.content || runRecord.executionSummary || '';
-        const audit = await this.agiHarness.runGoldfishAudit({
+        let targetSummary = ctx.outputs.build?.content || runRecord.executionSummary || '';
+        let audit = await this.agiHarness.runGoldfishAudit({
           specText,
           targetSummary,
           settings,
           runChatFn,
           signal: abortController.signal,
         });
+        let repaired = false;
+        if (audit.verdict === 'FAIL' && ctx.outputs.build && !ctx.repairedOnce && !abortController.signal.aborted) {
+          ctx.repairedOnce = true;
+          const repairRes = await runChatFn({
+            settings: { ...settings, ollamaThink: false },
+            modelOverride: resolveActiveModel(settings),
+            messages: [
+              {
+                role: 'system',
+                content: 'You are Forge-Bot Brok (Executor). Address every concrete defect found by the Goldfish audit cleanly and concisely.',
+              },
+              {
+                role: 'user',
+                content: `Goal: ${goal}\n\nSpec:\n${specText.slice(0, 3000)}\n\nPrevious Draft:\n${String(targetSummary).slice(0, 3000)}\n\nGoldfish Audit Defects:\n${audit.critique}\n\nProduce a corrected, verified revision:`,
+              },
+            ],
+            tools: [],
+            signal: abortController.signal,
+          });
+          if (repairRes?.content) {
+            repaired = true;
+            targetSummary = repairRes.content;
+            runRecord.executionSummary = targetSummary;
+            ctx.outputs.build = repairRes;
+            audit = await this.agiHarness.runGoldfishAudit({
+              specText,
+              targetSummary,
+              settings,
+              runChatFn,
+              signal: abortController.signal,
+            });
+          }
+        }
         runRecord.audit = audit;
         return {
           label: `Goldfish Review · ${audit.verdict}`,
-          detail: 'Zero-history isolated critique complete',
+          detail: repaired ? 'Evaluator-optimizer repair pass verified' : 'Zero-history isolated critique complete',
           status: audit.verdict === 'FAIL' ? 'warn' : 'done',
           verdict: audit.verdict,
           data: audit,
@@ -355,7 +396,7 @@ export class DagSwarmEngine {
 
       critic: async () => {
         const scoutData = ctx.outputs.scout || { webResults: [], kbHits: [] };
-        const targetSummary = JSON.stringify(scoutData).slice(0, 2000);
+        const targetSummary = JSON.stringify(scoutData).slice(0, 5000);
         const audit = await this.agiHarness.runGoldfishAudit({
           specText: goal,
           targetSummary,
@@ -416,10 +457,10 @@ export class DagSwarmEngine {
         const criticData = ctx.outputs.critic || runRecord.audit;
         const res = await runChatFn({
           settings: { ...settings, ollamaThink: false },
-          modelOverride: settings.ollamaModel || 'qwen3.5:4b',
+          modelOverride: resolveActiveModel(settings),
           messages: [
             { role: 'system', content: 'Produce a concise verified Markdown brief from the scouted facts and Goldfish audit.' },
-            { role: 'user', content: `Goal: ${goal}\n\nEvidence: ${JSON.stringify(scoutData).slice(0, 2000)}\n\nAudit: ${criticData?.critique || ''}` },
+            { role: 'user', content: `Goal: ${goal}\n\nEvidence: ${JSON.stringify(scoutData).slice(0, 5000)}\n\nAudit: ${criticData?.critique || ''}` },
           ],
           tools: [],
           signal: abortController.signal,
@@ -434,7 +475,7 @@ export class DagSwarmEngine {
         if (abortController.signal.aborted) throw new Error('Swarm aborted by Kill Switch');
         const wave = wavefronts[waveIndex];
 
-        await Promise.all(
+        const settled = await Promise.allSettled(
           wave.map(async step => {
             if (abortController.signal.aborted) throw new Error('Swarm aborted by Kill Switch');
             const startedAt = Date.now();
@@ -478,6 +519,11 @@ export class DagSwarmEngine {
             });
           })
         );
+        const rejected = settled.find(r => r.status === 'rejected');
+        if (rejected) {
+          abortController.abort();
+          throw rejected.reason;
+        }
       }
 
       runRecord.status = 'completed';

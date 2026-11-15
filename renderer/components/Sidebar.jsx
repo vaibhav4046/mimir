@@ -521,8 +521,8 @@ export function Sidebar({
         )}
       </div>
 
-      <nav className="sidebar-nav" role="tablist" aria-label="Primary Views">
-        <div className="sidebar-nav-core">
+      <nav className="sidebar-nav" aria-label="Primary Views">
+        <div className="sidebar-nav-core" role="tablist" aria-label="Core Views">
           {CORE_TABS.map(tab => {
             const idx = PRIMARY_TABS.findIndex(t => t.id === tab.id);
             const IconComp = tab.Icon;
@@ -562,6 +562,9 @@ export function Sidebar({
         <div
           className={`sidebar-nav-secondary ${showAdvancedNav || OS_TABS.some(t => t.id === activeTab) ? 'is-expanded' : 'is-collapsed'}`}
           data-testid="sidebar-advanced-group"
+          role="tablist"
+          aria-label="More Tools"
+          hidden={!(showAdvancedNav || OS_TABS.some(t => t.id === activeTab))}
         >
           {OS_TABS.map(tab => {
             const idx = PRIMARY_TABS.findIndex(t => t.id === tab.id);

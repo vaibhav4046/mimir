@@ -147,23 +147,107 @@ export function recallFromThreads(store, { bot, threadId, query, settings = {}, 
 const CHARS_PER_TOKEN = 3.6; // rough average for English + JSON; only used for budgeting
 const OUTPUT_RESERVE_TOKENS = 1500;
 
+export function compactToolText(text, maxChars = 2400) {
+  const str = String(text || '');
+  if (str.length <= maxChars || maxChars < 120) return str.slice(0, Math.max(0, maxChars));
+  const marker = (omitted) => `\n... [compacted ${omitted} chars] ...\n`;
+  const note = marker(str.length - maxChars + 40);
+  const avail = Math.max(60, maxChars - note.length);
+  const head = Math.floor(avail * 0.62);
+  const tail = Math.max(0, avail - head);
+  const dropped = str.length - head - tail;
+  return `${str.slice(0, head)}${marker(dropped)}${tail > 0 ? str.slice(str.length - tail) : ''}`;
+}
+
 /**
  * Keep the newest messages that fit the model's window; return what was left out so it can be
  * recalled by relevance instead of being silently cut off by the model server.
- * A tool result is never kept without the assistant message that requested it.
+ * An assistant tool-call message and its tool results form an atomic unit; oversized latest
+ * tool results are compacted in-place instead of dropping the whole turn.
  */
 export function fitHistoryToWindow(messages, { numCtx, overheadChars = 0 }) {
-  const budgetChars = Math.max(2000, (numCtx - OUTPUT_RESERVE_TOKENS) * CHARS_PER_TOKEN - overheadChars);
-  const cost = m => String(m.content || '').length + (m.toolCalls ? JSON.stringify(m.toolCalls).length : 0) + 12;
-  let used = 0;
-  let start = messages.length;
-  for (let i = messages.length - 1; i >= 0; i--) {
-    used += cost(messages[i]);
-    if (used > budgetChars && i < messages.length - 1) break;
-    start = i;
+  const budgetChars = Math.max(2000, Math.round((numCtx - OUTPUT_RESERVE_TOKENS) * CHARS_PER_TOKEN - overheadChars));
+  const msgCost = m => String(m.content || '').length + (m.toolCalls ? JSON.stringify(m.toolCalls).length : 0) + 12;
+
+  const units = [];
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i];
+    if (m.role === 'assistant' && Array.isArray(m.toolCalls) && m.toolCalls.length > 0) {
+      const group = [m];
+      while (i + 1 < messages.length && messages[i + 1].role === 'tool') {
+        group.push(messages[++i]);
+      }
+      units.push(group);
+    } else {
+      units.push([m]);
+    }
   }
-  while (start < messages.length && messages[start].role === 'tool') start += 1;
-  return { kept: messages.slice(start), omitted: messages.slice(0, start) };
+
+  let used = 0;
+  let startUnit = units.length;
+  for (let u = units.length - 1; u >= 0; u--) {
+    let unit = units[u];
+    let unitCost = unit.reduce((sum, m) => sum + msgCost(m), 0);
+    if (u === units.length - 1 && unitCost > budgetChars) {
+      const nonToolCost = unit.filter(m => m.role !== 'tool').reduce((s, m) => s + msgCost(m), 0);
+      const toolMsgs = unit.filter(m => m.role === 'tool');
+      if (toolMsgs.length > 0) {
+        const perToolBudget = Math.max(400, Math.floor((budgetChars - nonToolCost) / toolMsgs.length) - 24);
+        unit = unit.map(m => (m.role === 'tool' && String(m.content || '').length > perToolBudget)
+          ? { ...m, content: compactToolText(m.content, perToolBudget) }
+          : m);
+        units[u] = unit;
+        unitCost = unit.reduce((sum, m) => sum + msgCost(m), 0);
+      }
+    }
+    used += unitCost;
+    if (used > budgetChars && u < units.length - 1) break;
+    startUnit = u;
+  }
+
+  while (startUnit < units.length && units[startUnit].length === 1 && units[startUnit][0].role === 'tool') {
+    startUnit += 1;
+  }
+  return {
+    kept: units.slice(startUnit).flat(),
+    omitted: units.slice(0, startUnit).flat(),
+  };
+}
+
+/** Deterministic structured working-state note distilled from omitted messages. */
+export function buildStructuredStateNote(omitted, maxChars = 1400) {
+  if (!Array.isArray(omitted) || !omitted.length) return '';
+  const goals = [];
+  const files = new Set();
+  const searches = new Set();
+  const errors = [];
+
+  for (const m of omitted) {
+    const text = String(m.content || '').trim();
+    if (!text) continue;
+    if (m.role === 'user' && !m.isError) {
+      const clip = text.replace(/\s+/g, ' ').slice(0, 140);
+      if (clip && !goals.includes(clip)) goals.push(clip);
+    } else if (m.role === 'assistant' && Array.isArray(m.toolCalls)) {
+      for (const tc of m.toolCalls) {
+        const name = tc.name || tc.function?.name || '';
+        const rawArgs = tc.arguments ?? tc.function?.arguments ?? {};
+        const args = typeof rawArgs === 'string' ? (() => { try { return JSON.parse(rawArgs); } catch { return {}; } })() : (rawArgs || {});
+        if ((name === 'fs_write' || name === 'fs_edit') && args.path) files.add(String(args.path));
+        if ((name === 'browser_search' || name === 'knowledge_search') && args.query) searches.add(String(args.query).slice(0, 80));
+        if ((name === 'browser_navigate' || name === 'browser_fetch') && args.url) searches.add(String(args.url).slice(0, 100));
+      }
+    } else if (m.role === 'tool' && m.isError) {
+      errors.push(`${m.toolName || 'tool'}: ${text.replace(/\s+/g, ' ').slice(0, 90)}`);
+    }
+  }
+
+  const lines = [];
+  if (goals.length) lines.push(`Prior goals: ${goals.slice(-2).join(' | ')}`);
+  if (files.size) lines.push(`Files touched earlier: ${[...files].slice(-8).join(', ')}`);
+  if (searches.size) lines.push(`Earlier lookups: ${[...searches].slice(-5).join(' ; ')}`);
+  if (errors.length) lines.push(`Earlier tool errors: ${errors.slice(-2).join(' ; ')}`);
+  return lines.length ? lines.join('\n').slice(0, maxChars) : '';
 }
 
 /** Relevant lines from the part of the current chat that no longer fits in the window. */
@@ -171,12 +255,22 @@ export function recallFromOmitted(omitted, query, limit = 3) {
   const queryTokens = new Set(tokenize(query));
   if (!queryTokens.size) return [];
   return omitted
-    .filter(m => (m.role === 'user' || m.role === 'assistant') && m.content && !m.isError)
+    .filter(m => (m.role === 'user' || m.role === 'assistant' || m.role === 'tool')
+      && m.content
+      && !m.isError
+      && !String(m.content).startsWith('BLOCKED_BY_SENTINEL'))
     .map(m => ({ m, hits: [...new Set(tokenize(m.content))].filter(t => queryTokens.has(t)).length }))
     .filter(x => x.hits >= 2)
     .sort((a, b) => b.hits - a.hits)
     .slice(0, limit)
-    .map(x => `- ${x.m.role === 'user' ? 'User' : x.m.speakerName || 'Assistant'}: ${String(x.m.content).replace(/\s+/g, ' ').trim().slice(0, SNIPPET_CHARS)}`);
+    .map(x => {
+      const who = x.m.role === 'user'
+        ? 'User'
+        : x.m.role === 'tool'
+          ? `Tool(${x.m.toolName || 'result'})`
+          : (x.m.speakerName || 'Assistant');
+      return `- ${who}: ${String(x.m.content).replace(/\s+/g, ' ').trim().slice(0, SNIPPET_CHARS)}`;
+    });
 }
 
 /** System-prompt section for a turn, or '' when there is nothing to carry over. */

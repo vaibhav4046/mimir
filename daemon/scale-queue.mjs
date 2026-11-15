@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { assertSafeUrl } from './llm-provider.mjs';
 
 /**
  * Software Vertical + Horizontal Scaling & Telemetry Engine
@@ -242,6 +243,7 @@ export class ScaleQueueManager {
     for (const url of urls) {
       const t0 = Date.now();
       try {
+        await assertSafeUrl(url, { allowLoopback: true });
         const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(2500) });
         const ok = res.ok;
         const entry = { url, ok, status: res.status, latencyMs: Date.now() - t0, checkedAt: new Date().toISOString() };

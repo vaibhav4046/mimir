@@ -20,11 +20,13 @@ import {
   parseAgiCommand,
   buildDialogueCard,
 } from './agi-harness.mjs';
-import { buildSharedContext, captureUserFacts, fitHistoryToWindow, recallFromOmitted } from './context-recall.mjs';
+import { buildSharedContext, buildStructuredStateNote, captureUserFacts, fitHistoryToWindow, recallFromOmitted } from './context-recall.mjs';
 import { runBrowserAgentSuite } from './browser-agent-suite.mjs';
 
 const WORKSPACE_REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const MAX_TOOL_STEPS = 8;
+const MAX_TOOL_STEPS = 24;
+const MAX_TOOL_STEPS_CEILING = 48;
+const PARALLEL_READ_TOOLS = new Set(['fs_read', 'fs_list', 'browser_search', 'knowledge_search', 'memory_read']);
 const MAX_DELEGATIONS_PER_TURN = 3; // one small local model runs these in sequence
 const MAX_REFLEXION_RETRIES = 1;
 const UTILITY_COMMANDS = new Set(['/kill', '/library', '/forge', '/map', '/eval', '/voice', '/rea']);
@@ -1053,7 +1055,7 @@ export class AgentRunner {
         botId: targetBot.id,
         userText: String(goal || ''),
         depth: nextDepth,
-        maxSteps: Math.max(1, Math.min(Number(maxSteps) || 4, MAX_TOOL_STEPS)),
+        maxSteps: Math.max(1, Math.min(Number(maxSteps) || 8, 16)),
         parentBotId: parentBot?.id || null,
         rootThreadId,
       });
@@ -1814,7 +1816,11 @@ export class AgentRunner {
       let reflexionRetriesUsed = 0;
       let ephemeralRepairMsgs = [];
       let stepsUsed = 0;
-      const stepCap = Math.max(1, Math.min(Number(maxSteps) || MAX_TOOL_STEPS, MAX_TOOL_STEPS));
+      const defaultMaxSteps = Math.max(1, Number(settingsNow?.maxToolSteps) || MAX_TOOL_STEPS);
+      let stepCap = Math.max(1, Math.min(Number(maxSteps) || defaultMaxSteps, MAX_TOOL_STEPS_CEILING));
+      let lastTurnHadToolCalls = false;
+      let doomLoopStopped = false;
+      runState.toolCallCounts = runState.toolCallCounts || new Map();
 
       for (let step = 0; step < stepCap + MAX_REFLEXION_RETRIES; step++) {
         if (abortController.signal.aborted) break;
@@ -1838,21 +1844,25 @@ export class AgentRunner {
           (settings.provider === 'openai-compat' ? settings.openaiModel : settings.ollamaModel);
         // Fit the chat into the model's window ourselves. Left to the model server, the oldest
         // messages are dropped without anyone knowing; here the cut is explicit and what fell out
-        // is still searched for lines relevant to the current question.
+        // is distilled into a structured state note plus relevant keyword snippets.
         const toolsChars = mentionReports.length ? 0 : JSON.stringify(allTools).length;
+        const repairChars = ephemeralRepairMsgs.reduce((s, m) => s + String(m.content || '').length + 24, 0);
         const { kept, omitted } = fitHistoryToWindow(this.store.getThread(thread.id).messages, {
           numCtx: resolveNumCtx(settings),
-          overheadChars: systemMsg.content.length + toolsChars,
+          overheadChars: systemMsg.content.length + toolsChars + repairChars + 1800,
         });
+        const stateNote = omitted.length ? buildStructuredStateNote(omitted) : '';
+        const omittedRecalls = omitted.length ? recallFromOmitted(omitted, userText) : [];
         const omittedNote = omitted.length
           ? [
               {
                 role: 'user',
                 content:
                   `[Context note: ${omitted.length} earlier message(s) of this chat are outside your window.` +
-                  (recallFromOmitted(omitted, userText).length
-                    ? ` Relevant lines from them:\n${recallFromOmitted(omitted, userText).join('\n')}]`
-                    : ' If the user refers to something you cannot see, say so and ask.]'),
+                  (stateNote ? `\n${stateNote}` : '') +
+                  (omittedRecalls.length
+                    ? `\nRelevant lines from earlier:\n${omittedRecalls.join('\n')}]`
+                    : '\nIf the user refers to details not shown above, say so and ask.]'),
               },
             ]
           : [];
@@ -1983,9 +1993,10 @@ export class AgentRunner {
         this.broadcast?.('thread:updated', { threadId: thread.id });
 
         if (!res.toolCalls?.length) {
+          lastTurnHadToolCalls = false;
           finalReply = cleanContent;
           // Chief-of-staff handoff: if this bot's final answer calls on its own specialists by
-          // name, run them now. One round only, so two bots can never ping-pong.
+          // name, run them now. One round only, no ping-pong.
           if (canDelegate && !abortController.signal.aborted) {
             const called = [...cleanContent.matchAll(/@([a-zA-Z0-9_-]+)/g)].map(m => m[1].toLowerCase());
             const handoffs = teamBots
@@ -2006,44 +2017,58 @@ export class AgentRunner {
           break;
         }
 
-        for (const tc of res.toolCalls) {
-          if (abortController.signal.aborted) break;
-          if (!allowedToolNames.has(tc.name)) {
-            const blockedOut = `ERROR: Tool ${tc.name} is not enabled in ${effectiveMode} mode.`;
-            this.store.appendMessage(thread.id, {
-              role: 'tool',
-              toolCallId: tc.id,
-              toolName: tc.name,
-              toolArgs: tc.arguments,
-              approved: false,
-              content: blockedOut,
-            });
-            this.broadcast?.('tool:result', { threadId: thread.id, botId: bot.id, toolName: tc.name, approved: false, output: blockedOut });
-            this.broadcast?.('thread:updated', { threadId: thread.id });
-            continue;
-          }
+        lastTurnHadToolCalls = true;
 
+        // Doom-loop detector: track canonical (toolName, args) signatures across the turn
+        let repeatSteer = false;
+        let allRepeatedMax = true;
+        for (const tc of res.toolCalls) {
+          const sig = `${tc.name}:${JSON.stringify(tc.arguments || {})}`;
+          const nextCount = (runState.toolCallCounts.get(sig) || 0) + 1;
+          runState.toolCallCounts.set(sig, nextCount);
+          if (nextCount < 3) allRepeatedMax = false;
+          if (nextCount === 2) repeatSteer = true;
+        }
+        if (allRepeatedMax) {
+          doomLoopStopped = true;
+          timelineSteps.push({
+            id: `doom-loop-${timelineSteps.length}`,
+            icon: 'rune',
+            label: 'Stopped repeated identical tool calls',
+            status: 'warn',
+          });
+          break;
+        }
+        if (repeatSteer) {
+          ephemeralRepairMsgs = [
+            {
+              role: 'user',
+              content: '[Steer]: You just repeated the exact same tool call and arguments. Try a different approach/query/path or synthesize your final answer from what you already have.',
+            },
+          ];
+        }
+
+        // Pre-evaluate Sentinel policy & approval gates so eligible read-only bursts can run in parallel
+        const evaluatedCalls = res.toolCalls.map(tc => {
+          const allowed = allowedToolNames.has(tc.name);
           let sentinelBlockedReason = null;
-          if (this.sentinel) {
+          let sentinelApprovalReason = null;
+          if (allowed && this.sentinel) {
             const sentRes = this.sentinel.evaluateToolRequest({
               agentId: bot?.norseRoleId || bot?.id || 'mimir',
               toolName: tc.name,
               args: tc.arguments,
               bot,
               executionMode: effectiveMode,
+              approvalPolicy: settings.approvalPolicy,
               localOnly: Boolean(settings.localOnly),
               approved: runState.sessionApprovedTools.has(tc.name),
               runId: thread.id,
             });
             if (sentRes.decision === 'DENY') {
               sentinelBlockedReason = sentRes.reason;
-              this.broadcast?.('sentinel:blocked', {
-                threadId: thread.id,
-                botId: bot.id,
-                toolName: tc.name,
-                ruleId: sentRes.policyRuleId,
-                reason: sentRes.reason,
-              });
+            } else if (sentRes.decision === 'REQUIRE_APPROVAL') {
+              sentinelApprovalReason = sentRes.reason;
             }
           }
 
@@ -2065,154 +2090,292 @@ export class AgentRunner {
               sessionApprovedTools: runState.sessionApprovedTools,
             });
           }
-          let approved = sentinelBlockedReason ? false : !gate.needsApproval || runState.sessionApprovedTools.has(tc.name);
-
-          if (!sentinelBlockedReason && !approved) {
-            approved = await this.#awaitApproval({
-              threadId: thread.id,
-              botId: bot.id,
-              toolName: tc.name,
-              args: tc.arguments,
-              reason: gate.reason,
-              reversibility: gate.reversibility,
-              reversibilityLabel: gate.reversibilityLabel,
-              signal: abortController.signal,
-              ...(tc.name === 'bot_spawn'
-                ? {
-                    customCard: {
-                      customTitle: `Spawn Ally · ${tc.arguments?.name || tc.arguments?.role || 'Specialist'}`,
-                      customSubtitle: `Role: ${tc.arguments?.role || 'specialist'} · Tools: ${Array.isArray(tc.arguments?.allowedTools) ? tc.arguments.allowedTools.join(', ') : 'inherited'}`,
-                    },
-                  }
-                : {}),
-            });
+          if (sentinelApprovalReason && !runState.sessionApprovedTools.has(tc.name)) {
+            gate = { ...gate, needsApproval: true, reason: gate.reason || sentinelApprovalReason };
           }
+          const preApproved = !sentinelBlockedReason && (!gate.needsApproval || runState.sessionApprovedTools.has(tc.name));
+          const canParallelRead = allowed && preApproved && PARALLEL_READ_TOOLS.has(tc.name);
+          return { tc, allowed, sentinelBlockedReason, gate, preApproved, canParallelRead };
+        });
 
-          let output;
-          if (sentinelBlockedReason) {
-            output = `BLOCKED_BY_SENTINEL: ${sentinelBlockedReason}`;
-          } else if (!approved) {
-            output = `DENIED_BY_USER: Approval denied for ${tc.name}. Do not retry unless user instructs.`;
-          } else if (tc.name === 'desktop_control') {
+        const executeSingleTool = async (item) => {
+          const { tc } = item;
+          if (tc.name === 'desktop_control') {
             if (!isToolAllowedForBot(bot, 'desktop_control')) {
-              output = `ERROR: Tool desktop_control is not allowed for bot ${bot.id}`;
-            } else {
-              const dRes = await runDesktopAction(tc.arguments);
-              output = this.#redact(JSON.stringify(dRes));
+              return `ERROR: Tool desktop_control is not allowed for bot ${bot.id}`;
             }
-          } else {
-            const toolArgs =
-              tc.name === 'foundry_create' && creativeIntentFmt === 'wav' && !['wav', 'music'].includes(String(tc.arguments?.format || '').toLowerCase()) && !/\b(webm|mp4|gif|video|animation)\b/i.test(userText)
-                ? { ...(tc.arguments || {}), format: 'wav' }
-                : tc.arguments;
-            output = await this.localExec.executeTool({
-              bot,
-              toolName: tc.name,
-              args: toolArgs,
-              dispatchMap,
-              context: {
-                depth: currentDepth,
-                threadId: thread.id,
-                parentBotId: bot.id,
-                executionMode: effectiveMode,
-                sessionApprovedTools: runState.sessionApprovedTools,
-                signal: abortController.signal,
-                runSubagentTurn: subOpts =>
-                  this.runSubagentTurn({
-                    ...subOpts,
-                    depth: subOpts?.depth ?? currentDepth + 1,
-                    rootThreadId: runState.rootThreadId,
-                  }),
-                conveneCouncil: councilOpts =>
-                  this.conveneCouncil({
-                    ...councilOpts,
-                    threadId: councilOpts?.threadId || thread.id,
-                  }),
-              },
-            });
+            const dRes = await runDesktopAction(tc.arguments);
+            return this.#redact(JSON.stringify(dRes));
           }
-
-          if (tc.name === 'browser_search' || tc.name === 'browser_open') {
-            timelineSteps.push({
-              id: `ts-${timelineSteps.length}`,
-              icon: 'web_search',
-              label: tc.name === 'browser_search' ? 'Searching the web' : `Visiting ${String(tc.arguments?.url || '').slice(0, 48)}`,
-              status: String(output).startsWith('ERROR:') ? 'warn' : 'done',
-            });
-          } else if (tc.name === 'subagent_loop' || tc.name === 'bot_spawn') {
-            timelineSteps.push({
-              id: `ts-${timelineSteps.length}`,
-              icon: 'subagent',
-              label: tc.name === 'bot_spawn' ? `Spawned ally · ${tc.arguments?.name || tc.arguments?.role || 'ally'}` : `Subagent · ${tc.arguments?.role || tc.arguments?.botId || 'ally'}`,
-              status: approved && !String(output).startsWith('ERROR:') ? 'done' : 'warn',
-            });
-          } else if (tc.name === 'council_convene') {
-            timelineSteps.push({
-              id: `ts-${timelineSteps.length}`,
-              icon: 'council',
-              label: `Council · ${String(tc.arguments?.topic || '').slice(0, 48)}`,
-              status: String(output).startsWith('ERROR:') ? 'warn' : 'done',
-            });
-          } else if (tc.name === 'foundry_create') {
-            let forgedArt = null;
-            if (approved && !String(output).startsWith('ERROR:')) {
-              try {
-                const parsed = JSON.parse(String(output));
-                if (parsed?.artifact?.id) {
-                  forgedArt = parsed.artifact;
-                  forgedArt.dreamLoop = forgedArt.dreamLoop || buildDreamLoopReport(forgedArt);
-                }
-              } catch {}
-            }
-            if (forgedArt) forgedArtifacts.push(forgedArt);
-            timelineSteps.push({
-              id: `ts-${timelineSteps.length}`,
-              icon: 'rune',
-              label: forgedArt
-                ? `Studio · ${String(forgedArt.format || '').toUpperCase()} (${forgedArt.title})`
-                : `Studio · ${String(tc.arguments?.format || 'artifact').toUpperCase()}`,
-              status: forgedArt ? 'done' : 'warn',
-            });
-          } else if (tc.name.startsWith('mcp__')) {
-            timelineSteps.push({
-              id: `ts-${timelineSteps.length}`,
-              icon: 'connector',
-              label: `Connector · ${tc.name.replace(/^mcp__/, '')}`,
-              status: approved ? 'done' : 'warn',
-            });
-          }
-
-          if (approved && String(output).startsWith('ERROR:')) {
-            hadToolError = true;
-            rejectedAttempt = `${cleanContent}\nTool ${tc.name}(${JSON.stringify(tc.arguments)}) -> ${output}`;
-            const critique = this.rsi?.critiqueToolFailure?.({
-              bot,
-              toolName: tc.name,
-              args: tc.arguments,
-              errorOutput: output,
-            });
-            if (critique?.correctiveHint) {
-              output = `${output}\n\n[RSI Self-Correction Hint]: ${critique.correctiveHint}`;
-              this.broadcast?.('rsi:learned', { botId: bot.id, rule: critique.rule });
-            }
-          }
-
-          this.store.appendMessage(thread.id, {
-            role: 'tool',
-            toolCallId: tc.id,
+          const toolArgs =
+            tc.name === 'foundry_create' && creativeIntentFmt === 'wav' && !['wav', 'music'].includes(String(tc.arguments?.format || '').toLowerCase()) && !/\b(webm|mp4|gif|video|animation)\b/i.test(userText)
+              ? { ...(tc.arguments || {}), format: 'wav' }
+              : tc.arguments;
+          return this.localExec.executeTool({
+            bot,
             toolName: tc.name,
-            toolArgs: tc.arguments,
-            approved,
-            content: output,
+            args: toolArgs,
+            dispatchMap,
+            context: {
+              depth: currentDepth,
+              threadId: thread.id,
+              parentBotId: bot.id,
+              executionMode: effectiveMode,
+              sessionApprovedTools: runState.sessionApprovedTools,
+              signal: abortController.signal,
+              runSubagentTurn: subOpts =>
+                this.runSubagentTurn({
+                  ...subOpts,
+                  depth: subOpts?.depth ?? currentDepth + 1,
+                  rootThreadId: runState.rootThreadId,
+                }),
+              conveneCouncil: councilOpts =>
+                this.conveneCouncil({
+                  ...councilOpts,
+                  threadId: councilOpts?.threadId || thread.id,
+                }),
+            },
           });
-          this.broadcast?.('tool:result', { threadId: thread.id, botId: bot.id, toolName: tc.name, approved, output });
-          this.broadcast?.('thread:updated', { threadId: thread.id });
+        };
+
+        // Partition into contiguous read-only parallel runs separated by sequential/mutating calls
+        let idx = 0;
+        while (idx < evaluatedCalls.length) {
+          if (abortController.signal.aborted) break;
+          let end = idx;
+          if (evaluatedCalls[idx].canParallelRead) {
+            while (end < evaluatedCalls.length && evaluatedCalls[end].canParallelRead) end += 1;
+          } else {
+            end = idx + 1;
+          }
+
+          const batchOutputs = evaluatedCalls[idx].canParallelRead && (end - idx) > 1
+            ? await Promise.all(evaluatedCalls.slice(idx, end).map(item => executeSingleTool(item).catch(err => `ERROR: ${err?.message || String(err)}`)))
+            : null;
+
+          for (let j = idx; j < end; j++) {
+            if (abortController.signal.aborted) break;
+            const item = evaluatedCalls[j];
+            const { tc, allowed, sentinelBlockedReason, gate } = item;
+            if (!allowed) {
+              const blockedOut = `ERROR: Tool ${tc.name} is not enabled in ${effectiveMode} mode.`;
+              this.store.appendMessage(thread.id, {
+                role: 'tool',
+                toolCallId: tc.id,
+                toolName: tc.name,
+                toolArgs: tc.arguments,
+                approved: false,
+                content: blockedOut,
+              });
+              this.broadcast?.('tool:result', { threadId: thread.id, botId: bot.id, toolName: tc.name, approved: false, output: blockedOut });
+              this.broadcast?.('thread:updated', { threadId: thread.id });
+              continue;
+            }
+
+            if (sentinelBlockedReason) {
+              this.broadcast?.('sentinel:blocked', {
+                threadId: thread.id,
+                botId: bot.id,
+                toolName: tc.name,
+                reason: sentinelBlockedReason,
+              });
+            }
+
+            let approved = item.preApproved;
+            if (!sentinelBlockedReason && !approved) {
+              approved = await this.#awaitApproval({
+                threadId: thread.id,
+                botId: bot.id,
+                toolName: tc.name,
+                args: tc.arguments,
+                reason: gate.reason,
+                reversibility: gate.reversibility,
+                reversibilityLabel: gate.reversibilityLabel,
+                signal: abortController.signal,
+                ...(tc.name === 'bot_spawn'
+                  ? {
+                      customCard: {
+                        customTitle: `Spawn Ally · ${tc.arguments?.name || tc.arguments?.role || 'Specialist'}`,
+                        customSubtitle: `Role: ${tc.arguments?.role || 'specialist'} · Tools: ${Array.isArray(tc.arguments?.allowedTools) ? tc.arguments.allowedTools.join(', ') : 'inherited'}`,
+                      },
+                    }
+                  : {}),
+              });
+            }
+
+            let output;
+            if (sentinelBlockedReason) {
+              output = `BLOCKED_BY_SENTINEL: ${sentinelBlockedReason}`;
+            } else if (!approved) {
+              output = `DENIED_BY_USER: Approval denied for ${tc.name}. Do not retry unless user instructs.`;
+            } else if (batchOutputs) {
+              output = batchOutputs[j - idx];
+            } else {
+              output = await executeSingleTool(item);
+            }
+
+            if (tc.name === 'browser_search' || tc.name === 'browser_open') {
+              timelineSteps.push({
+                id: `ts-${timelineSteps.length}`,
+                icon: 'web_search',
+                label: tc.name === 'browser_search' ? 'Searching the web' : `Visiting ${String(tc.arguments?.url || '').slice(0, 48)}`,
+                status: String(output).startsWith('ERROR:') ? 'warn' : 'done',
+              });
+            } else if (tc.name === 'subagent_loop' || tc.name === 'bot_spawn') {
+              timelineSteps.push({
+                id: `ts-${timelineSteps.length}`,
+                icon: 'subagent',
+                label: tc.name === 'bot_spawn' ? `Spawned ally · ${tc.arguments?.name || tc.arguments?.role || 'ally'}` : `Subagent · ${tc.arguments?.role || tc.arguments?.botId || 'ally'}`,
+                status: approved && !String(output).startsWith('ERROR:') ? 'done' : 'warn',
+              });
+            } else if (tc.name === 'council_convene') {
+              timelineSteps.push({
+                id: `ts-${timelineSteps.length}`,
+                icon: 'council',
+                label: `Council · ${String(tc.arguments?.topic || '').slice(0, 48)}`,
+                status: String(output).startsWith('ERROR:') ? 'warn' : 'done',
+              });
+            } else if (tc.name === 'foundry_create') {
+              let forgedArt = null;
+              if (approved && !String(output).startsWith('ERROR:')) {
+                try {
+                  const parsed = JSON.parse(String(output));
+                  if (parsed?.artifact?.id) {
+                    forgedArt = parsed.artifact;
+                    forgedArt.dreamLoop = forgedArt.dreamLoop || buildDreamLoopReport(forgedArt);
+                  }
+                } catch {}
+              }
+              if (forgedArt) forgedArtifacts.push(forgedArt);
+              timelineSteps.push({
+                id: `ts-${timelineSteps.length}`,
+                icon: 'rune',
+                label: forgedArt
+                  ? `Studio · ${String(forgedArt.format || '').toUpperCase()} (${forgedArt.title})`
+                  : `Studio · ${String(tc.arguments?.format || 'artifact').toUpperCase()}`,
+                status: forgedArt ? 'done' : 'warn',
+              });
+            } else if (tc.name.startsWith('mcp__')) {
+              timelineSteps.push({
+                id: `ts-${timelineSteps.length}`,
+                icon: 'connector',
+                label: `Connector · ${tc.name.replace(/^mcp__/, '')}`,
+                status: approved ? 'done' : 'warn',
+              });
+            }
+
+            if (approved && String(output).startsWith('ERROR:')) {
+              hadToolError = true;
+              rejectedAttempt = `${cleanContent}\nTool ${tc.name}(${JSON.stringify(tc.arguments)}) -> ${output}`;
+              const critique = this.rsi?.critiqueToolFailure?.({
+                bot,
+                toolName: tc.name,
+                args: tc.arguments,
+                errorOutput: output,
+              });
+              if (critique?.correctiveHint) {
+                output = `${output}\n\n[RSI Self-Correction Hint]: ${critique.correctiveHint}`;
+                this.broadcast?.('rsi:learned', { botId: bot.id, rule: critique.rule });
+              }
+            }
+
+            this.store.appendMessage(thread.id, {
+              role: 'tool',
+              toolCallId: tc.id,
+              toolName: tc.name,
+              toolArgs: tc.arguments,
+              approved,
+              content: output,
+            });
+            this.broadcast?.('tool:result', { threadId: thread.id, botId: bot.id, toolName: tc.name, approved, output });
+            this.broadcast?.('thread:updated', { threadId: thread.id });
+          }
+
+          idx = end;
+        }
+      }
+
+      if ((lastTurnHadToolCalls || doomLoopStopped || !finalReply) && !abortController.signal.aborted && !directAddress) {
+        try {
+          const settings = this.store.getSettings();
+          const { kept } = fitHistoryToWindow(this.store.getThread(thread.id).messages, {
+            numCtx: resolveNumCtx(settings),
+            overheadChars: systemMsg.content.length + 600,
+          });
+          const synthHistory = kept.map(m =>
+            m.speakerBotId
+              ? { role: 'user', content: `[Report from teammate @${m.speakerName}]\n${m.content}` }
+              : { role: m.role, content: m.content, tool_calls: m.toolCalls, tool_call_id: m.toolCallId, tool_name: m.toolName }
+          );
+          const synthReason = doomLoopStopped
+            ? '[System]: Repeated identical tool calls were halted. Summarize what you already gathered, files written/verified, and any unresolved blockers.'
+            : '[System]: Step limit reached. Summarize all completed actions, verified findings/files, and any remaining blockers concisely for the user.';
+          const synthRes = await runChatTurn({
+            settings,
+            modelOverride: bot.modelOverride || null,
+            messages: [systemMsg, ...synthHistory, { role: 'user', content: synthReason }],
+            tools: [],
+            signal: abortController.signal,
+            onToken: delta => this.broadcast?.('agent:delta', { threadId: thread.id, kind: 'content', delta }),
+            onThinking: delta => this.broadcast?.('agent:delta', { threadId: thread.id, kind: 'thinking', delta }),
+          });
+          const synthText = this.#redact(synthRes.content || '').trim();
+          if (synthText) {
+            finalReply = synthText;
+            lastProvider = synthRes.provider || lastProvider;
+            lastModel = synthRes.model || lastModel;
+            this.store.appendMessage(thread.id, {
+              role: 'assistant',
+              content: finalReply,
+              thinking: this.#redact(synthRes.thinking || '') || undefined,
+              provider: synthRes.provider,
+              model: synthRes.model,
+              fallbackFrom: synthRes.fallbackFrom,
+              timelineSteps: timelineSteps.length ? [...timelineSteps] : undefined,
+              artifacts: forgedArtifacts.length ? [...forgedArtifacts] : undefined,
+            });
+            this.broadcast?.('thread:updated', { threadId: thread.id });
+          }
+        } catch {
+          // Non-fatal: fallback below still attaches forged deliverables or empty-reply notice
         }
       }
 
       if (!forgedArtifacts.length && creativeIntentFmt && !abortController.signal.aborted && this.foundry) {
         try {
+          const settingsForForge = this.store.getSettings();
           const autoArgs = { title: '', format: creativeIntentFmt, prompt: userText };
+          const forgeGate = classifyToolApproval('foundry_create', autoArgs, settingsForForge.approvalPolicy, {
+            bot,
+            sessionApprovedTools: runState.sessionApprovedTools,
+          });
+          const forgeSentinel = this.sentinel?.evaluateToolRequest?.({
+            agentId: bot?.norseRoleId || bot?.id || 'mimir',
+            toolName: 'foundry_create',
+            args: autoArgs,
+            bot,
+            executionMode: effectiveMode,
+            approvalPolicy: settingsForForge.approvalPolicy,
+            localOnly: Boolean(settingsForForge.localOnly),
+            approved: runState.sessionApprovedTools.has('foundry_create') || !forgeGate.needsApproval,
+            runId: thread.id,
+          });
+          let forgeAllowed = (!forgeSentinel || forgeSentinel.decision === 'ALLOW');
+          if (forgeAllowed && forgeGate.needsApproval && !runState.sessionApprovedTools.has('foundry_create')) {
+            forgeAllowed = await this.#awaitApproval({
+              threadId: thread.id,
+              botId: bot.id,
+              toolName: 'foundry_create',
+              args: autoArgs,
+              reason: forgeGate.reason,
+              reversibility: forgeGate.reversibility,
+              reversibilityLabel: forgeGate.reversibilityLabel,
+              signal: abortController.signal,
+            });
+          }
+          if (!forgeAllowed) {
+            throw new Error('Auto-forge skipped by approval/sentinel policy');
+          }
           const autoOut = await this.localExec.executeTool({
             bot,
             toolName: 'foundry_create',

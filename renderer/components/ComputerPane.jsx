@@ -409,6 +409,17 @@ export function ComputerPane({
     return { xPct: Math.round(xPct * 10) / 10, yPct: Math.round(yPct * 10) / 10 };
   };
 
+  const dragStartRefClean = () => {
+    dragStartRef.current = null;
+  };
+  useEffect(() => {
+    const clearDrag = () => {
+      dragStartRef.current = null;
+    };
+    window.addEventListener('mouseup', clearDrag);
+    return () => window.removeEventListener('mouseup', clearDrag);
+  }, []);
+
   const handlePointerDown = e => {
     if (!b?.screenshotBase64 || busy || e.button !== 0) return;
     dragStartRef.current = getPointerPct(e);
@@ -417,7 +428,7 @@ export function ComputerPane({
   const handlePointerUp = async e => {
     if (!b?.screenshotBase64 || busy || !dragStartRef.current) return;
     const start = dragStartRef.current;
-    dragStartRef.current = null;
+    dragStartRefClean();
     const end = getPointerPct(e);
     const dist = Math.hypot(end.xPct - start.xPct, end.yPct - start.yPct);
     const sourcePatch = userControl ? { source: 'user' } : {};
@@ -496,25 +507,39 @@ export function ComputerPane({
 
   const captureDesktop = async () => {
     if (!window.desktop?.captureDesktopScreen) return;
-    const res = await window.desktop.captureDesktopScreen();
-    if (res?.dataUrl) setDesktopSnap(res);
+    try {
+      const res = await window.desktop.captureDesktopScreen();
+      if (res?.dataUrl) setDesktopSnap(res);
+    } catch (err) {
+      setScreenErr(err?.message || 'Screen capture failed.');
+    }
   };
 
   const saveMem = async e => {
     e.preventDefault();
     if (!memKey.trim() || !memVal.trim()) return;
-    await apiFetch(`/v1/bots/${encodeURIComponent(botId)}/memories`, {
-      method: 'POST',
-      body: JSON.stringify({ key: memKey.trim(), value: memVal.trim() }),
-    });
-    setMemKey('');
-    setMemVal('');
-    await onRefresh();
+    setScreenErr('');
+    try {
+      await apiFetch(`/v1/bots/${encodeURIComponent(botId)}/memories`, {
+        method: 'POST',
+        body: JSON.stringify({ key: memKey.trim(), value: memVal.trim() }),
+      });
+      setMemKey('');
+      setMemVal('');
+      await onRefresh();
+    } catch (err) {
+      setScreenErr(err?.message || 'Failed saving memory.');
+    }
   };
 
   const delMem = async key => {
-    await apiFetch(`/v1/bots/${encodeURIComponent(botId)}/memories/${encodeURIComponent(key)}`, { method: 'DELETE' });
-    await onRefresh();
+    setScreenErr('');
+    try {
+      await apiFetch(`/v1/bots/${encodeURIComponent(botId)}/memories/${encodeURIComponent(key)}`, { method: 'DELETE' });
+      await onRefresh();
+    } catch (err) {
+      setScreenErr(err?.message || 'Failed deleting memory.');
+    }
   };
 
   return (
@@ -644,7 +669,20 @@ export function ComputerPane({
                       const cx = 32 + i * 49;
                       const col = sp.color || '#3ac9ff';
                       return (
-                        <g key={sp.id} onClick={() => onSelectBot?.(sp.id)} style={{ cursor: 'pointer' }}>
+                        <g
+                          key={sp.id}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Select ${sp.name}`}
+                          onClick={() => onSelectBot?.(sp.id)}
+                          onKeyDown={evt => {
+                            if (evt.key === 'Enter' || evt.key === ' ') {
+                              evt.preventDefault();
+                              onSelectBot?.(sp.id);
+                            }
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
                           <rect x={cx - 19} y="66" width="38" height="34" fill="#101829" stroke={sp.state === 'working' ? '#e6ab42' : col} strokeWidth="1.5" />
                           <rect x={cx - 7} y="71" width="14" height="10" fill={col} />
                           <rect x={cx - 4} y="74" width="2.5" height="3" fill="#081019" />

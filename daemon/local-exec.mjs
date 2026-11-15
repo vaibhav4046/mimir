@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
-import { exec } from 'node:child_process';
+import { exec, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import { chromium } from 'playwright-core';
 import { fetchLiveSearch, fetchUrlText } from './knowledge-rsi.mjs';
@@ -62,6 +62,23 @@ export function resolveSafePath(workspaceDir, relPath = '.') {
   const normTarget = process.platform === 'win32' ? target.toLowerCase() : target;
   if (normTarget !== normBase && !normTarget.startsWith(normBase + path.sep)) {
     throw new Error(`Path traversal blocked: ${relPath}`);
+  }
+  if (fs.existsSync(base)) {
+    const realBase = fs.realpathSync(base);
+    let probe = target;
+    while (!fs.existsSync(probe)) {
+      const parent = path.dirname(probe);
+      if (parent === probe) break;
+      probe = parent;
+    }
+    if (fs.existsSync(probe)) {
+      const realProbe = fs.realpathSync(probe);
+      const cmpBase = process.platform === 'win32' ? realBase.toLowerCase() : realBase;
+      const cmpProbe = process.platform === 'win32' ? realProbe.toLowerCase() : realProbe;
+      if (cmpProbe !== cmpBase && !cmpProbe.startsWith(cmpBase + path.sep)) {
+        throw new Error(`Path symlink escape blocked: ${relPath}`);
+      }
+    }
   }
   return target;
 }
@@ -547,6 +564,7 @@ export class BrowserSessionManager {
     this.activeMode = null;
     this.localRelayServer = null;
     this.localRelayWs = '';
+    this.browserInitPromise = null;
     this.sessions = new Map(); // botId -> { context, page, url, title, screenshotBase64, interactiveElements, controlMode, agentCursor, mode, updatedAt }
   }
 
@@ -602,75 +620,98 @@ export class BrowserSessionManager {
   }
 
   async #ensureConnection() {
-    const cfg = this.#getModeSettings();
-    if (this.activeMode && this.activeMode !== cfg.browserMode) {
-      await this.switchModeCleanup();
-    }
-    this.activeMode = cfg.browserMode;
-
-    if (cfg.browserMode === 'free-cloud') {
-      if (this.browser?.isConnected()) return { mode: 'free-cloud', browser: this.browser, persistentContext: null };
-      if (!cfg.cloudBrowserWsUrl) {
-        throw new Error(
-          'Free Cloud Browser has no WebSocket URL configured. Paste a free remote CDP/Playwright WS endpoint in Preview Settings or click "Start Free Relay" — zero payment needed.'
-        );
+    if (this.browserInitPromise) return this.browserInitPromise;
+    this.browserInitPromise = (async () => {
+      const cfg = this.#getModeSettings();
+      if (this.activeMode && this.activeMode !== cfg.browserMode) {
+        await this.switchModeCleanup();
       }
-      if (/\/json\/version/i.test(cfg.cloudBrowserWsUrl) || /^https?:\/\//i.test(cfg.cloudBrowserWsUrl)) {
-        this.browser = await chromium.connectOverCDP(cfg.cloudBrowserWsUrl);
-      } else {
-        try {
-          this.browser = await chromium.connect(cfg.cloudBrowserWsUrl);
-        } catch {
+      this.activeMode = cfg.browserMode;
+
+      if (cfg.browserMode === 'free-cloud') {
+        if (this.browser?.isConnected()) return { mode: 'free-cloud', browser: this.browser, persistentContext: null };
+        if (!cfg.cloudBrowserWsUrl) {
+          throw new Error(
+            'Free Cloud Browser has no WebSocket URL configured. Paste a free remote CDP/Playwright WS endpoint in Preview Settings or click "Start Free Relay" — zero payment needed.'
+          );
+        }
+        if (/\/json\/version/i.test(cfg.cloudBrowserWsUrl) || /^https?:\/\//i.test(cfg.cloudBrowserWsUrl)) {
           this.browser = await chromium.connectOverCDP(cfg.cloudBrowserWsUrl);
-        }
-      }
-      return { mode: 'free-cloud', browser: this.browser, persistentContext: null };
-    }
-
-    if (cfg.browserMode === 'user-computer') {
-      if (this.browser?.isConnected()) return { mode: 'user-computer', browser: this.browser, persistentContext: null };
-      if (this.persistentContext) return { mode: 'user-computer', browser: null, persistentContext: this.persistentContext };
-
-      // 1. Prefer attaching to user's already running Chrome/Edge remote debug port (no extra window needed)
-      if (cfg.userCdpUrl) {
-        try {
-          const probe = await fetch(`${cfg.userCdpUrl.replace(/\/+$/, '')}/json/version`, { signal: AbortSignal.timeout(1200) });
-          if (probe.ok) {
-            this.browser = await chromium.connectOverCDP(cfg.userCdpUrl);
-            return { mode: 'user-computer', browser: this.browser, persistentContext: null };
+        } else {
+          try {
+            this.browser = await chromium.connect(cfg.cloudBrowserWsUrl);
+          } catch {
+            this.browser = await chromium.connectOverCDP(cfg.cloudBrowserWsUrl);
           }
-        } catch {
-          // Port 9222 not listening -> fall through to launching visible window on user computer
         }
+        return { mode: 'free-cloud', browser: this.browser, persistentContext: null };
       }
 
-      // 2. Launch visible real browser window on user's computer (prefer Chrome/Edge if installed)
-      const executablePath = resolveChromiumPath({ preferSystemBrowser: true });
-      if (!executablePath) throw new Error('No Chrome, Edge, or Chromium browser found on this computer.');
-      const profileDir = this.store?.dataDir
-        ? path.join(this.store.dataDir, 'user-browser-profile')
-        : path.join(os.tmpdir(), 'mimir-user-browser-profile');
-      fs.mkdirSync(profileDir, { recursive: true });
-      this.persistentContext = await chromium.launchPersistentContext(profileDir, {
-        executablePath,
-        headless: false,
-        viewport: { width: 1280, height: 800 },
-      });
-      return { mode: 'user-computer', browser: null, persistentContext: this.persistentContext };
-    }
+      if (cfg.browserMode === 'user-computer') {
+        if (this.browser?.isConnected()) return { mode: 'user-computer', browser: this.browser, persistentContext: null };
+        if (this.persistentContext) {
+          try {
+            if (this.persistentContext.pages().some(p => !p.isClosed())) {
+              return { mode: 'user-computer', browser: null, persistentContext: this.persistentContext };
+            }
+          } catch {
+            // Closed persistent context — recreate below
+          }
+          await this.persistentContext.close().catch(() => {});
+          this.persistentContext = null;
+        }
 
-    // Default: 'embedded' headless Chromium
-    if (this.browser?.isConnected()) return { mode: 'embedded', browser: this.browser, persistentContext: null };
-    const executablePath = resolveChromiumPath();
-    if (!executablePath) {
-      throw new Error('No Chromium executable found (install ms-playwright or Chrome/Edge)');
+        if (cfg.userCdpUrl) {
+          try {
+            const probe = await fetch(`${cfg.userCdpUrl.replace(/\/+$/, '')}/json/version`, { signal: AbortSignal.timeout(1200) });
+            if (probe.ok) {
+              this.browser = await chromium.connectOverCDP(cfg.userCdpUrl);
+              return { mode: 'user-computer', browser: this.browser, persistentContext: null };
+            }
+          } catch {
+            // Port 9222 not listening -> fall through to launching visible window on user computer
+          }
+        }
+
+        const executablePath = resolveChromiumPath({ preferSystemBrowser: true });
+        if (!executablePath) throw new Error('No Chrome, Edge, or Chromium browser found on this computer.');
+        const profileDir = this.store?.dataDir
+          ? path.join(this.store.dataDir, 'user-browser-profile')
+          : path.join(os.tmpdir(), 'mimir-user-browser-profile');
+        fs.mkdirSync(profileDir, { recursive: true });
+        this.persistentContext = await chromium.launchPersistentContext(profileDir, {
+          executablePath,
+          headless: false,
+          viewport: { width: 1280, height: 800 },
+        });
+        return { mode: 'user-computer', browser: null, persistentContext: this.persistentContext };
+      }
+
+      if (this.browser?.isConnected()) return { mode: 'embedded', browser: this.browser, persistentContext: null };
+      const executablePath = resolveChromiumPath();
+      if (!executablePath) {
+        throw new Error('No Chromium executable found (install ms-playwright or Chrome/Edge)');
+      }
+      this.browser = await chromium.launch({
+        executablePath,
+        headless: true,
+        args: ['--disable-gpu', '--no-sandbox'],
+      });
+      return { mode: 'embedded', browser: this.browser, persistentContext: null };
+    })();
+    try {
+      return await this.browserInitPromise;
+    } finally {
+      this.browserInitPromise = null;
     }
-    this.browser = await chromium.launch({
-      executablePath,
-      headless: true,
-      args: ['--disable-gpu', '--no-sandbox'],
-    });
-    return { mode: 'embedded', browser: this.browser, persistentContext: null };
+  }
+
+  #pickUnclaimedPage(context, botId) {
+    const claimed = new Set();
+    for (const [id, sess] of this.sessions.entries()) {
+      if (id !== botId && sess?.page && !sess.page.isClosed()) claimed.add(sess.page);
+    }
+    return context.pages().find(p => !p.isClosed() && !claimed.has(p)) || null;
   }
 
   async #ensurePage(botId) {
@@ -687,10 +728,10 @@ export class BrowserSessionManager {
 
     if (conn.persistentContext) {
       context = conn.persistentContext;
-      page = context.pages()[0] || (await context.newPage());
+      page = this.#pickUnclaimedPage(context, botId) || (await context.newPage());
     } else if (conn.mode === 'user-computer' && conn.browser.contexts().length > 0) {
       context = conn.browser.contexts()[0];
-      page = context.pages()[0] || (await context.newPage());
+      page = this.#pickUnclaimedPage(context, botId) || (await context.newPage());
     } else {
       context = await conn.browser.newContext({ viewport: { width: 1280, height: 800 } });
       page = await context.newPage();
@@ -1092,19 +1133,22 @@ export class BrowserSessionManager {
         targetSelector: String(params.selector || ''),
       });
       await session.page.mouse.down();
-      await this.#moveCursor(botId, session, (fromPt.x + toPt.x) / 2, (fromPt.y + toPt.y) / 2, {
-        action: 'drag',
-        label: 'Dragging...',
-        targetSelector: String(params.targetSelector || ''),
-        steps: 6,
-      });
-      await this.#moveCursor(botId, session, toPt.x, toPt.y, {
-        action: 'drag',
-        label: `Drop -> ${params.targetSelector || 'target'}`.slice(0, 48),
-        targetSelector: String(params.targetSelector || ''),
-        steps: 6,
-      });
-      await session.page.mouse.up();
+      try {
+        await this.#moveCursor(botId, session, (fromPt.x + toPt.x) / 2, (fromPt.y + toPt.y) / 2, {
+          action: 'drag',
+          label: 'Dragging...',
+          targetSelector: String(params.targetSelector || ''),
+          steps: 6,
+        });
+        await this.#moveCursor(botId, session, toPt.x, toPt.y, {
+          action: 'drag',
+          label: `Drop -> ${params.targetSelector || 'target'}`.slice(0, 48),
+          targetSelector: String(params.targetSelector || ''),
+          steps: 6,
+        });
+      } finally {
+        await session.page.mouse.up().catch(() => {});
+      }
     } else if (act === 'draw') {
       let box = null;
       if (params.selector) {
@@ -1129,15 +1173,18 @@ export class BrowserSessionManager {
         targetSelector: String(params.selector || ''),
       });
       await session.page.mouse.down();
-      for (let i = 1; i < pts.length; i += 1) {
-        await this.#moveCursor(botId, session, pts[i].x, pts[i].y, {
-          action: 'draw',
-          label: `Stroke ${i}/${pts.length - 1}`,
-          targetSelector: String(params.selector || ''),
-          steps: 4,
-        });
+      try {
+        for (let i = 1; i < pts.length; i += 1) {
+          await this.#moveCursor(botId, session, pts[i].x, pts[i].y, {
+            action: 'draw',
+            label: `Stroke ${i}/${pts.length - 1}`,
+            targetSelector: String(params.selector || ''),
+            steps: 4,
+          });
+        }
+      } finally {
+        await session.page.mouse.up().catch(() => {});
       }
-      await session.page.mouse.up();
     } else if (act === 'extract_structured') {
       const fieldsOut = {};
       const fieldSpec = params.fields && typeof params.fields === 'object' ? params.fields : {};
@@ -1491,8 +1538,16 @@ export class LocalExecEngine {
           type: 'function',
           function: {
             name: 'fs_read',
-            description: 'Read a UTF-8 text file inside the bot workspace.',
-            parameters: { type: 'object', properties: { path: { type: 'string' } }, required: ['path'] },
+            description: 'Read a UTF-8 text file inside the bot workspace. Optionally pass 1-based startLine/endLine for large files.',
+            parameters: {
+              type: 'object',
+              properties: {
+                path: { type: 'string' },
+                startLine: { type: 'integer', description: 'Optional 1-based start line' },
+                endLine: { type: 'integer', description: 'Optional 1-based inclusive end line' },
+              },
+              required: ['path'],
+            },
           },
         },
         {
@@ -1770,11 +1825,57 @@ export class LocalExecEngine {
       if (toolName === 'shell_exec') {
         if (t.shell === false) throw new Error('shell_exec is disabled for this bot');
         const cwd = args.cwd ? resolveSafePath(workspace, args.cwd) : workspace;
-        const { stdout, stderr } = await execAsync(String(args.command || ''), {
-          cwd,
-          timeout: 20000,
-          maxBuffer: 256 * 1024,
-          windowsHide: true,
+        const { stdout, stderr } = await new Promise((resolve, reject) => {
+          const maxBytes = 256 * 1024;
+          const child = spawn(String(args.command || ''), {
+            shell: true,
+            cwd,
+            windowsHide: true,
+            detached: process.platform !== 'win32',
+          });
+          let stdout = '';
+          let stderr = '';
+          let settled = false;
+          const killTree = () => {
+            if (!child.pid) return;
+            if (process.platform === 'win32') {
+              spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
+            } else {
+              try { process.kill(-child.pid, 'SIGKILL'); } catch { try { child.kill('SIGKILL'); } catch {} }
+            }
+          };
+          const timer = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            killTree();
+            reject(Object.assign(new Error('Command timed out after 20000ms'), { stdout, stderr }));
+          }, 20000);
+          const onAbort = () => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            killTree();
+            reject(Object.assign(new Error('Command aborted'), { stdout, stderr, name: 'AbortError' }));
+          };
+          context?.signal?.addEventListener?.('abort', onAbort, { once: true });
+          const appendCap = (cur, chunk) => cur.length >= maxBytes ? cur : (cur + chunk).slice(0, maxBytes);
+          child.stdout?.on('data', d => { stdout = appendCap(stdout, d.toString('utf8')); });
+          child.stderr?.on('data', d => { stderr = appendCap(stderr, d.toString('utf8')); });
+          child.on('error', err => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            context?.signal?.removeEventListener?.('abort', onAbort);
+            reject(err);
+          });
+          child.on('close', code => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            context?.signal?.removeEventListener?.('abort', onAbort);
+            if (code === 0) resolve({ stdout, stderr });
+            else reject(Object.assign(new Error(`Command failed (exit ${code})${stderr ? `: ${stderr.slice(0, 300)}` : ''}`), { code, stdout, stderr }));
+          });
         });
         rawOutput = [stdout, stderr].filter(Boolean).join('\n').trim() || '(exit 0, no output)';
       } else if (toolName === 'fs_list') {
@@ -1786,7 +1887,19 @@ export class LocalExecEngine {
         if (t.fs === false) throw new Error('fs_read is disabled for this bot');
         const target = resolveSafePath(workspace, args.path);
         const content = fs.readFileSync(target, 'utf8');
-        rawOutput = content.slice(0, 24000);
+        if (args.startLine != null || args.endLine != null) {
+          const lines = content.split(/\r?\n/);
+          const start = Math.max(1, Number(args.startLine || 1));
+          const end = Math.min(lines.length, Number(args.endLine || lines.length));
+          const numbered = lines.slice(start - 1, end).map((ln, idx) => `${start + idx}: ${ln}`).join('\n');
+          rawOutput = numbered.length > 24000
+            ? `${numbered.slice(0, 24000)}\n... [truncated range; narrow startLine/endLine]`
+            : numbered;
+        } else {
+          rawOutput = content.length > 24000
+            ? `${content.slice(0, 24000)}\n... [truncated at 24000/${content.length} chars; pass startLine/endLine to read more]`
+            : content;
+        }
       } else if (toolName === 'fs_write') {
         if (t.fs === false) throw new Error('fs_write is disabled for this bot');
         const target = resolveSafePath(workspace, args.path);

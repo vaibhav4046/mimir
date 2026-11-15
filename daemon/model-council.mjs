@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { performance } from 'node:perf_hooks';
-import { runChatTurn, probeModels, isLoopbackUrl } from './llm-provider.mjs';
+import { runChatTurn, probeModels, isLoopbackUrl, resolveNumCtx } from './llm-provider.mjs';
 
 const MAX_HISTORY_RUNS = 50;
 const MAX_STAGE_CONCURRENCY = 3;
@@ -191,11 +191,14 @@ function parsePeerReviewOutput(rawText, labels) {
       pushLabel(`Response ${m[1].toUpperCase()}`);
     }
   }
-  for (const lbl of labels) {
-    if (!ranking.includes(lbl)) ranking.push(lbl);
+  const validRanking = ranking.length > 0;
+  if (validRanking) {
+    for (const lbl of labels) {
+      if (!ranking.includes(lbl)) ranking.push(lbl);
+    }
   }
 
-  return { ranking, critiques };
+  return { ranking, critiques, validRanking };
 }
 
 function parseChairmanOutput(rawText, fallbackCitations = [], fallbackTopOpinion = '') {
@@ -639,23 +642,23 @@ export class ModelCouncilEngine {
               },
               {
                 role: 'user',
-                content: `Topic: ${cleanTopic}\n\n${anonymizedPromptBody}\n\nCritique each response briefly and rank ALL labels (${labels.join(', ')}) from best to worst in JSON.`,
+                content: `Topic: ${cleanTopic}${ragBlock}\n\n${anonymizedPromptBody}\n\nCritique each response briefly and rank ALL labels (${labels.join(', ')}) from best to worst in JSON.`,
               },
             ],
           });
           const parsed = parsePeerReviewOutput(res?.content || '', labels);
           emit('stage2:critique', `${reviewer.name} submitted anonymized ranking`, { seatId: reviewer.seatId });
-          return { ok: true, reviewer: reviewer.name, ...parsed };
+          return { ok: parsed.validRanking, reviewer: reviewer.name, ...parsed };
         } catch (err) {
           emit('stage2:critique', `${reviewer.name} critique failed`, { seatId: reviewer.seatId, ok: false, error: err?.message });
-          return { ok: false, reviewer: reviewer.name, ranking: [], critiques: {} };
+          return { ok: false, validRanking: false, reviewer: reviewer.name, ranking: [], critiques: {} };
         }
       });
 
       const stats = new Map(
         anonymized.map(a => [a.label, { ...a, sumRank: 0, ballotCount: 0, bordaScore: 0, critiques: [] }])
       );
-      const validBallots = ballots.filter(b => b.ok && b.ranking.length === labels.length);
+      const validBallots = ballots.filter(b => b.ok && b.validRanking && b.ranking.length === labels.length);
       const mCount = labels.length;
 
       for (const b of validBallots) {
@@ -726,8 +729,10 @@ export class ModelCouncilEngine {
       const leaderSummary = leaderboard
         .map(l => `- ${l.label} (${l.name} | ${l.model}): borda=${l.bordaScore}, avgRank=${l.avgRank}${l.critiques.length ? ` | critiques: ${l.critiques.join(' ; ')}` : ''}`)
         .join('\n');
+      const maxChairBudget = Math.max(4000, Math.round((resolveNumCtx(settings) - 1800) * 3.4));
+      const perOpinionCap = Math.max(800, Math.floor((maxChairBudget - cleanTopic.length - ragBlock.length - leaderSummary.length) / Math.max(1, okOpinions.length)));
       const opinionText = okOpinions
-        .map(o => `### ${o.name} (${o.model})\n${o.response}`)
+        .map(o => `### ${o.name} (${o.model})\n${String(o.response || '').slice(0, perOpinionCap)}`)
         .join('\n\n');
 
       try {

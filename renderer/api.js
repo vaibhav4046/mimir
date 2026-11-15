@@ -213,17 +213,23 @@ export async function fetchArtifactBlob(id, query = 'inline=1') {
   return res.blob();
 }
 
-export function subscribeEvents(onMessage) {
+export function subscribeEvents(onMessage, onStatusChange) {
   let ws = null;
   let closed = false;
   let retryTimer = null;
+  let retryDelayMs = 1000;
 
   const connect = async () => {
     if (closed) return;
+    onStatusChange?.('connecting');
     try {
       const cfg = await resolveCoordinator();
       const wsUrl = cfg.url.replace(/^http/, 'ws') + '/ws' + (cfg.token ? `?token=${encodeURIComponent(cfg.token)}` : '');
       ws = new WebSocket(wsUrl);
+      ws.onopen = () => {
+        retryDelayMs = 1000;
+        onStatusChange?.('connected');
+      };
       ws.onmessage = evt => {
         try {
           onMessage(JSON.parse(evt.data));
@@ -231,11 +237,19 @@ export function subscribeEvents(onMessage) {
       };
       ws.onclose = () => {
         if (!closed) {
-          retryTimer = setTimeout(connect, 1500);
+          onStatusChange?.('reconnecting');
+          const wait = retryDelayMs;
+          retryDelayMs = Math.min(8000, Math.round(retryDelayMs * 1.6));
+          retryTimer = setTimeout(connect, wait);
         }
       };
     } catch {
-      if (!closed) retryTimer = setTimeout(connect, 1500);
+      if (!closed) {
+        onStatusChange?.('reconnecting');
+        const wait = retryDelayMs;
+        retryDelayMs = Math.min(8000, Math.round(retryDelayMs * 1.6));
+        retryTimer = setTimeout(connect, wait);
+      }
     }
   };
 

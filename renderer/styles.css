@@ -24,6 +24,9 @@
   --err-soft: rgba(217, 65, 67, 0.16);
 
   /* Aliases preserving compatibility across Views */
+  --bg: var(--bg-canvas);
+  --bg-base: var(--bg-surface);
+  --bg-hover: var(--sand-surface-hover);
   --sand-bg: var(--bg-canvas);
   --sand-surface: var(--bg-surface);
   --sand-surface-2: var(--bg-elevated);
@@ -1256,7 +1259,8 @@ input[type="file"]::file-selector-button:hover {
     padding: 14px 12px;
   }
 
-  .computer-pane {
+  .computer-pane,
+  .computer-pane.is-enlarged {
     width: 100vw;
     border-left: none;
   }
@@ -1264,7 +1268,10 @@ input[type="file"]::file-selector-button:hover {
 
 @media (max-width: 520px) {
   .topbar {
-    padding: 0 10px;
+    min-height: 48px;
+    height: auto;
+    flex-wrap: wrap;
+    padding: 6px 10px;
     gap: 6px;
   }
 
@@ -3852,6 +3859,29 @@ dialog.mimir-dialog::backdrop {
   opacity: 1;
   max-height: 220px;
   transition: max-height 160ms ease, opacity 160ms ease;
+}
+
+.md-link {
+  color: var(--frost);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.md-link:hover {
+  color: var(--frost-hi);
+}
+
+.command-suggest-item.is-active {
+  background: var(--bg-elevated);
+  border-color: var(--frost);
+}
+
+.timeline-accordion > summary {
+  list-style: none;
+}
+
+.timeline-accordion > summary::-webkit-details-marker {
+  display: none;
 }
 
 .chat-hero-prompt {

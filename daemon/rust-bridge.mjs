@@ -95,6 +95,13 @@ export class RustCoreBridge {
         }
       });
 
+      this.proc.once('error', err => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error(`Rust daemon spawn error: ${err.message}`));
+      });
+
       this.proc.once('exit', code => {
         if (settled) return;
         settled = true;
@@ -263,6 +270,11 @@ export class RustCoreBridge {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     this.workerProcs.set(workerId, child);
+    child.stdout?.resume();
+    child.stderr?.resume();
+    child.once('error', () => {
+      this.workerProcs.delete(workerId);
+    });
     child.once('exit', () => {
       this.workerProcs.delete(workerId);
     });
@@ -289,7 +301,14 @@ export class RustCoreBridge {
         } catch {}
         resolve();
       };
-      const t = setTimeout(finish, 2000);
+      const t = setTimeout(() => {
+        if (process.platform === 'win32' && child.pid) {
+          spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
+        } else {
+          try { child.kill('SIGKILL'); } catch {}
+        }
+        finish();
+      }, 2000);
       child.once('exit', finish);
       try {
         child.kill('SIGTERM');

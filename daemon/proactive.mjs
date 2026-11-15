@@ -220,6 +220,7 @@ export class ProactiveEngine {
           continue;
         }
         this.#deadLetter(routine, last);
+        continue;
       }
       const nextAt = this.nextDueAt(routine, now);
       if (nextAt !== null && nextAt <= now) {
@@ -245,7 +246,10 @@ export class ProactiveEngine {
       if (this.watchers.has(id) || this.watchErrors.get(id) === watchPath) continue;
       try {
         const handle = fs.watch(watchPath, () => this.fileEvents.set(id, Date.now()));
-        handle.on('error', () => {});
+        handle.on('error', () => {
+          try { handle.close(); } catch {}
+          this.watchers.delete(id);
+        });
         handle.unref?.();
         this.watchers.set(id, { path: watchPath, handle });
       } catch (err) {
@@ -286,12 +290,17 @@ export class ProactiveEngine {
         payload: { routineId, slotKey, attempt },
       });
       if (out.deduplicated) return 'taken';
-      // Tasks orphaned by a crash between enqueue and claim are closed out as superseded.
+      // Tasks orphaned by a crash between enqueue and claim for this same slot are closed out as superseded.
       for (let i = 0; i < 5; i++) {
         const claimed = (await this.rustBridge.claimTask(workerId, { queue: ROUTINE_QUEUE, leaseMs: 30 * MINUTE })).task;
         if (!claimed) return null;
         if (claimed.id === out.task.id) return claimed.id;
-        await this.rustBridge.completeTask(claimed.id, workerId, { superseded: true });
+        if (claimed.payload?.routineId === routineId && claimed.payload?.slotKey === slotKey) {
+          await this.rustBridge.completeTask(claimed.id, workerId, { superseded: true });
+        } else {
+          await this.rustBridge.failTask(claimed.id, workerId, 'released foreign task').catch(() => {});
+          return null;
+        }
       }
       return null;
     } catch {

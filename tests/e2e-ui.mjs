@@ -145,6 +145,20 @@ async function main() {
     assert.ok(fs.existsSync(writtenPath), 'Expected fs_write to create e2e-note.txt after UI approval');
     assert.ok(fs.readFileSync(writtenPath, 'utf8').includes('E2E_VERIFIED_OK'));
 
+    // Verify Wave 3 chat affordances: Copy/Edit/Retry action buttons & slash keyboard nav
+    await page.waitForSelector('[data-testid="copy-msg-btn"]');
+    await page.waitForSelector('[data-testid="edit-msg-btn"]');
+    await page.waitForSelector('[data-testid="retry-msg-btn"]');
+    await page.click('[data-testid="edit-msg-btn"]');
+    const editedDraft = await page.inputValue('[data-testid="chat-input"]');
+    assert.ok(editedDraft.includes('e2e-note.txt'), 'Clicking Edit on user message must populate composer');
+    await page.fill('[data-testid="chat-input"]', '/');
+    await page.waitForSelector('[data-testid="command-suggest"]');
+    await page.press('[data-testid="chat-input"]', 'ArrowDown');
+    const selectedOptions = await page.locator('[data-testid="command-suggest"] [aria-selected="true"]').count();
+    assert.equal(selectedOptions, 1, 'ArrowDown in slash menu must update aria-selected');
+    await page.press('[data-testid="chat-input"]', 'Escape');
+
     // Verify Agents Roster, fresh session switch (never opens Configure modal), RSI view & responsive widths
     await page.click('[data-testid="nav-agents"]');
     await page.waitForSelector('[data-testid="agents-view"]');

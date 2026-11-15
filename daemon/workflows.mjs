@@ -133,6 +133,26 @@ export class WorkflowEngine {
     this.routines = routines;
     this.broadcast = broadcast;
     this.active = new Set();
+    this.recoverInterrupted();
+  }
+
+  recoverInterrupted() {
+    let changed = false;
+    for (const r of this.#state.workflowRuns) {
+      if (r.status === 'running' && !this.active.has(r.workflowId)) {
+        r.status = 'failed';
+        r.error = r.error || 'Interrupted by daemon restart';
+        r.finishedAt = r.finishedAt || new Date().toISOString();
+        for (const s of r.steps || []) {
+          if (s.status === 'running') {
+            s.status = 'failed';
+            s.error = s.error || 'Interrupted by daemon restart';
+          }
+        }
+        changed = true;
+      }
+    }
+    if (changed) this.store.save();
   }
 
   get #state() {
@@ -312,7 +332,7 @@ export class WorkflowEngine {
       for (let i = 0; i < wf.steps.length; i++) {
         const step = wf.steps[i];
         const rec = run.steps[i];
-        if (rec.status === 'done') continue; // finished in an earlier attempt
+        if (!rec || rec.status === 'done') continue; // missing or finished in an earlier attempt
         rec.status = 'running';
         rec.error = null;
         checkpoint();

@@ -28,7 +28,7 @@ import { McpOAuthManager } from './mcp-http.mjs';
 import { ModelLibrary, OpenRouterAuth } from './model-library.mjs';
 import { systemUsage } from './system-usage.mjs';
 import { SHARED_MEMORY_SCOPE } from './context-recall.mjs';
-import { probeModels, RESPONSE_MODES } from './llm-provider.mjs';
+import { assertSafeUrl, probeModels, RESPONSE_MODES } from './llm-provider.mjs';
 import { RustCoreBridge } from './rust-bridge.mjs';
 import { ArtifactFoundry } from './foundry.mjs';
 import { hardenBrowserManager } from './browser-guard.mjs';
@@ -166,7 +166,8 @@ function buildOriginChecker(extraOrigins = []) {
     .filter(Boolean);
   const allowedSet = new Set([...DEFAULT_WEB_ORIGINS, ...envOrigins, ...extraOrigins]);
   return function isAllowedOrigin(origin) {
-    if (!origin || origin === 'null' || origin.startsWith('file://')) return true;
+    if (origin === 'null') return false;
+    if (!origin || origin.startsWith('file://')) return true;
     if (/^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i.test(origin)) return true;
     return allowedSet.has(origin);
   };
@@ -182,6 +183,7 @@ export async function startCoordinator(options = {}) {
   const pairingRequests = new Map();
   const pairingSessions = new Map();
   const retiredSessions = new Set();
+  let pairingExchangeFailures = 0;
 
   const makePairingCode = () => {
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -277,7 +279,15 @@ export async function startCoordinator(options = {}) {
     const model = String(body.model || '').trim();
     if (!/^https?:\/\//i.test(baseUrl)) throw Object.assign(new Error('baseUrl must start with http:// or https://'), { status: 400 });
     if (!model) throw Object.assign(new Error('model is required'), { status: 400 });
-    const apiKey = String(body.apiKey || '') || (body.useSavedKey ? store.getSettings().openaiApiKey : '');
+    const sNow = store.getSettings();
+    let apiKey = String(body.apiKey || '');
+    if (!apiKey && body.useSavedKey && sNow.openaiApiKey && sNow.openaiBaseUrl) {
+      try {
+        if (new URL(baseUrl).origin === new URL(sNow.openaiBaseUrl).origin) {
+          apiKey = sNow.openaiApiKey;
+        }
+      } catch {}
+    }
     return { kind, baseUrl, model, apiKey };
   };
 
@@ -285,7 +295,7 @@ export async function startCoordinator(options = {}) {
   const broadcast = (event, data) => {
     const packet = JSON.stringify({ event, data, ts: Date.now() });
     for (const ws of wsClients) {
-      if (ws.readyState === 1) ws.send(packet);
+      if (ws.readyState === 1 && ws.bufferedAmount < 4 * 1024 * 1024) ws.send(packet);
     }
   };
 
@@ -546,7 +556,7 @@ export async function startCoordinator(options = {}) {
       if (options.logPairing !== false) {
         console.log(`[mimir] Pairing code for "${clientName}" (${entry.origin}): ${code} (expires in ${Math.round(pairingCodeTtlMs / 1000)}s)`);
       }
-      broadcast('pairing:requested', { id: requestId, clientName, origin: entry.origin, code, expiresAt });
+      broadcast('pairing:requested', { id: requestId, clientName, origin: entry.origin, expiresAt });
       return json(res, 201, {
         requestId,
         clientName,
@@ -578,16 +588,30 @@ export async function startCoordinator(options = {}) {
         }
         if (reqEntry.code === presentedCode) match = reqEntry;
       } else {
+        if (pairingExchangeFailures >= 5) {
+          return json(res, 429, { error: 'Too many invalid pairing attempts. Request a new code.', code: 'PAIRING_LOCKED' });
+        }
         for (const reqEntry of pairingRequests.values()) {
           if (!reqEntry.used && Date.now() < reqEntry.expiresAt && reqEntry.code === presentedCode) {
             match = reqEntry;
             break;
           }
         }
+        if (!match) {
+          pairingExchangeFailures += 1;
+          for (const [id, reqEntry] of pairingRequests) {
+            reqEntry.attempts += 1;
+            if (reqEntry.attempts > 5) pairingRequests.delete(id);
+          }
+          if (pairingExchangeFailures > 5) {
+            return json(res, 429, { error: 'Too many invalid pairing attempts. Request a new code.', code: 'PAIRING_LOCKED' });
+          }
+        }
       }
       if (!match) {
         return json(res, 403, { error: 'Invalid pairing code.', code: 'PAIRING_INVALID' });
       }
+      pairingExchangeFailures = 0;
       match.used = true;
       pairingRequests.delete(match.id);
       const sessionToken = `mimir_sess_${crypto.randomBytes(24).toString('hex')}`;
@@ -692,6 +716,7 @@ export async function startCoordinator(options = {}) {
       }
       if (req.method === 'POST' && p === '/v1/models/test') {
         const target = resolveModelTarget(await readBody(req));
+        await assertSafeUrl(target.baseUrl, { allowLoopback: true });
         if (store.getSettings().localOnly && !isLoopbackUrl(target.baseUrl)) {
           return json(res, 403, { error: 'Local-only mode is on. Turn it off before testing a cloud model.', code: 'LOCAL_ONLY_BLOCKED' });
         }
@@ -700,6 +725,7 @@ export async function startCoordinator(options = {}) {
       if (req.method === 'POST' && p === '/v1/models/apply') {
         const body = await readBody(req);
         const target = resolveModelTarget(body);
+        await assertSafeUrl(target.baseUrl, { allowLoopback: true });
         const localOnly = Boolean(body.localOnly);
         if (localOnly && !isLoopbackUrl(target.baseUrl)) {
           return json(res, 400, { error: 'A cloud model cannot be the default while local-only mode is on.' });
@@ -945,12 +971,19 @@ export async function startCoordinator(options = {}) {
         return json(res, 200, { aborted: runner.abortThread(body.threadId) });
       }
       if (req.method === 'GET' && p === '/v1/approvals') {
-        return json(res, 200, runner.listPendingApprovals(urlObj.searchParams.get('threadId')));
+        const items = runner.listPendingApprovals(urlObj.searchParams.get('threadId'))
+          .filter(a => !a.threadId || store.getThread(a.threadId, userId));
+        return json(res, 200, items);
       }
       const aprMatch = p.match(/^\/v1\/approvals\/([^/]+)$/);
       if (req.method === 'POST' && aprMatch) {
+        const aprId = decodeURIComponent(aprMatch[1]);
+        const targetApr = runner.listPendingApprovals(null).find(a => a.id === aprId);
+        if (targetApr?.threadId && !store.getThread(targetApr.threadId, userId)) {
+          return json(res, 404, { error: 'Approval not found or already resolved' });
+        }
         const body = await readBody(req);
-        const ok = runner.resolveApproval(decodeURIComponent(aprMatch[1]), body.decision);
+        const ok = runner.resolveApproval(aprId, body.decision);
         return ok ? json(res, 200, { ok: true }) : json(res, 404, { error: 'Approval not found or already resolved' });
       }
 
@@ -1403,9 +1436,10 @@ export async function startCoordinator(options = {}) {
           ? 'png'
           : (wantPreviewVideo && targetPath === sidecarWebm ? 'webm' : String(art.format || '').toLowerCase());
         const mime = mimeMap[effectiveExt] || 'application/octet-stream';
-        const bytes = fs.readFileSync(targetPath);
+        const stat = fs.statSync(targetPath);
         const headers = {
           'Content-Type': mime,
+          'Content-Length': String(stat.size),
           'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${fname}"`,
           'X-Content-Type-Options': 'nosniff',
           'Cache-Control': 'no-store',
@@ -1414,7 +1448,12 @@ export async function startCoordinator(options = {}) {
           headers['Content-Security-Policy'] = "default-src 'none'; style-src 'unsafe-inline'";
         }
         res.writeHead(200, headers);
-        return res.end(bytes);
+        const stream = fs.createReadStream(targetPath);
+        stream.on('error', () => {
+          if (!res.headersSent) res.writeHead(500);
+          res.end();
+        });
+        return stream.pipe(res);
       }
 
       // Phase 2-7: Kill Switch, Own-Computer Desktop, Voice, Elephant-Goldfish AGI, Swarm, Connectors, Midgard Map
@@ -1591,7 +1630,11 @@ export async function startCoordinator(options = {}) {
       if (req.method === 'GET' && p === '/v1/agi/eval') {
         const evalPath = path.join(dataDir, 'latest-eval.json');
         if (fs.existsSync(evalPath)) {
-          return json(res, 200, JSON.parse(fs.readFileSync(evalPath, 'utf8')));
+          try {
+            return json(res, 200, JSON.parse(fs.readFileSync(evalPath, 'utf8')));
+          } catch {
+            return json(res, 200, { ok: true, benchmarked: [], installedModels: [], corrupt: true });
+          }
         }
         return json(res, 200, { ok: true, benchmarked: [], installedModels: [] });
       }
@@ -1794,6 +1837,9 @@ export async function startCoordinator(options = {}) {
         const body = await readBody(req);
         const goal = String(body.goal || body.prompt || '').trim();
         if (!goal) return json(res, 400, { error: 'goal is required' });
+        if (body.threadId && !store.getThread(body.threadId, userId)) {
+          return json(res, 404, { error: 'Thread not found for current user scope' });
+        }
         const { run, deduplicated } = store.createRun({
           idempotencyKey: body.idempotencyKey || null,
           userId,
@@ -1841,7 +1887,7 @@ export async function startCoordinator(options = {}) {
           return json(res, 200, { ok: true, run: cancelled });
         }
         if (req.method === 'POST' && op === 'approve') {
-          if (run.status === 'COMPLETED' || run.status === 'CANCELLED') {
+          if (['CLAIMED', 'RUNNING', 'VERIFYING', 'COMPLETED', 'CANCELLED'].includes(run.status)) {
             return json(res, 409, { error: `Run is already ${run.status}` });
           }
           const body = await readBody(req);
@@ -2172,7 +2218,7 @@ export async function startCoordinator(options = {}) {
           actionId: body.actionId || '',
           payload: body.payload || {},
           surface: body.surface || 'chat',
-          approved: Boolean(body.approved),
+          approved: (authCheck.mode === 'master' || authCheck.mode === 'local-open') && Boolean(body.approved),
           roleId: body.roleId || 'mimir',
         });
         if (gate.decision !== 'ALLOW') {
@@ -2291,7 +2337,10 @@ export async function startCoordinator(options = {}) {
       await localExec.browser.closeAll();
       await voiceEngine.close?.();
       await rustBridge.close();
-      for (const ws of wsClients) ws.close();
+      for (const ws of wsClients) {
+        try { ws.close(); } catch {}
+        setTimeout(() => { try { ws.terminate?.(); } catch {} }, 100).unref?.();
+      }
       server.closeAllConnections?.();
       await new Promise(resolve => server.close(resolve));
     },

@@ -97,8 +97,12 @@ function attachWindowSecurity(win) {
     return { action: 'deny' };
   });
   win.webContents.on('will-navigate', (evt, targetUrl) => {
+    let devOrigin = 'http://127.0.0.1:5173';
+    try {
+      devOrigin = new URL(env('DEV_URL') || 'http://127.0.0.1:5173/').origin;
+    } catch {}
     const allowed =
-      targetUrl.startsWith('http://127.0.0.1:5173') ||
+      targetUrl.startsWith(devOrigin) ||
       targetUrl.startsWith('file://');
     if (!allowed) {
       evt.preventDefault();
@@ -136,6 +140,13 @@ function startCoordinatorDaemon() {
 
   coordinatorProc.stderr?.on('data', chunk => {
     process.stderr.write(`[coordinator] ${chunk}`);
+  });
+  coordinatorProc.on('error', err => {
+    process.stderr.write(`[coordinator:error] ${err?.message || err}\n`);
+  });
+  coordinatorProc.on('exit', (code, signal) => {
+    process.stderr.write(`[coordinator:exit] code=${code} signal=${signal}\n`);
+    coordinatorProc = null;
   });
 }
 
@@ -297,26 +308,37 @@ function registerIpc() {
     const win = BrowserWindow.fromWebContents(evt.sender);
     const res = await dialog.showOpenDialog(win, { properties: ['openFile', 'multiSelections'] });
     if (res.canceled) return [];
-    return res.filePaths.slice(0, 6).map(fp => {
-      const buf = fs.readFileSync(fp);
-      return {
-        name: path.basename(fp),
-        size: buf.length,
-        contentBase64: buf.toString('base64'),
-      };
-    });
+    const MAX_FILE_BYTES = 5 * 1024 * 1024;
+    const out = [];
+    for (const fp of res.filePaths.slice(0, 6)) {
+      try {
+        const st = await fs.promises.stat(fp);
+        if (st.size > MAX_FILE_BYTES) continue;
+        const buf = await fs.promises.readFile(fp);
+        out.push({
+          name: path.basename(fp),
+          size: buf.length,
+          contentBase64: buf.toString('base64'),
+        });
+      } catch {}
+    }
+    return out;
   });
   ipcMain.handle('desktop:capture-screen', async () => {
-    const sources = await desktopCapturer.getSources({
-      types: ['screen'],
-      thumbnailSize: { width: 1280, height: 800 },
-    });
-    const first = sources[0];
-    if (!first) return null;
-    return {
-      name: first.name || 'Primary Display',
-      dataUrl: first.thumbnail.toDataURL(),
-    };
+    try {
+      const sources = await desktopCapturer.getSources({
+        types: ['screen'],
+        thumbnailSize: { width: 1280, height: 800 },
+      });
+      const first = sources[0];
+      if (!first) return null;
+      return {
+        name: first.name || 'Primary Display',
+        dataUrl: first.thumbnail.toDataURL(),
+      };
+    } catch {
+      return null;
+    }
   });
 }
 

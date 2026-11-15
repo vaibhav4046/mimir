@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { RagEngine } from './rag-engine.mjs';
+import { assertSafeUrl } from './llm-provider.mjs';
 
 function decodeHtmlEntities(str) {
   return String(str || '')
@@ -134,29 +135,40 @@ export async function fetchMultiEngineSearch(query, maxResults = 8) {
 }
 
 export async function fetchUrlText(rawUrl) {
-  const u = new URL(String(rawUrl));
-  if (!['http:', 'https:'].includes(u.protocol)) {
-    throw new Error(`Unsupported URL protocol: ${u.protocol}`);
+  let currentUrl = (await assertSafeUrl(rawUrl, { allowLoopback: true })).url;
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    Accept: 'text/html,text/plain,application/json',
+  };
+  let res;
+  for (let hop = 0; hop <= 3; hop++) {
+    res = await fetch(currentUrl, {
+      headers,
+      redirect: 'manual',
+      signal: AbortSignal.timeout(12000),
+    });
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get('location');
+      await res.body?.cancel?.().catch(() => {});
+      if (!loc || hop === 3) throw new Error(`Too many or empty redirects fetching ${currentUrl}`);
+      currentUrl = (await assertSafeUrl(new URL(loc, currentUrl).toString(), { allowLoopback: true })).url;
+      continue;
+    }
+    break;
   }
-  const res = await fetch(u.toString(), {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      Accept: 'text/html,text/plain,application/json',
-    },
-    signal: AbortSignal.timeout(12000),
-  });
+  const u = new URL(currentUrl);
   if (!res.ok) {
     throw new Error(`HTTP ${res.status} fetching ${u.toString()}`);
   }
   const ctype = res.headers.get('content-type') || '';
   const raw = await res.text();
   if (ctype.includes('json')) {
-    return { url: res.url, title: u.hostname, text: raw.slice(0, 20000) };
+    return { url: res.url || currentUrl, title: u.hostname, text: raw.slice(0, 20000) };
   }
   const titleMatch = raw.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const title = stripHtmlTags(titleMatch?.[1] || u.hostname);
   const text = stripHtmlTags(raw).slice(0, 20000);
-  return { url: res.url, title, text };
+  return { url: res.url || currentUrl, title, text };
 }
 
 export function tokenize(text) {

@@ -99,13 +99,25 @@ function PluginsHubSection() {
   const [busy, setBusy] = useState(false);
   const dialogRef = useRef(null);
 
+  const signOutRef = React.useRef(false);
+  React.useEffect(() => {
+    signOutRef.current = false;
+    return () => {
+      signOutRef.current = true;
+    };
+  }, []);
+
   const loadConnectors = async () => {
-    const res = await apiFetch('/v1/connectors');
-    setConnectors(res?.connectors || []);
+    try {
+      const res = await apiFetch('/v1/connectors');
+      setConnectors(res?.connectors || []);
+    } catch (e2) {
+      setTestResult({ ok: false, error: e2?.message || 'Failed to load apps.' });
+    }
   };
 
   useEffect(() => {
-    loadConnectors().catch(() => {});
+    loadConnectors();
   }, []);
 
   const installedList = connectors.filter(c => c.installed);
@@ -419,19 +431,29 @@ export function McpView({ mcps, onRefresh }) {
   };
 
   const toggleTool = async (srvId, toolName, disabled) => {
-    await apiFetch(`/v1/mcps/${encodeURIComponent(srvId)}/tools/${encodeURIComponent(toolName)}/toggle`, {
-      method: 'POST',
-      body: JSON.stringify({ disabled }),
-    });
-    await onRefresh();
+    setErr('');
+    try {
+      await apiFetch(`/v1/mcps/${encodeURIComponent(srvId)}/tools/${encodeURIComponent(toolName)}/toggle`, {
+        method: 'POST',
+        body: JSON.stringify({ disabled }),
+      });
+      await onRefresh();
+    } catch (e2) {
+      setErr(e2?.message || 'Could not update tool state.');
+    }
   };
 
   const toggleServer = async srv => {
-    await apiFetch('/v1/mcps', {
-      method: 'POST',
-      body: JSON.stringify({ ...srv, enabled: srv.enabled === false }),
-    });
-    await onRefresh();
+    setErr('');
+    try {
+      await apiFetch('/v1/mcps', {
+        method: 'POST',
+        body: JSON.stringify({ ...srv, enabled: srv.enabled === false }),
+      });
+      await onRefresh();
+    } catch (e2) {
+      setErr(e2?.message || 'Could not update connected app.');
+    }
   };
 
   // Opens the provider's sign-in page in the user's browser, then watches for the callback.
@@ -442,16 +464,17 @@ export function McpView({ mcps, onRefresh }) {
       const { authorizeUrl } = await apiFetch(`/v1/mcps/${encodeURIComponent(srv.id)}/oauth/start`, { method: 'POST', body: '{}' });
       const opened = window.desktop?.openExternal ? await window.desktop.openExternal(authorizeUrl) : window.open(authorizeUrl, '_blank', 'noopener,noreferrer');
       if (!opened) setErr(`Open this link to sign in: ${authorizeUrl}`);
-      for (let i = 0; i < 60; i++) {
+      for (let i = 0; i < 60 && !signOutRef.current; i++) {
         await new Promise(r => setTimeout(r, 2000));
+        if (signOutRef.current) return;
         const list = await apiFetch('/v1/mcps');
         if (list.find(s => s.id === srv.id)?.status === 'connected') break;
       }
-      await onRefresh();
+      if (!signOutRef.current) await onRefresh();
     } catch (e2) {
-      setErr(e2.message);
+      if (!signOutRef.current) setErr(e2.message);
     } finally {
-      setBusyId(null);
+      if (!signOutRef.current) setBusyId(null);
     }
   };
 

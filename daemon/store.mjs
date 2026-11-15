@@ -298,11 +298,13 @@ export class AppStore {
           recordings: Array.isArray(raw.recordings) ? raw.recordings : [],
           memories: raw.memories && typeof raw.memories === 'object' ? raw.memories : {},
           receipts: Array.isArray(raw.receipts) ? raw.receipts : [],
+          receiptAnchorHash: typeof raw.receiptAnchorHash === 'string' ? raw.receiptAnchorHash : '0'.repeat(64),
           runs: Array.isArray(raw.runs) ? raw.runs : [],
           researchRuns: Array.isArray(raw.researchRuns) ? raw.researchRuns : [],
           memoryTombstones: Array.isArray(raw.memoryTombstones) ? raw.memoryTombstones : [],
         };
-      } catch {
+      } catch (err) {
+        if (err && !(err instanceof SyntaxError)) throw err;
         // Corrupted store falls back cleanly after preserving backup
         fs.copyFileSync(this.storePath, `${this.storePath}.corrupt-${Date.now()}`);
       }
@@ -331,6 +333,7 @@ export class AppStore {
       recordings: [],
       memories: {},
       receipts: [],
+      receiptAnchorHash: '0'.repeat(64),
       runs: [],
       researchRuns: [],
       memoryTombstones: [],
@@ -340,9 +343,25 @@ export class AppStore {
   }
 
   #writeSync(data = this.state) {
-    const tmp = `${this.storePath}.tmp`;
-    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
-    fs.renameSync(tmp, this.storePath);
+    const tmp = `${this.storePath}.${process.pid}.${crypto.randomBytes(3).toString('hex')}.tmp`;
+    const fd = fs.openSync(tmp, 'w');
+    try {
+      fs.writeFileSync(fd, JSON.stringify(data, null, 2), 'utf8');
+      fs.fsyncSync(fd);
+    } finally {
+      fs.closeSync(fd);
+    }
+    for (let i = 0; i < 5; i++) {
+      try {
+        fs.renameSync(tmp, this.storePath);
+        return;
+      } catch (err) {
+        if (i === 4 || !['EPERM', 'EBUSY', 'EACCES'].includes(err?.code)) {
+          try { fs.rmSync(tmp, { force: true }); } catch {}
+          throw err;
+        }
+      }
+    }
   }
 
   save() {
@@ -945,6 +964,22 @@ export class AppStore {
     if (idx < 0) return false;
     this.state.bots.splice(idx, 1);
     this.state.threads = this.state.threads.filter(t => t.botId !== id);
+    if (this.state.memories && typeof this.state.memories === 'object') {
+      delete this.state.memories[id];
+    }
+    if (Array.isArray(this.state.runs)) {
+      this.state.runs = this.state.runs.filter(r => r.botId !== id);
+    }
+    if (Array.isArray(this.state.routines)) {
+      this.state.routines = this.state.routines.filter(r => r.botId !== id);
+    }
+    if (this.sandboxesDir) {
+      const ws = path.resolve(this.sandboxesDir, String(id));
+      const root = path.resolve(this.sandboxesDir);
+      if (ws.startsWith(root + path.sep)) {
+        fs.rmSync(ws, { recursive: true, force: true });
+      }
+    }
     this.save();
     return true;
   }
@@ -1113,7 +1148,7 @@ export class AppStore {
     if (!receipt || typeof receipt !== 'object') return null;
     if (!Array.isArray(this.state.receipts)) this.state.receipts = [];
     const last = this.state.receipts.length ? this.state.receipts[this.state.receipts.length - 1] : null;
-    const prevHash = last?.eventHash || '0'.repeat(64);
+    const prevHash = last?.eventHash || this.state.receiptAnchorHash || '0'.repeat(64);
     const chained = finalizeReceiptHashChain(
       {
         ...receipt,
@@ -1125,6 +1160,8 @@ export class AppStore {
     );
     this.state.receipts.push(chained);
     if (this.state.receipts.length > 300) {
+      const dropped = this.state.receipts.slice(0, this.state.receipts.length - 300);
+      this.state.receiptAnchorHash = dropped[dropped.length - 1]?.eventHash || this.state.receiptAnchorHash || '0'.repeat(64);
       this.state.receipts = this.state.receipts.slice(-300);
     }
     this.save();
@@ -1150,7 +1187,7 @@ export class AppStore {
   }
 
   verifyReceiptLedger() {
-    return verifyReceiptChain(this.state.receipts || []);
+    return verifyReceiptChain(this.state.receipts || [], this.state.receiptAnchorHash || '0'.repeat(64));
   }
 
   createRun({
@@ -1209,7 +1246,11 @@ export class AppStore {
       run.checkpoints = Array.isArray(run.checkpoints) ? run.checkpoints : [];
       run.checkpoints.push({ state: patch.status, ts: now, note: patch.note || null });
     }
-    Object.assign(run, { ...patch, updatedAt: now, heartbeatAt: patch.heartbeatAt || now });
+    const nextStatus = patch.status || run.status;
+    const leaseRenew = ['CLAIMED', 'RUNNING', 'VERIFYING'].includes(nextStatus) && !patch.leaseExpiresAt
+      ? { leaseExpiresAt: new Date(Date.now() + 120_000).toISOString() }
+      : {};
+    Object.assign(run, { ...patch, ...leaseRenew, updatedAt: now, heartbeatAt: patch.heartbeatAt || now });
     delete run.note;
     this.save();
     return run;

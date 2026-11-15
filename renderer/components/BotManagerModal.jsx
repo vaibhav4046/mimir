@@ -7,6 +7,8 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
   const isEdit = Boolean(initialBot?.id);
   const [templates, setTemplates] = useState([]);
   const [coordUrl, setCoordUrl] = useState('');
+  const [modalError, setModalError] = useState('');
+  const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     name: initialBot?.name || '',
     role: initialBot?.role || 'Desktop Computer Agent',
@@ -62,25 +64,41 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
 
   const handleSave = async e => {
     e.preventDefault();
-    if (!form.name.trim()) return;
-    if (isEdit) {
-      await apiFetch(`/v1/bots/${encodeURIComponent(initialBot.id)}`, {
-        method: 'PATCH',
-        body: JSON.stringify(form),
-      });
-    } else {
-      await apiFetch('/v1/bots', {
-        method: 'POST',
-        body: JSON.stringify(form),
-      });
+    if (!form.name.trim() || busy) return;
+    setModalError('');
+    setBusy(true);
+    try {
+      if (isEdit) {
+        await apiFetch(`/v1/bots/${encodeURIComponent(initialBot.id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify(form),
+        });
+      } else {
+        await apiFetch('/v1/bots', {
+          method: 'POST',
+          body: JSON.stringify(form),
+        });
+      }
+      onSaved();
+    } catch (err) {
+      setModalError(err?.message || 'Could not save assistant.');
+    } finally {
+      setBusy(false);
     }
-    onSaved();
   };
 
   const handleDelete = async () => {
-    if (!isEdit) return;
-    await apiFetch(`/v1/bots/${encodeURIComponent(initialBot.id)}`, { method: 'DELETE' });
-    onDeleted(initialBot.id);
+    if (!isEdit || busy) return;
+    setModalError('');
+    setBusy(true);
+    try {
+      await apiFetch(`/v1/bots/${encodeURIComponent(initialBot.id)}`, { method: 'DELETE' });
+      onDeleted(initialBot.id);
+    } catch (err) {
+      setModalError(err?.message || 'Could not delete assistant.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const shapes = meta?.shapes || ['mimir', 'shield', 'crystal', 'gem', 'star', 'hex', 'cloud', 'squircle'];
@@ -113,6 +131,7 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
         )}
 
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {modalError && <div className="tool-card is-error" role="alert">{modalError}</div>}
           <div className="grid-2">
             <label className="field-label">
               Name
@@ -197,6 +216,8 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
                   <button
                     key={c}
                     type="button"
+                    aria-label={`Color ${c}`}
+                    aria-pressed={form.color === c}
                     onClick={() => setForm(f => ({ ...f, color: c }))}
                     style={{
                       width: 24,

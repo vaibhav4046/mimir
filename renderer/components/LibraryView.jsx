@@ -242,16 +242,26 @@ export function LibraryView({ activeBotId }) {
   };
 
   const toggleFavorite = async art => {
-    await apiFetch(`/v1/library/artifacts/${encodeURIComponent(art.id)}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ favorite: !art.favorite }),
-    });
-    await load();
+    setErr('');
+    try {
+      await apiFetch(`/v1/library/artifacts/${encodeURIComponent(art.id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ favorite: !art.favorite }),
+      });
+      await load();
+    } catch (e2) {
+      setErr(e2?.message || 'Could not update favorite status.');
+    }
   };
 
   const removeArtifact = async id => {
-    await apiFetch(`/v1/library/artifacts/${encodeURIComponent(id)}`, { method: 'DELETE' });
-    await load();
+    setErr('');
+    try {
+      await apiFetch(`/v1/library/artifacts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      await load();
+    } catch (e2) {
+      setErr(e2?.message || 'Could not delete item.');
+    }
   };
 
   return (

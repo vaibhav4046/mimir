@@ -33,18 +33,18 @@
   "artifacts": [
     {
       "path": "package.json",
-      "bytes": 1917,
-      "sha256": "530f930fd4961ff1fa41d986fe5e9cb6f303b175fbcc7f3246f5477f5f2a5c30"
+      "bytes": 1980,
+      "sha256": "8c2ac86fca492879b6d78434dda3897538542dbd2fcc4c43e7c084611e09c59e"
     },
     {
       "path": "daemon/coordinator.mjs",
-      "bytes": 105627,
-      "sha256": "f9aad78ed791fa561090c371b4b981ea60c3f176b13efc7d4344eab0e55a1053"
+      "bytes": 107882,
+      "sha256": "dc8e4118cad8be4df09cdc037c41d10bfb88e1e530763495e31e1d0ab799a32d"
     },
     {
       "path": "daemon/receipt.mjs",
-      "bytes": 13851,
-      "sha256": "1a32f8919fb643f576a76b7a0e49d8eb7441ecc9ef6f1dff3cb9f93f90efb448"
+      "bytes": 14385,
+      "sha256": "51e8037069e73b8be2a1b9a1ef40a8ecfb0393bc1e2c041afee7c00e9897a0fe"
     },
     {
       "path": "daemon/deep-research.mjs",
@@ -68,5 +68,5 @@
     "cargo test --workspace --manifest-path rust/Cargo.toml",
     "npm run test:e2e"
   ],
-  "generatedAt": "2026-11-14T16:24:05.190Z"
+  "generatedAt": "2026-11-15T13:56:24.371Z"
 }

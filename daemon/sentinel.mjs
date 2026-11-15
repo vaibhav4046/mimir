@@ -88,6 +88,7 @@ export class SentinelPolicyService {
     args = {},
     bot = null,
     executionMode = 'auto',
+    approvalPolicy = null,
     localOnly = false,
     approved = false,
     runId = 'run-direct',
@@ -144,12 +145,12 @@ export class SentinelPolicyService {
     }
 
     // 5. Block local-only outbound network violations
-    if (localOnly && ['web_search', 'web_fetch', 'browser_open'].includes(cleanTool)) {
+    if (localOnly && ['web_search', 'web_fetch', 'browser_open', 'browser_search', 'browser_fetch', 'browser_navigate', 'browser_act'].includes(cleanTool)) {
       const isLoopback = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?/i.test(targetUrl);
       if (targetUrl && !isLoopback) {
         return finalize('DENY', 'SENTINEL_LOCAL_ONLY', `External URL "${targetUrl}" blocked while Local-Only mode is active.`, 'high');
       }
-      if (!targetUrl && cleanTool === 'web_search') {
+      if (!targetUrl && (cleanTool === 'web_search' || cleanTool === 'browser_search')) {
         return finalize('DENY', 'SENTINEL_LOCAL_ONLY', 'Public web search blocked while Local-Only mode is active.', 'high');
       }
     }
@@ -169,12 +170,13 @@ export class SentinelPolicyService {
     }
 
     // 8. Check standard approval classifier
-    const baseApproval = classifyToolApproval(cleanTool, args, executionMode);
-    if (baseApproval?.requiresApproval && !approved) {
-      return finalize('REQUIRE_APPROVAL', 'SENTINEL_ACTION_APPROVAL', baseApproval.reason || `Tool "${cleanTool}" requires user approval.`, baseApproval.riskTier || 'high');
+    const effectivePolicy = approvalPolicy || (['ask-writes', 'always-ask', 'reversibility', 'auto-approve'].includes(executionMode) ? executionMode : 'auto-approve');
+    const baseApproval = classifyToolApproval(cleanTool, args, effectivePolicy, { bot });
+    if (baseApproval?.needsApproval && !approved) {
+      return finalize('REQUIRE_APPROVAL', 'SENTINEL_ACTION_APPROVAL', baseApproval.reason || `Tool "${cleanTool}" requires user approval.`, baseApproval.tier || 'high');
     }
 
-    return finalize('ALLOW', 'SENTINEL_POLICY_PASS', `Authorized "${cleanTool}" under role "${role.name}".`, baseApproval?.riskTier || 'safe');
+    return finalize('ALLOW', 'SENTINEL_POLICY_PASS', `Authorized "${cleanTool}" under role "${role.name}".`, baseApproval?.tier || 'safe');
   }
 
   evaluateUiAction({ actionId = '', payload = {}, surface = 'chat', approved = false, roleId = 'mimir' } = {}) {

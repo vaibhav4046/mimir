@@ -33,9 +33,14 @@ export function ModelSetupWizard({ settings, onApplied }) {
   const [error, setError] = useState('');
   const [localOnly, setLocalOnly] = useState(Boolean(settings?.localOnly));
   const [autoRouting, setAutoRouting] = useState(Boolean(settings?.autoTierRouting));
+  const abortRef = React.useRef(false);
 
   useEffect(() => {
+    abortRef.current = false;
     apiFetch('/v1/models/providers').then(r => setProviders(r.providers || [])).catch(() => {});
+    return () => {
+      abortRef.current = true;
+    };
   }, []);
 
   const run = async fn => {
@@ -71,8 +76,9 @@ export function ModelSetupWizard({ settings, onApplied }) {
       const { authorizeUrl } = await apiFetch('/v1/models/openrouter/login', { method: 'POST', body: '{}' });
       const opened = window.desktop?.openExternal ? await window.desktop.openExternal(authorizeUrl) : window.open(authorizeUrl, '_blank', 'noopener,noreferrer');
       if (!opened) throw new Error(`Open this link to sign in: ${authorizeUrl}`);
-      for (let i = 0; i < 150; i++) {
+      for (let i = 0; i < 150 && !abortRef.current; i++) {
         await new Promise(r => setTimeout(r, 2000));
+        if (abortRef.current) return;
         const s = await apiFetch('/v1/settings');
         if (s.openRouterSignedIn && s.hasOpenaiApiKey) {
           setTarget({ kind: 'openai-compat', baseUrl: s.openaiBaseUrl, model: s.openaiModel, label: 'OpenRouter' });
@@ -82,7 +88,7 @@ export function ModelSetupWizard({ settings, onApplied }) {
           return;
         }
       }
-      throw new Error('Sign-in was not completed. Try again.');
+      if (!abortRef.current) throw new Error('Sign-in was not completed. Try again.');
     });
 
   const testTarget = () =>

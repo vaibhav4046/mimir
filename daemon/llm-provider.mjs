@@ -1,3 +1,6 @@
+import dns from 'node:dns/promises';
+import net from 'node:net';
+
 /**
  * Unified streaming LLM adapter:
  * Default -> Local Ollama (/api/chat, /api/tags)
@@ -9,6 +12,7 @@ function normalizeMessagesForOllama(messages) {
     const out = { role: m.role, content: m.content ?? '' };
     if (m.tool_calls?.length) {
       out.tool_calls = m.tool_calls.map(tc => ({
+        ...(tc.id ? { id: tc.id } : {}),
         function: {
           name: tc.name,
           arguments: typeof tc.arguments === 'string' ? safeJson(tc.arguments) : (tc.arguments || {}),
@@ -16,6 +20,7 @@ function normalizeMessagesForOllama(messages) {
       }));
     }
     if (m.role === 'tool' && m.tool_name) out.tool_name = m.tool_name;
+    if (m.role === 'tool' && m.tool_call_id) out.tool_call_id = m.tool_call_id;
     return out;
   });
 }
@@ -67,6 +72,72 @@ export function isLoopbackUrl(url) {
   } catch {
     return false;
   }
+}
+
+export function isPrivateIp(ip, { allowLoopback = false } = {}) {
+  const clean = String(ip || '').toLowerCase().replace(/^::ffff:/, '');
+  if (!clean) return false;
+  if (net.isIPv4(clean)) {
+    const parts = clean.split('.').map(Number);
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return true;
+    const [a, b] = parts;
+    if (a === 127) return !allowLoopback;
+    if (a === 0 || a === 10) return true;
+    if (a === 169 && b === 254) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 100 && b >= 64 && b <= 127) return true;
+    if (a >= 224) return true;
+    return false;
+  }
+  if (net.isIPv6(clean)) {
+    if (clean === '::1') return !allowLoopback;
+    if (clean === '::' || clean.startsWith('fe80:') || clean.startsWith('fc') || clean.startsWith('fd') || clean.startsWith('ff')) {
+      return true;
+    }
+    return false;
+  }
+  return false;
+}
+
+export async function assertSafeUrl(rawUrl, { allowLoopback = false } = {}) {
+  let u;
+  try {
+    u = new URL(String(rawUrl));
+  } catch {
+    throw Object.assign(new Error(`Invalid URL: ${rawUrl}`), { status: 400 });
+  }
+  if (!['http:', 'https:'].includes(u.protocol)) {
+    throw Object.assign(new Error(`Unsupported URL protocol: ${u.protocol}`), { status: 400 });
+  }
+  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (host === 'localhost' || host === '::1' || /^127\./.test(host)) {
+    if (!allowLoopback) {
+      throw Object.assign(new Error(`Loopback URL blocked: ${rawUrl}`), { status: 400 });
+    }
+    return { url: u.toString(), isLoopback: true };
+  }
+  if (host === 'metadata.google.internal' || host === 'metadata' || host.endsWith('.internal')) {
+    throw Object.assign(new Error(`Internal/metadata host blocked: ${host}`), { status: 403 });
+  }
+  if (net.isIP(host)) {
+    if (isPrivateIp(host, { allowLoopback })) {
+      throw Object.assign(new Error(`Private or metadata IP blocked: ${host}`), { status: 403 });
+    }
+    return { url: u.toString(), isLoopback: false };
+  }
+  try {
+    const resolved = await dns.lookup(host, { all: true, verbatim: true });
+    for (const entry of resolved || []) {
+      if (isPrivateIp(entry.address, { allowLoopback })) {
+        throw Object.assign(new Error(`Host ${host} resolves to private/metadata IP ${entry.address}`), { status: 403 });
+      }
+    }
+  } catch (err) {
+    if (err?.status === 403) throw err;
+    // Allow normal fetch DNS error handling when offline or unresolvable
+  }
+  return { url: u.toString(), isLoopback: false };
 }
 
 export class LocalOnlyBlockedError extends Error {
@@ -129,10 +200,14 @@ export async function probeModels(settings) {
 /** Context window Mimir asks Ollama for. Measured on a 6 GB GPU: 8k keeps a 1.7B model fully on
  *  the GPU at ~106 tok/s; 40k drops the same model to ~31 tok/s. */
 export const DEFAULT_NUM_CTX = 8192;
+export const DEFAULT_OPENAI_NUM_CTX = 65536;
 
 export function resolveNumCtx(settings = {}) {
-  const n = Number(settings.ollamaNumCtx);
-  return Number.isInteger(n) && n >= 2048 && n <= 262144 ? n : DEFAULT_NUM_CTX;
+  const isOpenAI = settings.provider === 'openai-compat';
+  const raw = isOpenAI ? (settings.openaiNumCtx ?? settings.numCtx ?? settings.ollamaNumCtx) : (settings.ollamaNumCtx ?? settings.numCtx);
+  const n = Number(raw);
+  if (Number.isInteger(n) && n >= 2048 && n <= 262144) return n;
+  return isOpenAI ? DEFAULT_OPENAI_NUM_CTX : DEFAULT_NUM_CTX;
 }
 
 export const RESPONSE_MODES = ['fast', 'standard', 'reasoning'];
@@ -207,19 +282,33 @@ async function callOllama({ baseUrl, model, think, messages, tools, onToken, onT
     }
   };
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    let nl;
-    while ((nl = buf.indexOf('\n')) >= 0) {
-      const line = buf.slice(0, nl).trim();
-      buf = buf.slice(nl + 1);
-      if (!line) continue;
-      handleObj(JSON.parse(line));
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line) continue;
+        try {
+          handleObj(JSON.parse(line));
+        } catch {
+          // Ignore malformed partial NDJSON line from stream interruption
+        }
+      }
     }
+    if (buf.trim()) {
+      try {
+        handleObj(JSON.parse(buf.trim()));
+      } catch {
+        // Ignore truncated trailing frame
+      }
+    }
+  } finally {
+    reader.cancel().catch(() => {});
   }
-  if (buf.trim()) handleObj(JSON.parse(buf.trim()));
   return { provider: 'ollama', model, content, thinking, toolCalls, usage };
 }
 
@@ -275,41 +364,68 @@ async function callOpenAICompat({ baseUrl, apiKey, model, messages, tools, onTok
   let content = '';
   let thinking = '';
   const pendingTools = new Map();
+  const idToIdx = new Map();
+  let nextFallbackIdx = 0;
   let usage = null;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    let nl;
-    while ((nl = buf.indexOf('\n')) >= 0) {
-      const line = buf.slice(0, nl).trim();
-      buf = buf.slice(nl + 1);
-      if (!line.startsWith('data:')) continue;
-      const payload = line.slice(5).trim();
-      if (!payload || payload === '[DONE]') continue;
-      const evt = JSON.parse(payload);
-      if (evt.usage) usage = openaiUsage(evt.usage);
-      const delta = evt.choices?.[0]?.delta || {};
-      if (delta.reasoning_content) {
-        thinking += delta.reasoning_content;
-        onThinking?.(delta.reasoning_content);
-      }
-      if (delta.content) {
-        content += delta.content;
-        onToken?.(delta.content);
-      }
-      if (Array.isArray(delta.tool_calls)) {
-        for (const tc of delta.tool_calls) {
-          const idx = tc.index ?? 0;
-          const prev = pendingTools.get(idx) || { id: tc.id || `call_oai_${idx}`, name: '', argText: '' };
-          if (tc.id) prev.id = tc.id;
-          if (tc.function?.name) prev.name += tc.function.name;
-          if (tc.function?.arguments) prev.argText += tc.function.arguments;
-          pendingTools.set(idx, prev);
+  const consumeLine = (rawLine) => {
+    const line = rawLine.trim();
+    if (!line.startsWith('data:')) return;
+    const payload = line.slice(5).trim();
+    if (!payload || payload === '[DONE]') return;
+    let evt;
+    try {
+      evt = JSON.parse(payload);
+    } catch {
+      return;
+    }
+    if (evt.usage) usage = openaiUsage(evt.usage);
+    const delta = evt.choices?.[0]?.delta || {};
+    if (delta.reasoning_content) {
+      thinking += delta.reasoning_content;
+      onThinking?.(delta.reasoning_content);
+    }
+    if (delta.content) {
+      content += delta.content;
+      onToken?.(delta.content);
+    }
+    if (Array.isArray(delta.tool_calls)) {
+      for (const tc of delta.tool_calls) {
+        let idx = tc.index;
+        if (idx == null) {
+          if (tc.id && idToIdx.has(tc.id)) idx = idToIdx.get(tc.id);
+          else {
+            idx = nextFallbackIdx++;
+            if (tc.id) idToIdx.set(tc.id, idx);
+          }
         }
+        const prev = pendingTools.get(idx) || { id: tc.id || `call_oai_${idx}`, name: '', argText: '' };
+        if (tc.id) {
+          prev.id = tc.id;
+          idToIdx.set(tc.id, idx);
+        }
+        if (tc.function?.name) prev.name += tc.function.name;
+        if (tc.function?.arguments) prev.argText += tc.function.arguments;
+        pendingTools.set(idx, prev);
       }
     }
+  };
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl);
+        buf = buf.slice(nl + 1);
+        consumeLine(line);
+      }
+    }
+    if (buf.trim()) consumeLine(buf);
+  } finally {
+    reader.cancel().catch(() => {});
   }
 
   const toolCalls = [...pendingTools.entries()]
@@ -317,6 +433,34 @@ async function callOpenAICompat({ baseUrl, apiKey, model, messages, tools, onTok
     .map(([, tc]) => ({ id: tc.id, name: tc.name, arguments: safeJson(tc.argText) }));
 
   return { provider: 'openai-compat', model, content, thinking, toolCalls, usage };
+}
+
+function isTransientLlmError(err) {
+  const msg = String(err?.message || '');
+  return /\bHTTP (?:429|502|503|504)\b|ECONNRESET|ETIMEDOUT|socket hang up/i.test(msg);
+}
+
+async function withTransientRetry(fn, signal) {
+  const delays = [150, 400];
+  let lastErr;
+  for (let attempt = 0; attempt <= delays.length; attempt += 1) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (signal?.aborted || err?.name === 'AbortError' || attempt === delays.length || !isTransientLlmError(err)) {
+        throw err;
+      }
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(resolve, delays[attempt]);
+        signal?.addEventListener?.('abort', () => {
+          clearTimeout(timer);
+          reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
+        }, { once: true });
+      });
+    }
+  }
+  throw lastErr;
 }
 
 export async function runChatTurn({ settings, modelOverride, messages, tools, onToken, onThinking, signal }) {
@@ -330,19 +474,19 @@ export async function runChatTurn({ settings, modelOverride, messages, tools, on
   const invoke = async target => {
     assertAllowed(target === 'ollama' ? settings.ollamaUrl : settings.openaiBaseUrl);
     if (target === 'ollama') {
-      return callOllama({
+      return withTransientRetry(() => callOllama({
         baseUrl: settings.ollamaUrl,
         model: (mode === 'fast' && settings.autoTierModels?.fast_local) || modelOverride || settings.ollamaModel || 'qwen3:1.7b',
         think: mode ? mode === 'reasoning' : settings.ollamaThink,
-        numCtx: resolveNumCtx(settings),
+        numCtx: resolveNumCtx({ ...settings, provider: 'ollama' }),
         messages,
         tools,
         onToken,
         onThinking,
         signal,
-      });
+      }), signal);
     }
-    return callOpenAICompat({
+    return withTransientRetry(() => callOpenAICompat({
       baseUrl: settings.openaiBaseUrl,
       apiKey: settings.openaiApiKey,
       model: modelOverride || settings.openaiModel || 'gpt-4o-mini',
@@ -351,7 +495,7 @@ export async function runChatTurn({ settings, modelOverride, messages, tools, on
       onToken,
       onThinking,
       signal,
-    });
+    }), signal);
   };
 
   try {

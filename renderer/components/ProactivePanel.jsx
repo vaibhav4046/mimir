@@ -29,6 +29,7 @@ export function ProactivePanel({ refreshKey, onOpenThread }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [quietDraft, setQuietDraft] = useState(null);
+  const [maxRunsDraft, setMaxRunsDraft] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -117,7 +118,19 @@ export function ProactivePanel({ refreshKey, onOpenThread }) {
         </label>
         <label className="field-label">
           Max runs per day
-          <input type="number" min="0" max="1000" className="input" defaultValue={status.maxRunsPerDay} onBlur={e => Number(e.target.value) !== status.maxRunsPerDay && saveConfig({ maxRunsPerDay: Number(e.target.value) })} />
+          <input
+            type="number"
+            min="0"
+            max="1000"
+            className="input"
+            value={maxRunsDraft ?? status.maxRunsPerDay}
+            onChange={e => setMaxRunsDraft(e.target.value)}
+            onBlur={e => {
+              const n = Number(e.target.value);
+              setMaxRunsDraft(null);
+              if (!Number.isNaN(n) && n !== status.maxRunsPerDay) saveConfig({ maxRunsPerDay: n });
+            }}
+          />
         </label>
       </div>
       {status.quietHours && (

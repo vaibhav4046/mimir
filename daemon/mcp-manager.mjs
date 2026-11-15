@@ -189,6 +189,15 @@ export class McpManager {
       } catch {}
     });
     proc.stderr.on('data', d => { stderrBuf = (stderrBuf + d.toString()).slice(-1500); });
+    proc.stdin?.on('error', () => {});
+    proc.on('error', err => {
+      for (const [, p] of pending) {
+        clearTimeout(p.timer);
+        p.reject(err);
+      }
+      pending.clear();
+      this.clients.set(srv.id, { status: 'error', error: err.message, tools: [] });
+    });
     proc.on('exit', code => {
       for (const [, p] of pending) {
         clearTimeout(p.timer);

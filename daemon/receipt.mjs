@@ -69,10 +69,20 @@ function collectActions(turnMessages, workspace, actor) {
     if (status === 'failed') action.error = output.slice(7, 160);
     if (m.toolName === 'fs_write' && status === 'done' && workspace) {
       // Trust the disk, not the tool's reply: the file must exist inside the sandbox right now.
+      const base = path.resolve(workspace);
       const abs = path.resolve(workspace, String(m.toolArgs?.path || ''));
-      const inside = abs.startsWith(path.resolve(workspace) + path.sep);
+      const inside = abs.startsWith(base + path.sep);
       if (inside && fs.existsSync(abs) && fs.statSync(abs).isFile()) {
-        action.file = { path: String(m.toolArgs.path), bytes: fs.statSync(abs).size, sha256: sha256Of(abs).slice(0, 16) };
+        const realBase = fs.realpathSync(base);
+        const realAbs = fs.realpathSync(abs);
+        const cmpBase = process.platform === 'win32' ? realBase.toLowerCase() : realBase;
+        const cmpAbs = process.platform === 'win32' ? realAbs.toLowerCase() : realAbs;
+        if (cmpAbs.startsWith(cmpBase + path.sep)) {
+          action.file = { path: String(m.toolArgs.path), bytes: fs.statSync(abs).size, sha256: sha256Of(abs).slice(0, 16) };
+        } else {
+          action.status = 'failed';
+          action.error = 'Symlink path escaped workspace';
+        }
       } else {
         action.status = 'failed';
         action.error = 'Tool reported success but the file is not on disk';
@@ -139,11 +149,11 @@ export function finalizeReceiptHashChain(receipt, prevHash = '0'.repeat(64)) {
   return next;
 }
 
-export function verifyReceiptChain(receipts = []) {
+export function verifyReceiptChain(receipts = [], initialPrevHash = '0'.repeat(64)) {
   if (!Array.isArray(receipts) || receipts.length === 0) {
     return { valid: true, count: 0, brokenIndex: null };
   }
-  let expectedPrev = '0'.repeat(64);
+  let expectedPrev = String(initialPrevHash || '0'.repeat(64));
   for (let i = 0; i < receipts.length; i++) {
     const r = receipts[i];
     if (!r || String(r.prevHash || '') !== expectedPrev) {

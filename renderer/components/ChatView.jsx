@@ -65,23 +65,7 @@ const SMART_ACTION_CARDS = [
   },
 ];
 
-const WORKSPACE_MODES = [
-  { id: 'auto', label: 'Auto-Detect' },
-  { id: 'conversation', label: 'Conversation' },
-  { id: 'code', label: 'Coding & Web App' },
-  { id: 'research', label: 'Deep Research' },
-  { id: 'music', label: 'Music & Audio' },
-  { id: 'video', label: 'Video Production' },
-  { id: '3d', label: 'Images & 3D' },
-  { id: 'voice', label: 'Voice' },
-  { id: 'automation', label: 'Automation' },
-];
-
-function detectDraftIntent(rawText, modeOverride = 'auto') {
-  if (modeOverride && modeOverride !== 'auto') {
-    const found = WORKSPACE_MODES.find(m => m.id === modeOverride);
-    if (found) return { kind: modeOverride, label: `Mode: ${found.label}` };
-  }
+function detectDraftIntent(rawText) {
   const text = String(rawText || '').trim();
   if (!text) return null;
   if (text.startsWith('/')) {
@@ -515,6 +499,7 @@ function SpeakButton({ text, autoPlay = false }) {
       const audio = new Audio(`data:${out.mime};base64,${out.audioBase64}`);
       audioRef.current = audio;
       audio.onended = () => setState('idle');
+      audio.onerror = () => setState('error');
       await audio.play();
       setState('playing');
     } catch {
@@ -524,7 +509,13 @@ function SpeakButton({ text, autoPlay = false }) {
 
   useEffect(() => {
     if (autoPlay) play();
-    return () => audioRef.current?.pause();
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        audioRef.current = null;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- play once on mount only
   }, []);
 
@@ -536,29 +527,53 @@ function SpeakButton({ text, autoPlay = false }) {
   );
 }
 
-function renderCitationsAndMentions(text, keyPrefix) {
+function renderSafeLinks(text, keyPrefix) {
   return String(text || '')
-    .split(/(\[S\d+\])/g)
-    .map((part, cIdx) => {
-      if (/^\[S\d+\]$/.test(part)) {
+    .split(/(\[[^\]]+\]\(https?:\/\/[^\s)]+\))/g)
+    .map((part, idx) => {
+      const m = part.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
+      if (m) {
         return (
-          <span key={`${keyPrefix}-c${cIdx}`} className="cite-badge">
-            {part}
-          </span>
+          <a key={`${keyPrefix}-lnk-${idx}`} href={m[2]} target="_blank" rel="noopener noreferrer" className="md-link">
+            {m[1]}
+          </a>
         );
       }
       return String(part)
-        .split(/(@[A-Za-z][A-Za-z0-9_-]*)/g)
-        .map((seg, sIdx) =>
-          sIdx % 2 === 1 ? (
-            <span key={`${keyPrefix}-m${cIdx}-${sIdx}`} className="mention-pill">
-              {seg}
-            </span>
-          ) : (
-            seg
-          )
-        );
+        .split(/(\[S\d+\])/g)
+        .map((cPart, cIdx) => {
+          if (/^\[S\d+\]$/.test(cPart)) {
+            return (
+              <span key={`${keyPrefix}-c${idx}-${cIdx}`} className="cite-badge">
+                {cPart}
+              </span>
+            );
+          }
+          return String(cPart)
+            .split(/(@[A-Za-z][A-Za-z0-9_-]*)/g)
+            .map((seg, sIdx) =>
+              sIdx % 2 === 1 ? (
+                <span key={`${keyPrefix}-m${idx}-${cIdx}-${sIdx}`} className="mention-pill">
+                  {seg}
+                </span>
+              ) : (
+                seg
+              )
+            );
+        });
     });
+}
+
+function renderItalic(text, keyPrefix) {
+  return String(text || '')
+    .split(/\*([^*\n]+)\*/g)
+    .map((part, idx) =>
+      idx % 2 === 1 ? (
+        <em key={`${keyPrefix}-em${idx}`}>{renderSafeLinks(part, `${keyPrefix}-emi${idx}`)}</em>
+      ) : (
+        renderSafeLinks(part, `${keyPrefix}-rl${idx}`)
+      )
+    );
 }
 
 function renderBold(text, keyPrefix) {
@@ -566,9 +581,9 @@ function renderBold(text, keyPrefix) {
     .split(/\*\*([^*]+)\*\*/g)
     .map((part, idx) =>
       idx % 2 === 1 ? (
-        <strong key={`${keyPrefix}-b${idx}`}>{renderCitationsAndMentions(part, `${keyPrefix}-bi${idx}`)}</strong>
+        <strong key={`${keyPrefix}-b${idx}`}>{renderItalic(part, `${keyPrefix}-bi${idx}`)}</strong>
       ) : (
-        renderCitationsAndMentions(part, `${keyPrefix}-m${idx}`)
+        renderItalic(part, `${keyPrefix}-m${idx}`)
       )
     );
 }
@@ -740,18 +755,39 @@ function parseMarkdownBlock(chunk, keyPrefix) {
   return nodes;
 }
 
+function CodeBlock({ lang, code }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard?.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
+  };
+  return (
+    <div className="code-block-wrap" style={{ margin: '8px 0' }}>
+      <div className="code-block-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, color: 'var(--ink-subtle)', padding: '4px 10px', borderBottom: '1px solid var(--border-soft)' }}>
+        <span>{lang || 'code'}</span>
+        <button type="button" className="btn btn-sm" onClick={copy} data-testid="copy-code-btn">
+          {copied ? 'Copied' : 'Copy'}
+        </button>
+      </div>
+      <pre className="code-block" style={{ margin: 0, borderTop: 'none', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
+
 function renderFormattedText(text) {
   const str = String(text || '');
   const parts = str.split(/```([\s\S]*?)```/g);
   return parts.map((chunk, i) => {
     if (i % 2 === 1) {
       const firstNewline = chunk.indexOf('\n');
-      const code = firstNewline > -1 ? chunk.slice(firstNewline + 1) : chunk;
-      return (
-        <pre key={i} className="code-block" style={{ margin: '8px 0' }}>
-          <code>{code.trimEnd()}</code>
-        </pre>
-      );
+      const lang = firstNewline > -1 ? chunk.slice(0, firstNewline).trim() : '';
+      const code = (firstNewline > -1 ? chunk.slice(firstNewline + 1) : chunk).trimEnd();
+      return <CodeBlock key={i} lang={lang} code={code} />;
     }
     return <div key={i} className="md-block">{parseMarkdownBlock(chunk, `md-${i}`)}</div>;
   });
@@ -776,24 +812,28 @@ export function ChatView({
   onToggleTeachMode,
   onSaveRecording,
   onNavigateTab,
-  activeSurface = 'chat',
-  onSelectSurface,
   mimirAvatarState = 'IDLE',
   staticAvatar = false,
   onUiAction,
 }) {
   const [draft, setDraft] = useState('');
   const [attachments, setAttachments] = useState([]);
-  const [workspaceMode, setWorkspaceMode] = useState('auto');
   const [recName, setRecName] = useState('');
   const [commands, setCommands] = useState([]);
   const [micState, setMicState] = useState('idle'); // idle | recording | transcribing | error
   const [micError, setMicError] = useState('');
+  const [sendError, setSendError] = useState('');
+  const [sending, setSending] = useState(false);
   const [modeBusy, setModeBusy] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [dropBusy, setDropBusy] = useState(false);
+  const [showScrollLatest, setShowScrollLatest] = useState(false);
+  const [slashIndex, setSlashIndex] = useState(0);
+  const [copiedMsgId, setCopiedMsgId] = useState('');
   const [greeting] = useState(() => MIMIR_GREETINGS[Math.floor(Math.random() * MIMIR_GREETINGS.length)]);
   const endRef = useRef(null);
+  const scrollRef = useRef(null);
+  const stickToBottomRef = useRef(true);
   const fileInputRef = useRef(null);
   const recorderRef = useRef(null);
   const micStreamRef = useRef(null);
@@ -896,19 +936,48 @@ export function ChatView({
 
   // Suggest only while typing the command word itself, not its argument.
   const commandMatches = /^\/\S*$/.test(draft) ? commands.filter(c => c.cmd.startsWith(draft.toLowerCase())) : [];
+  const activeSlashIdx = commandMatches.length ? Math.min(slashIndex, commandMatches.length - 1) : 0;
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setSlashIndex(0);
+  }, [draft]);
+
+  useEffect(() => {
+    if (stickToBottomRef.current) {
+      endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [thread?.messages?.length, streaming?.content, pendingApprovals?.length]);
+
+  const handleChatScroll = evt => {
+    const el = evt.currentTarget;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 90;
+    stickToBottomRef.current = nearBottom;
+    setShowScrollLatest(!nearBottom && (messages.length > 0 || isRunning));
+  };
+
+  const sendDraftPayload = async (text, staged) => {
+    setSending(true);
+    setSendError('');
+    stickToBottomRef.current = true;
+    try {
+      await onSendMessage(text || 'Inspect attached files.', staged);
+      setDraft('');
+      setAttachments([]);
+      return true;
+    } catch (err) {
+      setSendError(err?.message || 'Failed to send message. Your draft was kept.');
+      return false;
+    } finally {
+      setSending(false);
+    }
+  };
 
   const handleSubmit = async e => {
     e?.preventDefault();
+    if (sending) return;
     const text = draft.trim();
     if (!text && attachments.length === 0) return;
-    setDraft('');
-    const staged = [...attachments];
-    setAttachments([]);
-    await onSendMessage(text || 'Inspect attached files.', staged);
+    await sendDraftPayload(text, [...attachments]);
   };
 
   const stageAndMaybeAutoRun = async (fileList, { autoSend = false } = {}) => {
@@ -916,6 +985,7 @@ export function ChatView({
     if (!rawFiles.length) return;
     setDropBusy(true);
     setMicError('');
+    setSendError('');
     try {
       const { encoded, skipped } = await encodeFilesForStaging(rawFiles);
       if (skipped.length) {
@@ -926,13 +996,12 @@ export function ChatView({
       const merged = [...attachments, ...staged];
       if (autoSend && !isRunning) {
         const customPrompt = draft.trim();
-        setDraft('');
-        setAttachments([]);
         const names = staged.map(f => f.name).join(', ');
-        await onSendMessage(
+        const ok = await sendDraftPayload(
           customPrompt || `Inspect and work on dropped file(s): ${names}`,
           merged
         );
+        if (!ok) setAttachments(merged);
       } else {
         setAttachments(merged);
       }
@@ -945,10 +1014,14 @@ export function ChatView({
 
   const handlePickFiles = async () => {
     if (window.desktop?.pickAttachmentFiles) {
-      const files = await window.desktop.pickAttachmentFiles();
-      if (files?.length) {
-        const res = await onStageFiles(files);
-        setAttachments(prev => [...prev, ...res]);
+      try {
+        const files = await window.desktop.pickAttachmentFiles();
+        if (files?.length) {
+          const res = await onStageFiles(files);
+          setAttachments(prev => [...prev, ...res]);
+        }
+      } catch (err) {
+        setSendError(err?.message || 'Failed attaching selected file(s).');
       }
       return;
     }
@@ -1063,7 +1136,7 @@ export function ChatView({
         </div>
       </div>
 
-      <div className="chat-scroll" data-testid="chat-messages">
+      <div className="chat-scroll" ref={scrollRef} onScroll={handleChatScroll} data-testid="chat-messages">
         {messages.length === 0 && !streaming?.content && (
           <div className="view-panel-enter chat-empty-hero">
             <div className="hairline-hero">
@@ -1203,14 +1276,19 @@ export function ChatView({
                 </div>
               )}
               {m.role === 'assistant' && m.timelineSteps?.length > 0 && (
-                <div className="timeline-steps" data-testid="timeline-steps">
-                  {m.timelineSteps.map((step, sIdx) => (
-                    <div key={step.id || sIdx} className="timeline-row" data-status={step.status || 'done'}>
-                      <TimelineStepIcon icon={step.icon} />
-                      <span>{step.label}</span>
-                    </div>
-                  ))}
-                </div>
+                <details className="timeline-steps timeline-accordion" data-testid="timeline-steps">
+                  <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--ink-muted)' }}>
+                    Steps ({m.timelineSteps.length})
+                  </summary>
+                  <div style={{ marginTop: 6 }}>
+                    {m.timelineSteps.map((step, sIdx) => (
+                      <div key={step.id || sIdx} className="timeline-row" data-status={step.status || 'done'}>
+                        <TimelineStepIcon icon={step.icon} />
+                        <span>{step.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
               )}
               {m.speakerName && (
                 <div className="speaker-tag" data-testid="speaker-tag" style={{ color: m.speakerColor || 'var(--frost-hi)' }}>
@@ -1286,6 +1364,46 @@ export function ChatView({
                 <span>{m.role === 'user' ? 'You' : m.speakerName || bot?.name || 'Mimir'}</span>
                 {m.model && !m.speakerName && <span>• {m.provider}:{m.model}</span>}
                 {m.fallbackFrom && <span>• Backup used after {m.fallbackFrom}</span>}
+                {hasText && (
+                  <button
+                    type="button"
+                    className="speak-btn"
+                    data-testid="copy-msg-btn"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard?.writeText(String(m.content || ''));
+                        setCopiedMsgId(m.id);
+                        setTimeout(() => setCopiedMsgId(prev => (prev === m.id ? '' : prev)), 1500);
+                      } catch {}
+                    }}
+                  >
+                    {copiedMsgId === m.id ? 'Copied' : 'Copy'}
+                  </button>
+                )}
+                {m.role === 'user' && hasText && !isRunning && (
+                  <button
+                    type="button"
+                    className="speak-btn"
+                    data-testid="edit-msg-btn"
+                    onClick={() => setDraft(String(m.content || ''))}
+                  >
+                    Edit
+                  </button>
+                )}
+                {m.role === 'assistant' && !isRunning && (() => {
+                  const prevUser = [...messages.slice(0, msgIdx)].reverse().find(x => x.role === 'user' && String(x.content || '').trim());
+                  if (!prevUser) return null;
+                  return (
+                    <button
+                      type="button"
+                      className="speak-btn"
+                      data-testid="retry-msg-btn"
+                      onClick={() => sendDraftPayload(String(prevUser.content || '').trim(), prevUser.attachments || [])}
+                    >
+                      Retry
+                    </button>
+                  );
+                })()}
                 {m.role === 'assistant' && hasText && (
                   <SpeakButton text={m.content} autoPlay={Boolean(m.voice) && msgIdx === messages.length - 1} />
                 )}
@@ -1296,17 +1414,22 @@ export function ChatView({
 
         {isRunning && swarmSteps.length > 0 && (
           <div className="msg-row assistant">
-            <div className="timeline-steps" data-testid="timeline-steps">
-              {swarmSteps.map((step, sIdx) => (
-                <div key={step.id || sIdx} className="timeline-row" data-status={step.status || 'running'}>
-                  <TimelineStepIcon icon={step.icon || 'subagent'} />
-                  <span>
-                    {step.label}
-                    {step.detail ? ` — ${step.detail}` : ''}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <details className="timeline-steps timeline-accordion" data-testid="timeline-steps" open>
+              <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--ink-muted)' }}>
+                Live steps ({swarmSteps.length})
+              </summary>
+              <div style={{ marginTop: 6 }}>
+                {swarmSteps.map((step, sIdx) => (
+                  <div key={step.id || sIdx} className="timeline-row" data-status={step.status || 'running'}>
+                    <TimelineStepIcon icon={step.icon || 'subagent'} />
+                    <span>
+                      {step.label}
+                      {step.detail ? ` — ${step.detail}` : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </details>
           </div>
         )}
 
@@ -1332,6 +1455,23 @@ export function ChatView({
         ) : null}
         <div ref={endRef} />
       </div>
+
+      {showScrollLatest && (
+        <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0' }}>
+          <button
+            type="button"
+            className="btn btn-sm"
+            data-testid="scroll-latest-btn"
+            onClick={() => {
+              stickToBottomRef.current = true;
+              setShowScrollLatest(false);
+              endRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            Latest
+          </button>
+        </div>
+      )}
 
       {pendingApprovals.map(apr => {
         const card = apr.dialogueCard;
@@ -1461,13 +1601,13 @@ export function ChatView({
 
           {commandMatches.length > 0 && (
             <ul className="command-suggest" role="listbox" aria-label="Mimir commands" data-testid="command-suggest">
-              {commandMatches.map(c => (
+              {commandMatches.map((c, sIdx) => (
                 <li key={c.cmd}>
                   <button
                     type="button"
                     role="option"
-                    aria-selected="false"
-                    className="command-suggest-item"
+                    aria-selected={sIdx === activeSlashIdx}
+                    className={`command-suggest-item ${sIdx === activeSlashIdx ? 'is-active' : ''}`}
                     onClick={() => setDraft(`${c.cmd} `)}
                   >
                     <code>{c.syntax}</code>
@@ -1522,7 +1662,7 @@ export function ChatView({
           </div>
 
           {(() => {
-            const draftIntent = detectDraftIntent(draft, workspaceMode);
+            const draftIntent = detectDraftIntent(draft);
             if (!draftIntent) return null;
             return (
               <div className="adaptive-workspace-bar" data-testid="adaptive-workspace-bar">
@@ -1533,6 +1673,13 @@ export function ChatView({
               </div>
             );
           })()}
+
+          {sendError && (
+            <div className="error-banner" role="alert" data-testid="composer-error" style={{ marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <span>{sendError}</span>
+              <button type="button" className="btn btn-sm" onClick={() => setSendError('')}>Dismiss</button>
+            </div>
+          )}
 
           <UsageBar threadId={thread?.id} isRunning={isRunning} />
 
@@ -1571,10 +1718,30 @@ export function ChatView({
                 }
               }}
               onKeyDown={e => {
-                if (e.key === 'Tab' && commandMatches.length === 1) {
-                  e.preventDefault();
-                  setDraft(`${commandMatches[0].cmd} `);
-                  return;
+                if (commandMatches.length > 0) {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setSlashIndex(prev => (prev + 1) % commandMatches.length);
+                    return;
+                  }
+                  if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setSlashIndex(prev => (prev - 1 + commandMatches.length) % commandMatches.length);
+                    return;
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    setDraft('');
+                    return;
+                  }
+                  if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey && !/\s/.test(draft))) {
+                    const chosen = commandMatches[activeSlashIdx];
+                    if (chosen && draft.toLowerCase() !== chosen.cmd) {
+                      e.preventDefault();
+                      setDraft(`${chosen.cmd} `);
+                      return;
+                    }
+                  }
                 }
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -1619,7 +1786,7 @@ export function ChatView({
                 type="submit"
                 className="btn btn-primary"
                 data-testid="send-btn"
-                disabled={!draft.trim() && attachments.length === 0}
+                disabled={sending || (!draft.trim() && attachments.length === 0)}
               >
                 <span>Send</span>
                 <SendRunicSvg size={14} />

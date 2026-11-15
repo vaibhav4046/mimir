@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolveUrlOrSearch } from './local-exec.mjs';
+import { isPrivateIp } from './llm-provider.mjs';
 
 export const BrowserState = Object.freeze({
   IDLE: 'idle',
@@ -33,6 +34,9 @@ export function isUrlAllowed(rawUrl, settings = {}) {
   const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
   if (host === '127.0.0.1' || host === 'localhost' || host === '::1') {
     return { ok: true, host };
+  }
+  if (host === 'metadata.google.internal' || host === 'metadata' || host.endsWith('.internal') || isPrivateIp(host, { allowLoopback: true })) {
+    return { ok: false, reason: `Private/metadata host blocked: ${host}`, host };
   }
 
   const rawList = Array.isArray(settings.browserAllowedDomains)

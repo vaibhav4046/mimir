@@ -128,6 +128,8 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
       onSaved(updated);
       await onProbeModels();
       setSavedBanner('Saved. AI models checked.');
+    } catch (err) {
+      setSavedBanner(`Could not save: ${err?.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }

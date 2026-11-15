@@ -57,8 +57,8 @@ export function App() {
   const [routines, setRoutines] = useState([]);
   const [recordings, setRecordings] = useState([]);
   const [pendingApprovals, setPendingApprovals] = useState([]);
-  const [streaming, setStreaming] = useState({ content: '', thinking: '' });
-  const [runningThreadId, setRunningThreadId] = useState(null);
+  const [streamingByThread, setStreamingByThread] = useState({});
+  const [runningThreads, setRunningThreads] = useState({});
   const [botModal, setBotModal] = useState(null);
   const [teachMode, setTeachMode] = useState(false);
   const [recordedSteps, setRecordedSteps] = useState([]);
@@ -68,11 +68,11 @@ export function App() {
   const [killNotice, setKillNotice] = useState('');
   const [liveVoiceOpen, setLiveVoiceOpen] = useState(false);
   const [councilSteps, setCouncilSteps] = useState([]);
-  const [swarmSteps, setSwarmSteps] = useState([]);
+  const [swarmStepsByThread, setSwarmStepsByThread] = useState({});
   const [teamOverview, setTeamOverview] = useState(null);
   const [spaces, setSpaces] = useState([]);
   const [activeSpaceId, setActiveSpaceId] = useState('');
-  const [activeSurface, setActiveSurface] = useState('chat');
+  const [wsStatus, setWsStatus] = useState('connected');
   const [sentinelBlocked, setSentinelBlocked] = useState(false);
   const [voicePhase, setVoicePhase] = useState('idle');
   const [lastRunFailed, setLastRunFailed] = useState(false);
@@ -88,6 +88,9 @@ export function App() {
   const teachRef = useRef(teachMode);
   const settingsRef = useRef(settings);
   const skipAutoThreadSelectRef = useRef(false);
+  const threadReqRef = useRef(0);
+  const botReqRef = useRef(0);
+  const wsWasDisconnectedRef = useRef(false);
   activeThreadRef.current = activeThreadId;
   activeBotRef.current = activeBotId;
   teachRef.current = teachMode;
@@ -128,12 +131,14 @@ export function App() {
 
   const refreshBotContext = useCallback(async botId => {
     if (!botId) return;
+    const reqId = ++botReqRef.current;
     const [tList, comp, mems, ov] = await Promise.all([
       apiFetch(`/v1/threads?botId=${encodeURIComponent(botId)}`),
       apiFetch(`/v1/computer/${encodeURIComponent(botId)}/state`),
       apiFetch(`/v1/bots/${encodeURIComponent(botId)}/memories`),
       apiFetch(`/v1/team/overview?botId=${encodeURIComponent(botId)}`).catch(() => null),
     ]);
+    if (reqId !== botReqRef.current) return;
     setThreads(tList);
     setComputerState(comp);
     setMemories(mems);
@@ -145,17 +150,23 @@ export function App() {
     if (!activeThreadRef.current || !tList.some(t => t.id === activeThreadRef.current)) {
       const nextId = tList[0]?.id || null;
       setActiveThreadId(nextId);
-      setActiveThread(nextId ? await apiFetch(`/v1/threads/${encodeURIComponent(nextId)}`) : null);
+      const tReqId = ++threadReqRef.current;
+      const loaded = nextId ? await apiFetch(`/v1/threads/${encodeURIComponent(nextId)}`) : null;
+      if (tReqId === threadReqRef.current) setActiveThread(loaded);
     }
   }, []);
 
   const loadThread = useCallback(async threadId => {
+    const reqId = ++threadReqRef.current;
     setActiveThreadId(threadId);
     if (!threadId) {
       setActiveThread(null);
       return;
     }
-    setActiveThread(await apiFetch(`/v1/threads/${encodeURIComponent(threadId)}`));
+    const loaded = await apiFetch(`/v1/threads/${encodeURIComponent(threadId)}`);
+    if (reqId === threadReqRef.current) {
+      setActiveThread(loaded);
+    }
   }, []);
 
   const connectAndRefresh = useCallback(async () => {
@@ -257,131 +268,180 @@ export function App() {
 
   useEffect(() => {
     if (runtimeState.status !== 'connected') return undefined;
-    const unsub = subscribeEvents(async msg => {
-      const { event, data } = msg;
-      if (event === 'agent:delta') {
-        if (data.threadId === activeThreadRef.current) {
-          setStreaming(prev => ({
-            content: data.kind === 'content' ? prev.content + data.delta : prev.content,
-            thinking: data.kind === 'thinking' ? prev.thinking + data.delta : prev.thinking,
-          }));
-        }
-      } else if (event === 'thread:updated') {
-        const list = await apiFetch(`/v1/threads?botId=${encodeURIComponent(activeBotRef.current)}`);
-        setThreads(list);
-        if (data.threadId === activeThreadRef.current) {
-          setActiveThread(await apiFetch(`/v1/threads/${encodeURIComponent(data.threadId)}`));
-        }
-      } else if (event === 'receipt:created') {
-        if (data?.threadId && data.threadId === activeThreadRef.current) {
-          apiFetch(`/v1/threads/${encodeURIComponent(data.threadId)}`)
-            .then(setActiveThread)
-            .catch(() => {});
-        }
-      } else if (event === 'agents:status') {
-        setAgentStatuses(await apiFetch('/v1/agents/status').catch(() => []));
-        setTeamOverview(await apiFetch(`/v1/team/overview?botId=${encodeURIComponent(activeBotRef.current)}`).catch(() => null));
-      } else if (event === 'bots:updated') {
-        if (Array.isArray(data)) setBots(data);
-      } else if (event === 'approval:requested') {
-        setPendingApprovals(prev => [...prev.filter(x => x.id !== data.id), data]);
-        if (settingsRef.current?.soundEffects !== false) playSoftCue('alert');
-      } else if (event === 'approval:resolved') {
-        setPendingApprovals(prev => prev.filter(x => x.id !== data.id));
-      } else if (event === 'tool:result') {
-        if (teachRef.current && data.approved) {
-          const thr = await apiFetch(`/v1/threads/${encodeURIComponent(data.threadId)}`);
-          const lastToolMsg = [...(thr?.messages || [])].reverse().find(m => m.role === 'tool' && m.toolName === data.toolName);
-          if (lastToolMsg) {
-            setRecordedSteps(prev => [...prev, { toolName: lastToolMsg.toolName, args: lastToolMsg.toolArgs || {} }]);
+    const unsub = subscribeEvents(
+      async msg => {
+        const { event, data } = msg;
+        if (event === 'agent:delta') {
+          const tid = data.threadId || activeThreadRef.current;
+          if (!tid) return;
+          setStreamingByThread(prev => {
+            const cur = prev[tid] || { content: '', thinking: '' };
+            return {
+              ...prev,
+              [tid]: {
+                content: data.kind === 'content' ? cur.content + data.delta : cur.content,
+                thinking: data.kind === 'thinking' ? cur.thinking + data.delta : cur.thinking,
+              },
+            };
+          });
+        } else if (event === 'thread:updated') {
+          const list = await apiFetch(`/v1/threads?botId=${encodeURIComponent(activeBotRef.current)}`);
+          setThreads(list);
+          if (data.threadId === activeThreadRef.current) {
+            const reqId = ++threadReqRef.current;
+            const loaded = await apiFetch(`/v1/threads/${encodeURIComponent(data.threadId)}`);
+            if (reqId === threadReqRef.current) setActiveThread(loaded);
+          }
+        } else if (event === 'receipt:created') {
+          if (data?.threadId && data.threadId === activeThreadRef.current) {
+            const reqId = ++threadReqRef.current;
+            apiFetch(`/v1/threads/${encodeURIComponent(data.threadId)}`)
+              .then(loaded => {
+                if (reqId === threadReqRef.current) setActiveThread(loaded);
+              })
+              .catch(() => {});
+          }
+        } else if (event === 'agents:status') {
+          setAgentStatuses(await apiFetch('/v1/agents/status').catch(() => []));
+          setTeamOverview(await apiFetch(`/v1/team/overview?botId=${encodeURIComponent(activeBotRef.current)}`).catch(() => null));
+        } else if (event === 'bots:updated') {
+          if (Array.isArray(data)) setBots(data);
+        } else if (event === 'approval:requested') {
+          setPendingApprovals(prev => [...prev.filter(x => x.id !== data.id), data]);
+          if (settingsRef.current?.soundEffects !== false) playSoftCue('alert');
+        } else if (event === 'approval:resolved') {
+          setPendingApprovals(prev => prev.filter(x => x.id !== data.id));
+        } else if (event === 'tool:result') {
+          if (teachRef.current && data.approved) {
+            const thr = await apiFetch(`/v1/threads/${encodeURIComponent(data.threadId)}`);
+            const lastToolMsg = [...(thr?.messages || [])].reverse().find(m => m.role === 'tool' && m.toolName === data.toolName);
+            if (lastToolMsg) {
+              setRecordedSteps(prev => [...prev, { toolName: lastToolMsg.toolName, args: lastToolMsg.toolArgs || {} }]);
+            }
+          }
+          if (data.botId === activeBotRef.current) {
+            setComputerState(await apiFetch(`/v1/computer/${encodeURIComponent(data.botId)}/state`));
+            setMemories(await apiFetch(`/v1/bots/${encodeURIComponent(data.botId)}/memories`));
+          }
+          if (data.toolName === 'bot_spawn' && data.approved) {
+            setBots(await apiFetch('/v1/bots').catch(() => []));
+          }
+        } else if (event === 'computer:screenshot') {
+          if (data.botId === activeBotRef.current) {
+            setComputerState(prev => (prev ? { ...prev, browser: data } : prev));
+          }
+        } else if (event === 'browser:cursor') {
+          if (data.botId === activeBotRef.current) {
+            setComputerState(prev => (prev ? {
+              ...prev,
+              browser: {
+                ...(prev.browser || {}),
+                agentCursor: data.cursor,
+                ...(data.controlMode ? { controlMode: data.controlMode, userControlActive: Boolean(data.userControlActive) } : {}),
+              },
+            } : prev));
+          }
+        } else if (event === 'browser:control') {
+          if (data.botId === activeBotRef.current) {
+            setComputerState(prev => (prev ? {
+              ...prev,
+              browser: {
+                ...(prev.browser || {}),
+                controlMode: data.controlMode,
+                userControlActive: Boolean(data.userControlActive),
+                browserState: data.browserState || prev.browser?.browserState,
+                agentCursor: data.agentCursor ?? prev.browser?.agentCursor,
+              },
+            } : prev));
+          }
+        } else if (event === 'agent:done' || event === 'agent:error') {
+          const tid = data.threadId || activeThreadRef.current;
+          setRunningThreads(prev => {
+            if (!data.threadId) return {};
+            const next = { ...prev };
+            delete next[data.threadId];
+            return next;
+          });
+          setLastRunFailed(event === 'agent:error');
+          if (tid) {
+            setStreamingByThread(prev => {
+              const next = { ...prev };
+              delete next[tid];
+              return next;
+            });
+            setSwarmStepsByThread(prev => {
+              const next = { ...prev };
+              delete next[tid];
+              return next;
+            });
+          }
+          if ((!tid || tid === activeThreadRef.current) && event === 'agent:done' && settingsRef.current?.soundEffects !== false) {
+            playSoftCue('done');
+          }
+        } else if (event === 'spaces:updated') {
+          if (Array.isArray(data)) setSpaces(data);
+        } else if (event === 'sentinel:blocked') {
+          setSentinelBlocked(true);
+        } else if (event === 'routine:updated') {
+          setRoutines(await apiFetch('/v1/routines'));
+        } else if (event === 'browser:challenge' || event === 'browser:download') {
+          if (data.botId === activeBotRef.current) {
+            setComputerState(await apiFetch(`/v1/computer/${encodeURIComponent(data.botId)}/state`));
+          }
+        } else if (event === 'kill-switch' || event === 'kill-switch:activated') {
+          setRunningThreads({});
+          setStreamingByThread({});
+          setSwarmStepsByThread({});
+          setKillNotice(`Stopped all running tasks (${data.runsKilled || 0} stopped)`);
+          setComputerState(await apiFetch(`/v1/computer/${encodeURIComponent(activeBotRef.current)}/state`));
+        } else if (event === 'council:step') {
+          setCouncilSteps(prev => [...prev.slice(-99), { ...data, receivedAt: Date.now() }]);
+        } else if (event === 'swarm:step') {
+          const tid = data?.threadId || activeThreadRef.current;
+          if (!tid) return;
+          if (Array.isArray(data?.timeline)) {
+            setSwarmStepsByThread(prev => ({ ...prev, [tid]: data.timeline }));
+          } else {
+            const nextStep = data?.step || {
+              id: data?.nodeId || data?.id || `sw-${Date.now()}`,
+              icon: data?.icon || 'subagent',
+              label: data?.label || `${data?.role || data?.nodeId || 'Subagent'}: ${data?.status || 'running'}`,
+              detail: data?.detail || '',
+              status: data?.status || 'running',
+            };
+            setSwarmStepsByThread(prev => {
+              const list = prev[tid] || [];
+              const idx = list.findIndex(s => s.id === nextStep.id);
+              const nextList = idx >= 0
+                ? list.map((item, k) => (k === idx ? { ...item, ...nextStep } : item))
+                : [...list, nextStep];
+              return { ...prev, [tid]: nextList };
+            });
           }
         }
-        if (data.botId === activeBotRef.current) {
-          setComputerState(await apiFetch(`/v1/computer/${encodeURIComponent(data.botId)}/state`));
-          setMemories(await apiFetch(`/v1/bots/${encodeURIComponent(data.botId)}/memories`));
-        }
-        if (data.toolName === 'bot_spawn' && data.approved) {
-          setBots(await apiFetch('/v1/bots').catch(() => []));
-        }
-      } else if (event === 'computer:screenshot') {
-        if (data.botId === activeBotRef.current) {
-          setComputerState(prev => (prev ? { ...prev, browser: data } : prev));
-        }
-      } else if (event === 'browser:cursor') {
-        if (data.botId === activeBotRef.current) {
-          setComputerState(prev => (prev ? {
-            ...prev,
-            browser: {
-              ...(prev.browser || {}),
-              agentCursor: data.cursor,
-              ...(data.controlMode ? { controlMode: data.controlMode, userControlActive: Boolean(data.userControlActive) } : {}),
-            },
-          } : prev));
-        }
-      } else if (event === 'browser:control') {
-        if (data.botId === activeBotRef.current) {
-          setComputerState(prev => (prev ? {
-            ...prev,
-            browser: {
-              ...(prev.browser || {}),
-              controlMode: data.controlMode,
-              userControlActive: Boolean(data.userControlActive),
-              browserState: data.browserState || prev.browser?.browserState,
-              agentCursor: data.agentCursor ?? prev.browser?.agentCursor,
-            },
-          } : prev));
-        }
-      } else if (event === 'agent:done' || event === 'agent:error') {
-        setRunningThreadId(prev => (!data.threadId || prev === data.threadId) ? null : prev);
-        setLastRunFailed(event === 'agent:error');
-        if (!data.threadId || data.threadId === activeThreadRef.current) {
-          setStreaming({ content: '', thinking: '' });
-          setSwarmSteps([]);
-          if (event === 'agent:done' && settingsRef.current?.soundEffects !== false) playSoftCue('done');
-        }
-      } else if (event === 'spaces:updated') {
-        if (Array.isArray(data)) setSpaces(data);
-      } else if (event === 'sentinel:blocked') {
-        setSentinelBlocked(true);
-      } else if (event === 'routine:updated') {
-        setRoutines(await apiFetch('/v1/routines'));
-      } else if (event === 'browser:challenge' || event === 'browser:download') {
-        if (data.botId === activeBotRef.current) {
-          setComputerState(await apiFetch(`/v1/computer/${encodeURIComponent(data.botId)}/state`));
-        }
-      } else if (event === 'kill-switch' || event === 'kill-switch:activated') {
-        setRunningThreadId(null);
-        setStreaming({ content: '', thinking: '' });
-        setSwarmSteps([]);
-        setKillNotice(`Stopped all running tasks (${data.runsKilled || 0} stopped)`);
-        setComputerState(await apiFetch(`/v1/computer/${encodeURIComponent(activeBotRef.current)}/state`));
-      } else if (event === 'council:step') {
-        setCouncilSteps(prev => [...prev.slice(-99), { ...data, receivedAt: Date.now() }]);
-      } else if (event === 'swarm:step') {
-        if (Array.isArray(data?.timeline)) {
-          setSwarmSteps(data.timeline);
-        } else {
-          const nextStep = data?.step || {
-            id: data?.nodeId || data?.id || `sw-${Date.now()}`,
-            icon: data?.icon || 'subagent',
-            label: data?.label || `${data?.role || data?.nodeId || 'Subagent'}: ${data?.status || 'running'}`,
-            detail: data?.detail || '',
-            status: data?.status || 'running',
-          };
-          setSwarmSteps(prev => {
-            const idx = prev.findIndex(s => s.id === nextStep.id);
-            if (idx >= 0) {
-              const copy = [...prev];
-              copy[idx] = { ...copy[idx], ...nextStep };
-              return copy;
-            }
-            return [...prev, nextStep];
-          });
+      },
+      nextStatus => {
+        setWsStatus(nextStatus);
+        if (nextStatus === 'reconnecting') {
+          wsWasDisconnectedRef.current = true;
+        } else if (nextStatus === 'connected' && wsWasDisconnectedRef.current) {
+          wsWasDisconnectedRef.current = false;
+          refreshAll().catch(() => {});
+          if (activeBotRef.current) refreshBotContext(activeBotRef.current).catch(() => {});
         }
       }
-    });
+    );
     return unsub;
-  }, [runtimeState.status]);
+  }, [runtimeState.status, refreshAll, refreshBotContext]);
+
+  useEffect(() => {
+    if (mode !== 'spotlight') return undefined;
+    const onKeyDown = evt => {
+      if (evt.key === 'Escape') window.desktop?.hideCurrentWindow?.();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [mode]);
 
   // Prevent browser/Electron tab navigation if files are dropped outside an active drop zone
   useEffect(() => {
@@ -457,7 +517,6 @@ export function App() {
   // Explicit clean bot switch -> always starts a fresh empty session for that agent!
   const handleSelectBotFresh = async botId => {
     skipAutoThreadSelectRef.current = true;
-    setSwarmSteps([]);
     const t = await apiFetch('/v1/threads', {
       method: 'POST',
       body: JSON.stringify({ botId, title: 'New Chat' }),
@@ -499,21 +558,30 @@ export function App() {
       setActiveThreadId(tid);
       setActiveThread(created);
     }
-    setStreaming({ content: '', thinking: '' });
-    setSwarmSteps([]);
+    setStreamingByThread(prev => ({ ...prev, [tid]: { content: '', thinking: '' } }));
+    setSwarmStepsByThread(prev => ({ ...prev, [tid]: [] }));
     setLastRunFailed(false);
     setSentinelBlocked(false);
-    setRunningThreadId(tid);
-    await apiFetch('/v1/agent/run', {
-      method: 'POST',
-      body: JSON.stringify({
-        threadId: tid,
-        botId: activeBotId,
-        userText: text,
-        attachments,
-        async: true,
-      }),
-    });
+    setRunningThreads(prev => ({ ...prev, [tid]: true }));
+    try {
+      await apiFetch('/v1/agent/run', {
+        method: 'POST',
+        body: JSON.stringify({
+          threadId: tid,
+          botId: activeBotId,
+          userText: text,
+          attachments,
+          async: true,
+        }),
+      });
+    } catch (err) {
+      setRunningThreads(prev => {
+        const next = { ...prev };
+        delete next[tid];
+        return next;
+      });
+      throw err;
+    }
   };
 
   const handleAbort = async () => {
@@ -522,13 +590,18 @@ export function App() {
       method: 'POST',
       body: JSON.stringify({ threadId: activeThreadId }),
     });
-    setRunningThreadId(null);
+    setRunningThreads(prev => {
+      const next = { ...prev };
+      delete next[activeThreadId];
+      return next;
+    });
   };
 
   const handleKillSwitch = async () => {
     const out = await apiFetch('/v1/kill-switch', { method: 'POST', body: '{}' });
-    setRunningThreadId(null);
-    setStreaming({ content: '', thinking: '' });
+    setRunningThreads({});
+    setStreamingByThread({});
+    setSwarmStepsByThread({});
     setKillNotice(`Stopped ${out.runsKilled || 0} running task(s)`);
     await refreshBotContext(activeBotId);
   };
@@ -586,7 +659,7 @@ export function App() {
     setActiveBotId(newBotId);
     setActiveTab('chat');
     if (startedThreadId) {
-      setRunningThreadId(startedThreadId);
+      setRunningThreads(prev => ({ ...prev, [startedThreadId]: true }));
       setActiveThreadId(startedThreadId);
       setActiveThread(await apiFetch(`/v1/threads/${encodeURIComponent(startedThreadId)}`));
     } else {
@@ -597,7 +670,9 @@ export function App() {
 
   const activeBot = bots.find(b => b.id === activeBotId) || bots[0];
   const backendOnline = modelStatus ? Boolean(modelStatus?.ollama?.ok || modelStatus?.openai?.ok || navigator.onLine) : true;
-  const isCurrentThreadRunning = runningThreadId !== null && runningThreadId === activeThreadId;
+  const activeStreaming = (activeThreadId && streamingByThread[activeThreadId]) || { content: '', thinking: '' };
+  const activeSwarmSteps = (activeThreadId && swarmStepsByThread[activeThreadId]) || [];
+  const isCurrentThreadRunning = Boolean(activeThreadId && runningThreads[activeThreadId]);
   const mimirAvatarState = deriveMimirAvatarState({
     online: backendOnline,
     blocked: sentinelBlocked,
@@ -605,7 +680,7 @@ export function App() {
     waitingApproval: pendingApprovals.length > 0,
     speaking: voicePhase === 'speaking',
     listening: voicePhase === 'listening',
-    thinking: voicePhase === 'thinking' || (isCurrentThreadRunning && Boolean(streaming?.thinking)),
+    thinking: voicePhase === 'thinking' || (isCurrentThreadRunning && Boolean(activeStreaming?.thinking)),
     working: isCurrentThreadRunning,
     completed: Boolean(activeThread?.messages?.some(m => m.role === 'assistant')),
   });
@@ -623,7 +698,6 @@ export function App() {
 
   const handleSelectSpace = space => {
     setActiveSpaceId(space.id);
-    setActiveSurface(space.surface || 'chat');
     if (space.surface === 'memory') setActiveTab('map');
     else if (space.surface === 'automation') setActiveTab('routines');
     else if (space.surface === 'voice') setLiveVoiceOpen(true);
@@ -720,7 +794,7 @@ export function App() {
               shape={activeBot?.shape || 'mimir'}
               color={activeBot?.color}
               size={24}
-              state={runningThreadId !== null && runningThreadId === activeThreadId ? 'running' : 'idle'}
+              state={isCurrentThreadRunning ? 'running' : 'idle'}
             />
             Quick ask — {activeBot?.name || 'Mimir'}
           </div>
@@ -809,7 +883,7 @@ export function App() {
               shape={activeBot?.shape || 'mimir'}
               color={activeBot?.color}
               size={24}
-              state={runningThreadId !== null && runningThreadId === activeThreadId ? 'running' : 'idle'}
+              state={isCurrentThreadRunning ? 'running' : 'idle'}
             />
             <strong className="topbar-bot-name">
               {activeBot?.name || 'Mimir'}
@@ -823,6 +897,30 @@ export function App() {
             </span>
           </div>
           <div className="topbar-right">
+            {mode === 'popout' && (
+              <>
+                <select
+                  className="select"
+                  style={{ width: 170, padding: '4px 8px', fontSize: 12 }}
+                  aria-label="Switch conversation"
+                  value={activeThreadId || ''}
+                  onChange={e => loadThread(e.target.value)}
+                >
+                  {threads.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.title || 'New Chat'}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => handleNewThread()}
+                >
+                  New chat
+                </button>
+              </>
+            )}
             {getRuntimeEnvironment().hasStoredSession && (
               <button
                 type="button"
@@ -866,6 +964,12 @@ export function App() {
             )}
           </div>
         </header>
+
+        {wsStatus === 'reconnecting' && (
+          <div className="kill-notice-bar" role="status" data-testid="ws-reconnect-notice">
+            <span>Reconnecting to local runtime...</span>
+          </div>
+        )}
 
         {killNotice && (
           <div className="kill-notice-bar" data-testid="kill-notice-pill" role="status">
@@ -918,9 +1022,9 @@ export function App() {
             bot={activeBot}
             teamBots={bots}
             thread={activeThread}
-            streaming={streaming}
-            isRunning={runningThreadId !== null && runningThreadId === activeThreadId}
-            swarmSteps={swarmSteps}
+            streaming={activeStreaming}
+            isRunning={isCurrentThreadRunning}
+            swarmSteps={activeSwarmSteps}
             pendingApprovals={pendingApprovals.filter(a => !activeThreadId || a.threadId === activeThreadId || a.rootThreadId === activeThreadId)}
             onSendMessage={handleSendMessage}
             onAbort={handleAbort}
@@ -936,8 +1040,6 @@ export function App() {
             }}
             onSaveRecording={handleSaveRecording}
             onNavigateTab={setActiveTab}
-            activeSurface={activeSurface}
-            onSelectSurface={setActiveSurface}
             mimirAvatarState={mimirAvatarState}
             staticAvatar={Boolean(settings?.staticAvatar || settings?.reducedMotion)}
             onUiAction={handleUiAction}

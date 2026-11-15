@@ -203,6 +203,13 @@ function scoreHeuristicCandidate(text, prompt) {
   return score;
 }
 
+export function resolveActiveModel(settings = {}, fallback = '') {
+  if (settings?.provider === 'openai-compat') {
+    return settings.openaiModel || fallback || '';
+  }
+  return settings?.ollamaModel || MODEL_TIERS.balanced_local.model;
+}
+
 export class AgiHarness {
   constructor({ dataDir = os.tmpdir(), store = null, knowledge = null, rsi = null, foundry = null, scaleQueue = null, runChatFn = null } = {}) {
     this.dataDir = dataDir;
@@ -235,7 +242,7 @@ export class AgiHarness {
   }
 
   recordUsage({ model = '', tokens = 0, provider = 'ollama' }) {
-    const s = this.store.getSettings();
+    const s = this.store?.getSettings?.() || {};
     const curMonth = new Date().toISOString().slice(0, 7);
     let ledger = this.getBudgetState();
     if (ledger.month !== curMonth) {
@@ -255,7 +262,7 @@ export class AgiHarness {
   }
 
   checkBudgetCeiling() {
-    const s = this.store.getSettings();
+    const s = this.store?.getSettings?.() || {};
     const limit = Number(s.monthlyBudgetUsd ?? 25);
     const ledger = this.getBudgetState();
     if (limit > 0 && ledger.spentUsd >= limit) {
@@ -337,7 +344,7 @@ export class AgiHarness {
 
     const res = await runChatFn({
       settings: { ...settings, ollamaThink: false },
-      modelOverride: settings.ollamaModel || MODEL_TIERS.balanced_local.model,
+      modelOverride: resolveActiveModel(settings),
       messages: [
         { role: 'system', content: sys },
         { role: 'user', content: prompt },
@@ -380,12 +387,12 @@ export class AgiHarness {
     const user = [
       '=== SPECIFICATION / DELIVERABLE TO REFUTE ===',
       String(specText || '').slice(0, 6000),
-      targetSummary ? `\n=== TARGET CONTEXT ===\n${String(targetSummary).slice(0, 2000)}` : '',
+      targetSummary ? `\n=== TARGET CONTEXT ===\n${String(targetSummary).slice(0, 6000)}` : '',
     ].join('\n');
 
     const res = await runChatFn({
       settings: { ...settings, ollamaThink: false },
-      modelOverride: settings.ollamaModel || MODEL_TIERS.balanced_local.model,
+      modelOverride: resolveActiveModel(settings),
       messages: [
         { role: 'system', content: sys },
         { role: 'user', content: user },

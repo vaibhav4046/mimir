@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { isPrivateIp } from './llm-provider.mjs';
 
 /**
  * MCP Streamable HTTP client (spec 2025-06-18) plus the spec's OAuth 2.1 authorization flow:
@@ -40,6 +41,10 @@ const isLoopbackHost = host => host === 'localhost' || host === '::1' || host ==
 /** OAuth endpoints must be HTTPS; plain HTTP is only accepted on this computer (test servers). */
 function assertSecureEndpoint(url, what) {
   const u = new URL(url);
+  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (host === 'metadata.google.internal' || host === 'metadata' || host.endsWith('.internal') || isPrivateIp(host, { allowLoopback: true })) {
+    throw new Error(`${what} targets a private or metadata host (${url})`);
+  }
   if (u.protocol !== 'https:' && !(u.protocol === 'http:' && isLoopbackHost(u.hostname))) {
     throw new Error(`${what} must use HTTPS (${url})`);
   }
@@ -48,6 +53,7 @@ function assertSecureEndpoint(url, what) {
 const b64url = buf => Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 async function getJson(url) {
+  assertSecureEndpoint(url, 'metadata URL');
   const res = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
   if (!res.ok) throw new Error(`GET ${url} → HTTP ${res.status}`);
   return res.json();

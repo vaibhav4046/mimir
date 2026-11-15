@@ -56,19 +56,38 @@ export class VaultManager {
       this.#save(initial);
       return initial;
     }
+    let raw;
     try {
-      const env = JSON.parse(fs.readFileSync(this.vaultPath, 'utf8'));
+      raw = fs.readFileSync(this.vaultPath, 'utf8');
+    } catch (err) {
+      throw new Error(`Unable to read Vault store: ${err.message}`);
+    }
+    try {
+      const env = JSON.parse(raw);
       const data = this.#decrypt(env);
       return Array.isArray(data) ? data : [];
-    } catch {
-      return [];
+    } catch (err) {
+      try {
+        fs.copyFileSync(this.vaultPath, `${this.vaultPath}.corrupt-${Date.now()}`);
+      } catch {}
+      throw new Error(`Vault encrypted store could not be decrypted or parsed: ${err.message}`);
     }
   }
 
   #save(entries = this.entries) {
-    const tmp = `${this.vaultPath}.tmp`;
+    const tmp = `${this.vaultPath}.${process.pid}.${crypto.randomBytes(3).toString('hex')}.tmp`;
     fs.writeFileSync(tmp, JSON.stringify(this.#encrypt(entries), null, 2), 'utf8');
-    fs.renameSync(tmp, this.vaultPath);
+    for (let i = 0; i < 4; i++) {
+      try {
+        fs.renameSync(tmp, this.vaultPath);
+        return;
+      } catch (err) {
+        if (i === 3 || !['EPERM', 'EBUSY', 'EACCES'].includes(err?.code)) {
+          try { fs.rmSync(tmp, { force: true }); } catch {}
+          throw err;
+        }
+      }
+    }
   }
 
   #maskEntry(entry) {
