@@ -549,7 +549,8 @@ async function main() {
     await browser.close();
     uiSrv.close();
     await (coordRestart || coord).close().catch(() => {});
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    // Windows can hold a handle on the folder for a moment after the browser exits.
+    fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   }
 }
 

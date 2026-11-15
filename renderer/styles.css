@@ -4175,4 +4175,4 @@ dialog.mimir-dialog::backdrop {
 .usage-low { background: var(--frost, #3ac9ff); }
 .usage-mid { background: var(--gold, #e6ab42); }
 .usage-high { background: var(--err, #ff6b6b); }
-@media (max-width: 640px) { .usage-track { width: 36px; } }
+@media (max-width: 640px) { .usage-track { width: 36px; } }.unbacked-warning { margin-top: 6px; padding: 6px 10px; border: 1px solid var(--err, #ff6b6b); background: var(--err-soft, rgba(255,107,107,0.08)); color: var(--err, #ff6b6b); font-size: 11.5px; }

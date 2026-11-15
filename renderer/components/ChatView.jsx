@@ -800,7 +800,6 @@ export function ChatView({
   const [modeBusy, setModeBusy] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [dropBusy, setDropBusy] = useState(false);
-  const [copiedReceiptId, setCopiedReceiptId] = useState('');
   const [greeting] = useState(() => MIMIR_GREETINGS[Math.floor(Math.random() * MIMIR_GREETINGS.length)]);
   const endRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -1180,8 +1179,7 @@ export function ChatView({
             !hasText &&
             !m.thinking &&
             pendingToolCalls.length === 0 &&
-            !(m.attachments?.length > 0) &&
-            !m.receipt
+            !(m.attachments?.length > 0)
           ) {
             return null;
           }
@@ -1282,78 +1280,12 @@ export function ChatView({
                   ))}
                 </div>
               )}
-              {m.role === 'assistant' && m.receipt && (() => {
-                const rcpt = m.receipt;
-                const verdict = rcpt.verdict || 'verified';
-                const isVerified = verdict === 'verified';
-                const isLocal = rcpt.model?.leftThisComputer === false;
-                return (
-                  <div
-                    className={`tool-card ${isVerified ? '' : 'is-error'}`}
-                    data-testid="execution-receipt-card"
-                    style={{ marginTop: 6, padding: '8px 10px' }}
-                  >
-                    <div className="tool-card-head" style={{ gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        <span className={`pill ${isVerified ? 'is-emerald' : 'is-crimson'}`} style={{ fontSize: 10 }}>
-                          {verdict}
-                        </span>
-                        <span style={{ fontSize: 11.5, color: 'var(--ink)' }}>
-                          {rcpt.summary || 'Turn verified'}
-                        </span>
-                      </span>
-                      <span className="pill" style={{ fontSize: 10 }}>
-                        {isLocal ? 'Local-only' : 'Remote'} · {rcpt.model?.name || 'model'}
-                      </span>
-                    </div>
-                    {rcpt.unbackedClaims?.length > 0 && (
-                      <div style={{ marginTop: 6, fontSize: 11.5, color: 'var(--err)' }} role="alert">
-                        Unbacked claim warning: {rcpt.unbackedClaims.map(c => c.label || c.text).join('; ')}
-                      </div>
-                    )}
-                    {(rcpt.files?.length > 0 || rcpt.sources?.length > 0 || rcpt.delegated?.length > 0) && (
-                      <div className="chip-list" style={{ marginTop: 6 }}>
-                        {(rcpt.files || []).map((f, i) => (
-                          <span key={`rf-${i}`} className="chip" title={`sha256: ${f.sha256 || 'n/a'}`}>
-                            {f.path} ({f.bytes ?? 0}B · sha:{String(f.sha256 || '').slice(0, 8)})
-                          </span>
-                        ))}
-                        {(rcpt.sources || []).map((s, i) => (
-                          <span key={`rs-${i}`} className="chip" title={s.url}>
-                            {s.title || s.url}
-                          </span>
-                        ))}
-                        {(rcpt.delegated || []).map((d, i) => (
-                          <span key={`rd-${i}`} className="chip">
-                            @{d.name} ({d.status})
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <details className="tool-card-details" style={{ marginTop: 6 }}>
-                      <summary style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                        <span>Receipt #{rcpt.id || 'turn'} · hash {String(rcpt.eventHash || '').slice(0, 12)}</span>
-                        <button
-                          type="button"
-                          className="btn btn-sm"
-                          style={{ minHeight: 20, padding: '1px 7px', fontSize: 10.5 }}
-                          onClick={e => {
-                            e.preventDefault();
-                            navigator.clipboard?.writeText(JSON.stringify(rcpt, null, 2));
-                            setCopiedReceiptId(rcpt.id || 'copied');
-                            setTimeout(() => setCopiedReceiptId(''), 1500);
-                          }}
-                        >
-                          {copiedReceiptId === (rcpt.id || 'copied') ? 'Copied' : 'Copy Receipt JSON'}
-                        </button>
-                      </summary>
-                      <pre className="tool-output-pre" style={{ marginTop: 6, maxHeight: 180 }}>
-                        {JSON.stringify(rcpt, null, 2)}
-                      </pre>
-                    </details>
-                  </div>
-                );
-              })()}
+              {/* Receipts stay internal; only a reply that claims work it did not do is flagged. */}
+              {m.role === 'assistant' && m.receipt?.unbackedClaims?.length > 0 && (
+                <div className="unbacked-warning" role="alert" data-testid="unbacked-claim-warning">
+                  This reply mentions actions that did not run: {m.receipt.unbackedClaims.map(c => c.label || c.text).join('; ')}
+                </div>
+              )}
               <div className="msg-meta">
                 <span>{m.role === 'user' ? 'You' : m.speakerName || bot?.name || 'Mimir'}</span>
                 {m.model && !m.speakerName && <span>• {m.provider}:{m.model}</span>}

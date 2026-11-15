@@ -1,0 +1,7 @@
+# Files whose SHA-256 is pinned in public/release-manifest.json: keep their bytes identical on every OS.
+package.json text eol=lf
+daemon/coordinator.mjs text eol=lf
+daemon/receipt.mjs text eol=lf
+daemon/deep-research.mjs text eol=lf
+docs/eval-results.json text eol=lf
+public/assets/mimir/manifest.json text eol=lf
