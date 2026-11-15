@@ -1,0 +1,13 @@
+persona_id,persona,scenario,entry_surface,expected_outcome,verification_method,status
+P01,First-Time Non-Technical User,Opens Home and asks a plain-English question,"Home (chat) hero prompt","Headline 'What would you like to get done?' with clear reply and zero jargon","Live Chromium UI + DOM check",PASS
+P02,Software Developer,Requests a multi-file Expense-Tracking Web App,"Chat composer / Studio","Generates ZIP bundle with auth, charts, tests, README and interactive preview","API test + ZIP inspect",PASS
+P03,Content & Music Creator,Generates ambient synthwave WAV music track at 110 BPM,"Chat composer / Studio","Produces stereo 44.1 kHz WAV with RMS non-silence and interactive waveform player","Foundry WAV test + Audio QA",PASS
+P04,Video Storyboard Producer,Requests MP4 motion clip on 6GB RTX 3050 laptop,"Studio / Hardware Capabilities","Runs Tier 1 deterministic MP4+WebM composition and honestly states Tier 2 VRAM limit","API test + preview.json check",PASS
+P05,Deep Researcher,Researches a multi-domain topic and exports documents,"Chat / Research Reader","Produces cited report + 9 downloadable formats (MD, DOCX, PDF, PPTX, XLSX, CSV, HTML, JSON, ZIP)","npm test + Live Browser",PASS
+P06,Voice-First User,Speaks short backchannel 'mm-hmm' vs 'Stop change plan' during TTS,"Live Voice / /v1/voice/turn-evaluate","'mm-hmm' ignored (no barge-in); real command cancels active speech immediately","Voice duplex automated test",PASS
+P07,Project Lead,Audits interconnected memories, files, decisions, and tasks,"Projects (Yggdrasil Atlas)","Displays all 11 node types, search filter, breadcrumbs, and duplicate/stale diagnostics","Atlas API + UI check",PASS
+P08,Privacy-Conscious Local User,Enables localOnly privacy lock,"Settings / Hardware","Restricts chat and voice to Ollama + offline SAPI5 and blocks external web calls","Coordinator + security tests",PASS
+P09,3D Designer,Creates multi-part Valkyrie Starfighter 3D GLB mesh,"Studio / Chat","Exports valid glTF GLB binary and renders interactive 3D orbit canvas","3D foundry test + Canvas check",PASS
+P10,Automation Operator,Schedules recurring research briefing routine,"Automations (routines)","Saves cron/interval routine and executes isolated run with receipt","Routine automation test",PASS
+P11,Security Auditor,Attempts cross-user data/memory access or invalid contract payload,"HTTP API boundary","Enforces strict userId tenant scoping and rejects malformed contract schemas with 400","Contract & isolation tests",PASS
+P12,System Maintainer,Triggers Kill Switch or rapid stop during active run,"Topbar Kill Switch / /v1/kill-switch","Halts runs safely, closes browser sessions, pauses routines without corrupting SQLite","Kill switch automated test",PASS

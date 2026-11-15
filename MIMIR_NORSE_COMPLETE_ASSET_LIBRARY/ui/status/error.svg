@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="Cracked Runestone Error">
+  <title>Cracked Runestone Error</title>
+  <desc>16x16 pixel UI icon (status).</desc>
+  <g id="ui-error-outline">
+    <path fill="#081019" d="M5 3h6v1h-6zM4 4h1v1h-1zM11 4h1v1h-1zM3 5h1v1h-1zM12 5h1v1h-1zM2 6h1v1h-1zM13 6h1v1h-1zM2 7h1v1h-1zM13 7h1v1h-1zM2 8h1v1h-1zM13 8h1v1h-1zM2 9h1v1h-1zM13 9h1v1h-1zM3 10h1v1h-1zM12 10h1v1h-1zM4 11h1v1h-1zM11 11h1v1h-1zM5 12h6v1h-6z" />
+  </g>
+  <g id="ui-error-shadow">
+    <path fill="#2e4359" d="M5 6h6v1h-6zM5 7h1v1h-1zM9 7h2v1h-2zM5 8h2v1h-2zM10 8h1v1h-1zM5 9h2v1h-2zM10 9h1v1h-1z" />
+  </g>
+  <g id="ui-error-accent">
+    <path fill="#d94143" d="M5 4h6v1h-6zM4 5h8v1h-8zM3 6h2v1h-2zM11 6h2v1h-2zM3 7h2v1h-2zM6 7h3v1h-3zM11 7h2v1h-2zM3 8h2v1h-2zM7 8h3v1h-3zM11 8h2v1h-2zM3 9h2v1h-2zM7 9h3v1h-3zM11 9h2v1h-2zM4 10h8v1h-8zM5 11h6v1h-6z" />
+  </g>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 32" shape-rendering="crispEdges" role="img" aria-label="MIMIR Norse AI Command">
+  <title>MIMIR Pixel Wordmark</title>
+  <desc>Crisp 16-bit Norse gold pixel wordmark for Mimir.</desc>
+  <rect x="0" y="0" width="180" height="32" fill="#081019" />
+  <rect x="1" y="1" width="178" height="30" fill="none" stroke="#69400b" stroke-width="1" />
+  <text x="90" y="21" text-anchor="middle" fill="#e6ab42" font-family="Consolas, monospace" font-weight="bold" font-size="16" letter-spacing="4">MIMIR</text>
+  <rect x="12" y="15" width="14" height="2" fill="#3ac9ff" />
+  <rect x="154" y="15" width="14" height="2" fill="#3ac9ff" />
+</svg>

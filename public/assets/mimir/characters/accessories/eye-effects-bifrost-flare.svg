@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Bifrost Cyan Eye Flare">
+  <title>Bifrost Cyan Eye Flare</title>
+  <desc>Modular eye-effects pixel overlay socket for Mimir custom bot avatars.</desc>
+  <g id="eye-effects-bifrost-flare-outline">
+    <path fill="#081019" d="M15 19h1v1h-1zM33 19h1v1h-1zM14 20h1v1h-1zM16 20h6v1h-6zM27 20h6v1h-6zM34 20h1v1h-1zM15 21h1v1h-1zM22 21h1v1h-1zM26 21h1v1h-1zM33 21h1v1h-1zM16 22h6v1h-6zM27 22h6v1h-6z" />
+  </g>
+  <g id="eye-effects-bifrost-flare-eyes">
+    <path fill="#3ac9ff" d="M15 20h1v1h-1zM33 20h1v1h-1z" />
+    <path fill="#a9eeff" d="M16 21h6v1h-6zM27 21h6v1h-6z" />
+  </g>
+</svg>

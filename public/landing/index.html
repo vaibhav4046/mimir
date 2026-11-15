@@ -1,0 +1,1117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mimir — Your Local AI Workspace for Getting Things Done</title>
+  <meta name="description" content="Type, speak, or attach a task. Mimir plans steps, asks approval before risky actions, runs local Ollama models and tools on your hardware, and delivers downloadable files with SHA-256 receipts." />
+  <link rel="canonical" href="/landing/index.html" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="alternate icon" href="/favicon.ico" />
+  <meta property="og:title" content="Mimir — Your Local AI Workspace for Getting Things Done" />
+  <meta property="og:description" content="Local-first AI workspace with explicit device pairing, human approval gates, real deliverables (PDF/DOCX/MD/code), and hash-chained execution receipts." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="../assets/mimir/characters/mimir-head.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Mimir — Local AI Workspace" />
+  <meta name="twitter:description" content="Local models, human approval gates, verifiable SHA-256 receipts, and downloadable deliverables." />
+  <style>
+    :root {
+      --night: #081019;
+      --panel: #101722;
+      --slate: #1d2b3b;
+      --slate-hi: #243549;
+      --gold: #e6ab42;
+      --gold-hi: #ffd878;
+      --frost: #3ac9ff;
+      --ice: #a9eeff;
+      --ink: #e5edf4;
+      --muted: #91a8bd;
+      --rule: #24364a;
+      --ok: #38b87c;
+      --mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+      --step: steps(4);
+      --gutter: clamp(14px, 4vw, 44px);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html {
+      scroll-behavior: smooth;
+      max-width: 100%;
+      overflow-x: clip;
+    }
+    body {
+      margin: 0;
+      max-width: 100%;
+      overflow-x: clip;
+      background: var(--night);
+      color: var(--ink);
+      font: 16px/1.6 var(--sans);
+      background-image:
+        linear-gradient(rgba(58, 201, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(58, 201, 255, 0.025) 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: var(--ice); }
+    code {
+      font-family: var(--mono);
+      font-size: 0.9em;
+      color: var(--gold-hi);
+      overflow-wrap: anywhere;
+    }
+    a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 80;
+      padding: 10px 14px;
+      background: var(--panel);
+      border: 2px solid var(--gold);
+      color: var(--ice);
+      font: 700 13px var(--mono);
+      text-decoration: none;
+      transform: translate3d(0, -220%, 0);
+      transition: transform 140ms var(--step);
+    }
+    .skip-link:focus { transform: translate3d(0, 0, 0); }
+
+    .wrap {
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding-inline: var(--gutter);
+    }
+
+    /* Sticky basalt header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(8, 16, 25, 0.95);
+      border-bottom: 1px solid var(--rule);
+      backdrop-filter: blur(8px);
+    }
+    .bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 60px;
+      padding-block: 6px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font: 700 16px/1 var(--mono);
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      min-width: 0;
+    }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font: 12px/1.2 var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+    nav a:hover { color: var(--ice); }
+    nav a.nav-cta {
+      color: var(--night);
+      background: var(--gold);
+      border: 1px solid var(--gold-hi);
+      padding: 7px 12px;
+      font-weight: 700;
+    }
+    nav a.nav-cta:hover { background: var(--gold-hi); color: var(--night); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 18px;
+      font: 700 13px/1.25 var(--mono);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border: 2px solid var(--frost);
+      color: var(--night);
+      background: var(--frost);
+      box-shadow: 3px 3px 0 var(--gold);
+      cursor: pointer;
+      max-width: 100%;
+    }
+    .btn:hover { background: var(--ice); border-color: var(--ice); }
+    .btn.ghost {
+      background: var(--panel);
+      color: var(--ice);
+      border-color: var(--rule);
+      box-shadow: 3px 3px 0 var(--slate);
+    }
+    .btn.ghost:hover { border-color: var(--frost); }
+    .btn-mini {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 11px;
+      font: 700 11.5px/1.2 var(--mono);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: var(--slate);
+      color: var(--ink);
+      border: 1px solid var(--rule);
+      cursor: pointer;
+    }
+    .btn-mini:hover { border-color: var(--frost); color: var(--ice); }
+    .btn-mini[aria-pressed="true"],
+    .btn-mini[aria-checked="true"] {
+      border-color: var(--gold);
+      color: var(--gold-hi);
+      background: rgba(230, 171, 66, 0.14);
+    }
+
+    /* Hero */
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+      gap: clamp(24px, 4vw, 40px);
+      align-items: center;
+      padding-block: clamp(32px, 6vw, 72px);
+    }
+    .hero > * { min-width: 0; }
+    .eyebrow {
+      font: 700 11.5px/1.3 var(--mono);
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin: 0 0 12px;
+    }
+    h1 {
+      font: 800 clamp(28px, 4.8vw, 56px)/1.06 var(--sans);
+      letter-spacing: -0.02em;
+      margin: 0 0 16px;
+      overflow-wrap: break-word;
+    }
+    h1 em { font-style: normal; color: var(--frost); }
+    .lede {
+      font-size: clamp(15.5px, 1.7vw, 18px);
+      color: var(--muted);
+      max-width: 38em;
+      margin: 0 0 22px;
+    }
+    .cta { display: flex; flex-wrap: wrap; gap: 12px; }
+    .hero-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border: 1px solid var(--rule);
+      background: var(--panel);
+      font: 11.5px/1.3 var(--mono);
+      color: var(--muted);
+    }
+    .pill strong { color: var(--ice); }
+
+    /* Calm status card instead of noisy spectacle */
+    .status-panel {
+      border: 1px solid var(--rule);
+      background: var(--panel);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      box-shadow: 5px 5px 0 var(--slate);
+    }
+    .status-panel-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .status-panel-head img { width: 48px; height: 48px; image-rendering: pixelated; }
+    .status-panel-rows { display: grid; gap: 8px; }
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--night);
+      border: 1px solid var(--rule);
+      font: 12.5px/1.35 var(--mono);
+    }
+    .status-row .role { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 700; }
+    .status-row .role img { width: 20px; height: 20px; image-rendering: pixelated; }
+    .status-row .state { color: var(--muted); font-size: 11.5px; }
+    .status-row.is-active .state { color: var(--frost); }
+    .stage-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--rule);
+      font: 11.5px/1.3 var(--mono);
+      color: var(--muted);
+    }
+
+    /* Sections */
+    section { padding: clamp(40px, 6vw, 64px) 0; }
+    section.alt { background: var(--panel); border-block: 1px solid var(--rule); }
+    h2 {
+      font: 800 clamp(22px, 3.6vw, 34px)/1.14 var(--sans);
+      margin: 0 0 10px;
+      letter-spacing: -0.015em;
+    }
+    .sub { color: var(--muted); max-width: 48em; margin: 0 0 24px; }
+
+    /* Grid cards */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 245px), 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--rule);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    section.alt .card { background: var(--night); }
+    .card-head { display: flex; align-items: center; gap: 10px; }
+    .card-head img { width: 28px; height: 28px; image-rendering: pixelated; flex-shrink: 0; }
+    .card h3 { margin: 0; font: 700 16.5px/1.3 var(--sans); color: var(--ink); }
+    .card p { margin: 0; color: var(--muted); font-size: 14px; }
+    .tag {
+      font: 700 11px/1.2 var(--mono);
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* Real recorded trace */
+    .trace-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .trace-card {
+      background: var(--night);
+      border: 1px solid var(--rule);
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+    .trace-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+    .trace-item {
+      border: 1px solid var(--rule);
+      background: var(--panel);
+      padding: 10px 12px;
+      font-size: 13.5px;
+    }
+    .trace-item strong { color: var(--ice); display: block; font: 700 12px/1.3 var(--mono); margin-bottom: 3px; }
+    .trace-pre {
+      margin: 0;
+      padding: 12px;
+      background: #060b12;
+      border: 1px solid var(--rule);
+      color: var(--ice);
+      font: 12px/1.45 var(--mono);
+      overflow-x: auto;
+      max-height: 290px;
+    }
+
+    /* Sandbox: Strictly separate static fixtures from live coordinator runs */
+    .sandbox-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .sandbox-card {
+      border: 1px solid var(--rule);
+      background: var(--night);
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+    .sandbox-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+    .sandbox-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .sandbox-field { display: grid; gap: 5px; font: 12px/1.3 var(--mono); color: var(--muted); }
+    .sandbox-input, .sandbox-select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--rule);
+      background: var(--panel);
+      color: var(--ink);
+      font: 13px/1.35 var(--sans);
+    }
+    .sandbox-steps { display: flex; flex-wrap: wrap; gap: 6px; font: 11.5px/1.2 var(--mono); }
+    .sandbox-step {
+      padding: 4px 8px;
+      border: 1px solid var(--rule);
+      background: var(--panel);
+      color: var(--muted);
+    }
+    .sandbox-step.is-demo { border-color: var(--gold); color: var(--gold-hi); }
+    .sandbox-step.is-live { border-color: var(--ok); color: var(--ice); }
+    .sandbox-pre {
+      margin: 0;
+      padding: 12px;
+      border: 1px solid var(--rule);
+      background: #060b12;
+      color: var(--ice);
+      font: 12px/1.45 var(--mono);
+      overflow-x: auto;
+      max-height: 250px;
+    }
+
+    /* Tables */
+    .scroll-x { width: 100%; max-width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
+    th, td {
+      text-align: left;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+    }
+    th {
+      font: 700 11.5px/1.3 var(--mono);
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .ok { color: var(--ok); font-family: var(--mono); font-weight: 700; }
+    .warn { color: var(--gold-hi); font-family: var(--mono); font-weight: 700; }
+    .no { color: var(--muted); font-family: var(--mono); }
+
+    /* Optional architecture collapsible */
+    details.arch-drawer {
+      border: 1px solid var(--rule);
+      background: var(--panel);
+      padding: 16px 18px;
+    }
+    details.arch-drawer summary {
+      cursor: pointer;
+      font: 700 14px/1.3 var(--mono);
+      color: var(--gold-hi);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .arch-drawer-body {
+      margin-top: 16px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .motion-paused *,
+    .motion-paused *::before,
+    .motion-paused *::after {
+      animation-play-state: paused !important;
+      transition: none !important;
+    }
+
+    footer {
+      border-top: 1px solid var(--rule);
+      padding: 26px 0 40px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    footer .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: space-between;
+      align-items: center;
+    }
+    footer .foot-brand { display: inline-flex; align-items: center; gap: 8px; }
+
+    @media (max-width: 880px) {
+      .hero, .trace-grid, .sandbox-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      nav a:not(.nav-cta) { display: none; }
+      .sandbox-controls { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header>
+    <div class="wrap bar">
+      <a class="brand" href="#top">
+        <img src="../assets/mimir/characters/mimir-head.svg" width="24" height="24" alt="" aria-hidden="true" style="image-rendering:pixelated" />
+        <span>MIMIR</span>
+      </a>
+      <nav aria-label="Primary">
+        <a href="#recorded-task">Recorded Run</a>
+        <a href="#onboarding">Setup</a>
+        <a href="#specialists">Agents</a>
+        <a href="#golden-path-sandbox">Sandbox</a>
+        <a href="#download">Install</a>
+        <a href="#compare">Compare</a>
+        <a class="nav-cta" href="/app.html">Open App</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- HERO: 5-second clear explanation -->
+    <section id="top">
+      <div class="wrap hero">
+        <div>
+          <p class="eyebrow">Local-First AI Workspace · Windows &amp; Local Web Pairing</p>
+          <h1>Your <em>local AI workspace</em> for getting real work done.</h1>
+          <p class="lede">
+            Type, speak, or attach a file. Mimir plans steps, asks permission before touching files or apps,
+            runs local Ollama models on your hardware, and delivers real documents with a SHA-256 receipt.
+          </p>
+          <div class="cta">
+            <a class="btn" href="/app.html">Launch Web Workspace</a>
+            <a class="btn ghost" href="#download">Windows Installer &amp; SHA-256</a>
+            <a class="btn ghost" href="#recorded-task">See Real Task Output</a>
+          </div>
+          <div class="hero-pills">
+            <span class="pill"><strong>Local Models:</strong> Ollama 127.0.0.1:11434</span>
+            <span class="pill"><strong>Permissions:</strong> Human approval gates</span>
+            <span class="pill"><strong>Proof:</strong> Hash-chained SHA-256 receipts</span>
+          </div>
+        </div>
+
+        <aside class="status-panel" aria-label="Agent workspace roles">
+          <div class="status-panel-head">
+            <img src="../assets/mimir/characters/mimir-head.svg" width="48" height="48" alt="Mimir workspace coordinator icon" />
+            <div>
+              <div class="tag">Specialist Roles (No Fake Activity)</div>
+              <div style="font-size:14px;color:var(--ink);font-weight:700;">Each character maps to real permissions</div>
+            </div>
+          </div>
+          <div class="status-panel-rows">
+            <div class="status-row is-active">
+              <span class="role"><img src="../assets/mimir/characters/mimir-head.svg" width="20" height="20" alt="" aria-hidden="true" />Mimir</span>
+              <span class="state">Plans tasks &amp; routes models</span>
+            </div>
+            <div class="status-row">
+              <span class="role"><img src="../assets/mimir/characters/heimdall-sentinel.svg" width="20" height="20" alt="" aria-hidden="true" />Guardian</span>
+              <span class="state">Checks tool policy &amp; redacts secrets</span>
+            </div>
+            <div class="status-row">
+              <span class="role"><img src="../assets/mimir/characters/forge-bot-brok.svg" width="20" height="20" alt="" aria-hidden="true" />Forge Master</span>
+              <span class="state">Builds PDF, DOCX, Markdown &amp; code</span>
+            </div>
+            <div class="status-row">
+              <span class="role"><img src="../assets/mimir/characters/odin-archivist.svg" width="20" height="20" alt="" aria-hidden="true" />Scout</span>
+              <span class="state">Runs cited research &amp; local retrieval</span>
+            </div>
+          </div>
+          <div class="stage-bar">
+            <span>Public site runs static UI; connect to <code>127.0.0.1</code> for live work.</span>
+            <button id="motion-toggle" type="button" class="btn-mini" role="switch" aria-checked="true" aria-label="Pause subtle transitions">
+              Transitions: On
+            </button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 1. ONE REAL RECORDED TASK DEMONSTRATION -->
+    <section id="recorded-task" class="alt">
+      <div class="wrap">
+        <p class="eyebrow">Recorded Execution Trace · 2026-11-14T16:01:06Z</p>
+        <h2>One real task, start to downloadable PDF</h2>
+        <p class="sub">
+          Captured verbatim on this machine against local Ollama <code>qwen3:1.7b</code> with <code>approvalPolicy: "always-ask"</code> enabled.
+          Duration: <strong>6.8 seconds</strong>. Zero data left localhost.
+        </p>
+        <div class="trace-grid">
+          <div class="trace-card">
+            <ul class="trace-list">
+              <li class="trace-item">
+                <strong>1. User Prompt (Local Thread thr-40eeb33984)</strong>
+                "In 3 concise bullet points, explain how local AI execution with approval gates and SHA-256 receipts protects user data."
+              </li>
+              <li class="trace-item">
+                <strong>2. Paused for Human Tool Approval (always-ask policy)</strong>
+                Agent requested <code>knowledge_search</code> and <code>fs_list</code>; durable research run entered <code>WAITING_FOR_APPROVAL</code> until approved.
+              </li>
+              <li class="trace-item">
+                <strong>3. Deliverable Generated &amp; Verified (%PDF-1.4)</strong>
+                Artifact <code>art-ad4df9a106</code> written &amp; downloaded (<code>2,200 bytes</code>, SHA-256 <code>c61c87e5...b2b1b4</code>).
+              </li>
+              <li class="trace-item">
+                <strong>4. Independent Hash-Chain Receipt Verified</strong>
+                <code>GET /v1/receipts/verify</code> returned <code>{ "valid": true, "count": 2, "brokenIndex": null }</code> linking both execution hashes.
+              </li>
+            </ul>
+          </div>
+          <div class="trace-card">
+            <div class="tag">Actual Recorded Receipt Excerpt (Verified Run)</div>
+            <pre class="trace-pre">{
+  "recordedAt": "2026-11-14T16:01:06.230Z",
+  "durationMs": 6818,
+  "model": { "provider": "ollama", "name": "qwen3:1.7b", "leftThisComputer": false },
+  "approvedTools": ["knowledge_search", "fs_list"],
+  "durableRun": { "initialStatus": "WAITING_FOR_APPROVAL", "finalStatus": "COMPLETED" },
+  "artifact": {
+    "id": "art-ad4df9a106",
+    "format": "pdf",
+    "pdfHeader": "%PDF-1.4",
+    "bytes": 2200,
+    "sha256": "c61c87e56b0387d0f406aeb68938e57b2383c0f2a9940b0207c169eecbb2b1b4"
+  },
+  "receiptChain": {
+    "turnReceiptHash": "45ff333d2bb9d998fd9401de427bf2880d778b43f6e0e812e553633e1e79c702",
+    "runReceiptHash":  "3f1d91b8843f521805a255c90066d57057d1bc8b9214f671d14ffb24ba04172a",
+    "ledgerVerify": { "valid": true, "count": 2, "brokenIndex": null }
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. SIMPLE LOCAL-MODEL ONBOARDING -->
+    <section id="onboarding">
+      <div class="wrap">
+        <p class="eyebrow">3-Step Local Onboarding</p>
+        <h2>Up and running in under five minutes</h2>
+        <p class="sub">Whether you already use Ollama or are starting fresh on Windows, Mimir stays local and tells you what is running at each step.</p>
+        <div class="cards">
+          <article class="card">
+            <div class="card-head">
+              <img src="../assets/mimir/ui/online.svg" width="28" height="28" alt="" aria-hidden="true" />
+              <h3>1. Install or Launch Local Runtime</h3>
+            </div>
+            <p>Open the Windows Desktop installer build (<code>Mimir Setup 1.0.3.exe</code>) or run <code>npm run dev:daemon</code> in your local checkout.</p>
+          </article>
+          <article class="card">
+            <div class="card-head">
+              <img src="../assets/mimir/ui/workspace.svg" width="28" height="28" alt="" aria-hidden="true" />
+              <h3>2. Pair Browser Session Safely</h3>
+            </div>
+            <p>Open <a href="/app.html">/app.html</a>. The app checks <code>127.0.0.1:4567</code>, prints a 6-character pairing code in your local Mimir window or terminal, and exchanges it for a short-lived session token.</p>
+          </article>
+          <article class="card">
+            <div class="card-head">
+              <img src="../assets/mimir/ui/succeeded.svg" width="28" height="28" alt="" aria-hidden="true" />
+              <h3>3. Connect Ollama &amp; Run First Task</h3>
+            </div>
+            <p>Mimir detects installed Ollama models automatically, or helps you pull a starter model like <code>qwen3:1.7b</code> (~1.4 GB) before running your first gated task.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. VISUAL EXPLANATION OF SPECIALIZED AI AGENTS -->
+    <section id="specialists" class="alt">
+      <div class="wrap">
+        <p class="eyebrow">Accountable Specialist System</p>
+        <h2>Know which agent is acting and what it is allowed to touch</h2>
+        <p class="sub">Characters in Mimir are permission boundaries and memory scopes — never fake chat fillers.</p>
+        <div class="cards">
+          <article class="card">
+            <div class="card-head">
+              <img src="../assets/mimir/characters/mimir-head.svg" width="32" height="32" alt="Mimir Coordinator icon" />
+              <div>
+                <div class="tag">Coordinator</div>
+                <h3>Mimir</h3>
+              </div>
+            </div>
+            <p>Breaks down your prompt, tracks conversation memory, picks local models, and coordinates specialists only when needed.</p>
+          </article>
+          <article class="card">
+            <div class="card-head">
+              <img src="../assets/mimir/characters/forge-bot-brok.svg" width="32" height="32" alt="Forge Master icon" />
+              <div>
+                <div class="tag">Builder · Deliverables</div>
+                <h3>Forge Master</h3>
+              </div>
+            </div>
+            <p>Compiles downloadable PDFs, DOCX documents, Markdown briefs, charts, code changes, and runs tests inside scoped workspace rules.</p>
+          </article>
+          <article class="card">
+            <div class="card-head">
+              <img src="../assets/mimir/characters/heimdall-sentinel.svg" width="32" height="32" alt="Guardian Sentinel icon" />
+              <div>
+                <div class="tag">Sentinel · Policy Layer</div>
+                <h3>Guardian</h3>
+              </div>
+            </div>
+            <p>Independently enforces allowlists, redacts accidental password or OTP pastes before inference, and pauses mutating tools for your approval.</p>
+          </article>
+          <article class="card">
+            <div class="card-head">
+              <img src="../assets/mimir/characters/odin-archivist.svg" width="32" height="32" alt="Scout Archivist icon" />
+              <div>
+                <div class="tag">Research · Citations</div>
+                <h3>Scout</h3>
+              </div>
+            </div>
+            <p>Searches your local corpus or live web when enabled, validates source quotes, flags contradictions, and outputs grounded citations.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. GOLDEN PATH SANDBOX (STRICTLY SEPARATED FIXTURE VS LIVE EXECUTION) -->
+    <section id="golden-path-sandbox">
+      <div class="wrap">
+        <p class="eyebrow">Transparent Preview vs. Real Execution</p>
+        <h2>Inspect task payloads honestly — fixture vs. live runtime</h2>
+        <p class="sub">
+          Static examples on a public webpage are <strong>simulated fixture previews</strong>, never real verified task outcomes.
+          To produce a real receipt, run against your local coordinator on <code>127.0.0.1:4567</code> or open <a href="/app.html">/app.html</a>.
+        </p>
+
+        <div class="sandbox-grid">
+          <div class="sandbox-card">
+            <div class="tag">1. Preview Payload Parameters</div>
+            <div class="sandbox-presets" role="group" aria-label="Task presets">
+              <button type="button" class="btn-mini" data-preset="research" aria-pressed="true">Cited Research Brief</button>
+              <button type="button" class="btn-mini" data-preset="gate" aria-pressed="false">Approval-Gated Task</button>
+              <button type="button" class="btn-mini" data-preset="pdf" aria-pressed="false">PDF Export Deliverable</button>
+            </div>
+            <div class="sandbox-controls">
+              <label class="sandbox-field">
+                <span>Prompt Goal</span>
+                <input id="sbx-goal" class="sandbox-input" type="text" value="Summarize local Ollama benchmark latency with citations" />
+              </label>
+              <label class="sandbox-field">
+                <span>Target Policy</span>
+                <select id="sbx-policy" class="sandbox-select">
+                  <option value="always-ask">always-ask (Strict Gate)</option>
+                  <option value="reversibility">reversibility (Ask on Writes)</option>
+                </select>
+              </label>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+              <button id="sbx-preview-btn" type="button" class="btn-mini">Update Fixture Preview</button>
+              <button id="sbx-run" type="button" class="btn" style="padding:9px 14px;font-size:12px;">Probe Local Coordinator (127.0.0.1)</button>
+              <button id="sbx-copy" type="button" class="btn-mini">Copy JSON</button>
+            </div>
+            <p class="note" id="sbx-note" style="margin:0;color:var(--muted);font-size:13px;">
+              Static fixture mode never claims a <code>verified</code> live outcome. Paired live tasks run inside <a href="/app.html">/app.html</a>.
+            </p>
+          </div>
+
+          <div class="sandbox-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+              <div class="tag">2. Payload &amp; Execution Provenance</div>
+              <span id="sbx-mode-badge" class="pill warn" style="border-color:var(--gold);">Static Demo Fixture (NOT Live)</span>
+            </div>
+            <div id="sbx-summary" style="font:13.5px/1.45 var(--sans);color:var(--ink);"></div>
+            <div id="sbx-steps" class="sandbox-steps"></div>
+            <pre id="sbx-json" class="sandbox-pre"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. WORKING DOWNLOAD, SHA-256 CHECKSUMS & LAUNCH -->
+    <section id="download" class="alt">
+      <div class="wrap">
+        <p class="eyebrow">Download, Pair &amp; Verify Integrity</p>
+        <h2>Run locally with verifiable files</h2>
+        <p class="sub">
+          Mimir's public site is hosted statically. Large desktop installers and Ollama models live on your own machine — verify every local build digest before running.
+        </p>
+
+        <div class="cards" style="margin-bottom:20px;">
+          <article class="card">
+            <div class="tag">Web Workspace</div>
+            <h3>Launch Mimir App (`/app.html`)</h3>
+            <p>Connects to your local coordinator via loopback health check and explicit 6-character device pairing. Shows setup help if offline.</p>
+            <div style="margin-top:auto;padding-top:8px;">
+              <a class="btn" href="/app.html" style="width:100%;">Open /app.html</a>
+            </div>
+          </article>
+          <article class="card">
+            <div class="tag">Windows Desktop (NSIS)</div>
+            <h3>Mimir Setup 1.0.3.exe</h3>
+            <p>Build or verify locally with <code>npm run dist:win</code> (~93.7 MB packaged Electron + Node + Rust runtime). Always check the SHA-256 digest after packaging:</p>
+            <code style="font-size:12px;">Get-FileHash "release\Mimir Setup 1.0.3.exe" -Algorithm SHA256</code>
+          </article>
+          <article class="card">
+            <div class="tag">Local Source Quickstart</div>
+            <h3>Three Commands</h3>
+            <p><code>npm install</code><br /><code>npm run dev:daemon</code><br /><code>npm run dev:renderer</code></p>
+          </article>
+        </div>
+
+        <div class="trace-card" style="background:var(--night);">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div>
+              <div class="tag">Published Release Manifest (`../release-manifest.json`)</div>
+              <p id="manifest-meta" style="margin:4px 0 0;color:var(--muted);font-size:13px;">Loading release-manifest.json...</p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <a class="btn-mini" href="../release-manifest.json">Inspect release-manifest.json</a>
+              <a class="btn-mini" href="../eval-results.json">Inspect eval-results.json</a>
+            </div>
+          </div>
+          <div class="scroll-x">
+            <table>
+              <thead>
+                <tr>
+                  <th>Artifact Path</th>
+                  <th>Bytes</th>
+                  <th>SHA-256 Digest</th>
+                </tr>
+              </thead>
+              <tbody id="manifest-tbody">
+                <tr><td colspan="3" style="color:var(--muted);">Loading signed file manifest...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. CONCISE FEATURE COMPARISON -->
+    <section id="compare">
+      <div class="wrap">
+        <p class="eyebrow">Where Mimir Fits</p>
+        <h2>Why teams pair local execution with approval gates</h2>
+        <div class="scroll-x">
+          <table>
+            <thead>
+              <tr>
+                <th>Capability</th>
+                <th>Mimir (Local + Web Pairing)</th>
+                <th>Hosted Cloud Chatbots</th>
+                <th>Terminal-Only Coding CLIs</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Model Inference Location</td>
+                <td class="ok">100% Local Ollama (or opt-in API)</td>
+                <td class="no">Cloud servers</td>
+                <td class="no">Usually cloud API</td>
+              </tr>
+              <tr>
+                <td>Browser + File Tool Execution</td>
+                <td class="ok">Built-in workspace &amp; live preview</td>
+                <td class="warn">Sandboxed or limited</td>
+                <td class="ok">Local shell access</td>
+              </tr>
+              <tr>
+                <td>Human Approval &amp; Secret Guard</td>
+                <td class="ok">Sentinel policy + secret redaction</td>
+                <td class="warn">Basic confirmation</td>
+                <td class="warn">Per-command prompt</td>
+              </tr>
+              <tr>
+                <td>Downloadable Deliverables</td>
+                <td class="ok">PDF, DOCX, Markdown, HTML, code</td>
+                <td class="warn">Limited download links</td>
+                <td class="no">Raw files on disk</td>
+              </tr>
+              <tr>
+                <td>Tamper-Evident Receipt Chain</td>
+                <td class="ok">SHA-256 chained audit ledger</td>
+                <td class="no">None</td>
+                <td class="no">Terminal scrollback only</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. OPTIONAL ADVANCED ARCHITECTURE SECTION -->
+    <section id="architecture" class="alt">
+      <div class="wrap">
+        <details class="arch-drawer">
+          <summary>Advanced Architecture &amp; Technical Specifications (Optional)</summary>
+          <div class="arch-drawer-body">
+            <p class="sub" style="margin:0;">
+              Built with a Node coordinator, React workspace UI, Electron desktop shell, and Rust SQLite WAL safety sidecar.
+            </p>
+            <div class="cards">
+              <article class="card">
+                <div class="tag">Rust Core (`rust/`)</div>
+                <h3>SQLite WAL Queue &amp; Sandbox</h3>
+                <p>Durable task queue with lease recovery, dead-letter queue, path sandbox checks, and credential pattern scanner.</p>
+              </article>
+              <article class="card">
+                <div class="tag">Retrieval &amp; Citations</div>
+                <h3>Offline Corpus + CRAG</h3>
+                <p>Extracts inline source hashes (<code>[S#]</code>), catches contradictions across documents, and rejects prompt-injection strings inside fetched text.</p>
+              </article>
+              <article class="card">
+                <div class="tag">Security Boundary</div>
+                <h3>Loopback &amp; Explicit Pairing</h3>
+                <p>Coordinator binds strictly to <code>127.0.0.1</code>, rejects unknown origins (HTTP 403), never places tokens in URLs, and issues expiring pairing session tokens.</p>
+              </article>
+            </div>
+            <div>
+              <div class="tag" style="margin-bottom:8px;">Measured Benchmark Summary (`../eval-results.json`)</div>
+              <pre id="eval-summary-pre" class="trace-pre">Loading ../eval-results.json ...</pre>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap row">
+      <div class="foot-brand">
+        <img src="../assets/mimir/characters/mimir-head.svg" width="20" height="20" alt="" aria-hidden="true" style="image-rendering:pixelated" />
+        <span><strong>MIMIR</strong> · Local-First AI Workspace · MIT License</span>
+      </div>
+      <div>
+        <a href="/app.html">Open App</a> ·
+        <a href="#recorded-task">Recorded Run</a> ·
+        <a href="#download">Checksums</a> ·
+        <a href="../eval-results.json">Eval JSON</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      // WCAG 2.2.2 reduced-motion switch
+      var motionBtn = document.getElementById('motion-toggle');
+      if (motionBtn) {
+        motionBtn.addEventListener('click', function () {
+          var paused = document.body.classList.toggle('motion-paused');
+          motionBtn.setAttribute('aria-checked', paused ? 'false' : 'true');
+          motionBtn.textContent = paused ? 'Transitions: Off' : 'Transitions: On';
+        });
+      }
+
+      // Populate ../release-manifest.json cleanly
+      fetch('../release-manifest.json')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (manifest) {
+          var metaEl = document.getElementById('manifest-meta');
+          var tbody = document.getElementById('manifest-tbody');
+          if (!manifest || !Array.isArray(manifest.artifacts)) {
+            if (metaEl) metaEl.textContent = 'Manifest preview unavailable.';
+            return;
+          }
+          if (metaEl) {
+            metaEl.textContent = 'Version ' + (manifest.version || '1.0.3') + ' · Updated ' + (manifest.generatedAt || 'locally');
+          }
+          if (tbody) {
+            tbody.innerHTML = manifest.artifacts.map(function (a) {
+              return '<tr><td><code>' + String(a.path) + '</code></td><td>' + Number(a.bytes || 0).toLocaleString() + '</td><td><code>' + String(a.sha256 || '') + '</code></td></tr>';
+            }).join('');
+          }
+        })
+        .catch(function () {});
+
+      // Populate optional architecture eval summary
+      fetch('../eval-results.json')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          var el = document.getElementById('eval-summary-pre');
+          if (!el || !data) return;
+          el.textContent = JSON.stringify({
+            generatedAt: data.generatedAt || null,
+            suite: data.suite || 'mimir-eval',
+            ablationLevels: data.ablationLadder ? data.ablationLadder.levels.length : 0,
+            loadTiers: data.multiUserLoadBenchmark ? data.multiUserLoadBenchmark.tiers.length : 0
+          }, null, 2);
+        })
+        .catch(function () {});
+
+      // Golden Path Sandbox: static fixtures NEVER report verdict === 'verified'
+      var PRESETS = {
+        research: {
+          goal: 'Summarize local Ollama benchmark latency with citations',
+          steps: ['1. Fixture Input', '2. Policy Preview', '3. Citation Shape', '4. Simulated Demo Receipt'],
+          fixture: function (goal, policy) {
+            return {
+              executionMode: 'static-demo-fixture',
+              isLiveExecution: false,
+              verdict: 'simulated-demo',
+              note: 'Static preview payload only. Connect to local coordinator to run real inference and issue a real receipt.',
+              goal: goal,
+              policy: policy,
+              citations: ['[S1] Local fixture placeholder'],
+              eventHash: 'static-fixture-demo-not-live-chain'
+            };
+          }
+        },
+        gate: {
+          goal: 'Write summary file inside workspace (requires approval)',
+          steps: ['1. Fixture Input', '2. Sentinel Preview', '3. Approval Gate Simulated', '4. Simulated Demo Receipt'],
+          fixture: function (goal, policy) {
+            return {
+              executionMode: 'static-demo-fixture',
+              isLiveExecution: false,
+              verdict: 'simulated-demo',
+              note: 'Static preview showing WAITING_FOR_APPROVAL shape. No filesystem action occurred.',
+              goal: goal,
+              policy: policy,
+              status: 'SIMULATED_WAITING_FOR_APPROVAL',
+              eventHash: 'static-fixture-demo-not-live-chain'
+            };
+          }
+        },
+        pdf: {
+          goal: 'Compile project status report as downloadable PDF',
+          steps: ['1. Fixture Input', '2. Forge Template Shape', '3. Simulated PDF Header', '4. Simulated Demo Receipt'],
+          fixture: function (goal, policy) {
+            return {
+              executionMode: 'static-demo-fixture',
+              isLiveExecution: false,
+              verdict: 'simulated-demo',
+              note: 'Static preview payload only. Real PDF generation runs in local /app.html via ArtifactFoundry.',
+              goal: goal,
+              policy: policy,
+              artifactPreview: { format: 'pdf', simulated: true },
+              eventHash: 'static-fixture-demo-not-live-chain'
+            };
+          }
+        }
+      };
+
+      var activePreset = 'research';
+      var lastPayload = null;
+      var goalInput = document.getElementById('sbx-goal');
+      var policySelect = document.getElementById('sbx-policy');
+      var previewBtn = document.getElementById('sbx-preview-btn');
+      var runBtn = document.getElementById('sbx-run');
+      var copyBtn = document.getElementById('sbx-copy');
+      var badgeEl = document.getElementById('sbx-mode-badge');
+      var summaryEl = document.getElementById('sbx-summary');
+      var stepsEl = document.getElementById('sbx-steps');
+      var jsonEl = document.getElementById('sbx-json');
+
+      function renderSandbox(payload, stepLabels, badgeText, summaryHtml, isLive) {
+        lastPayload = payload;
+        if (badgeEl) {
+          badgeEl.textContent = badgeText;
+          badgeEl.style.borderColor = isLive ? 'var(--ok)' : 'var(--gold)';
+          badgeEl.className = 'pill ' + (isLive ? 'ok' : 'warn');
+        }
+        if (summaryEl) summaryEl.innerHTML = summaryHtml;
+        if (stepsEl) {
+          stepsEl.innerHTML = stepLabels.map(function (s) {
+            return '<span class="sandbox-step ' + (isLive ? 'is-live' : 'is-demo') + '">' + s + '</span>';
+          }).join('');
+        }
+        if (jsonEl) jsonEl.textContent = JSON.stringify(payload, null, 2);
+      }
+
+      function showFixture(reason) {
+        var preset = PRESETS[activePreset] || PRESETS.research;
+        var goal = (goalInput && goalInput.value.trim()) || preset.goal;
+        var policy = (policySelect && policySelect.value) || 'always-ask';
+        renderSandbox(
+          preset.fixture(goal, policy),
+          preset.steps,
+          'Static Demo Fixture (NOT Live)',
+          'Mode: <strong style="color:var(--gold-hi);">Simulated Fixture Preview</strong> · ' + (reason || 'No live coordinator called. Open /app.html to run locally.'),
+          false
+        );
+      }
+
+      document.querySelectorAll('[data-preset]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          activePreset = btn.getAttribute('data-preset') || 'research';
+          document.querySelectorAll('[data-preset]').forEach(function (b) {
+            b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+          });
+          if (goalInput && PRESETS[activePreset]) goalInput.value = PRESETS[activePreset].goal;
+          showFixture('Preset updated (static preview).');
+        });
+      });
+
+      if (previewBtn) {
+        previewBtn.addEventListener('click', function () {
+          showFixture('Static fixture updated from your form inputs.');
+        });
+      }
+
+      if (runBtn) {
+        runBtn.addEventListener('click', function () {
+          var coordUrl = window.location.protocol.indexOf('http') === 0 && /^(127\.0\.0\.1|localhost)$/i.test(window.location.hostname) && window.location.port === '4567'
+            ? ''
+            : 'http://127.0.0.1:4567';
+          fetch(coordUrl + '/v1/health')
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function (health) {
+              renderSandbox(
+                { executionMode: 'live-health-probe', isLiveExecution: true, coordinator: 'http://127.0.0.1:4567', health: health },
+                ['1. Loopback Reachable', '2. Health Checked', '3. Auth Ready: ' + (health.authRequired ? 'Pairing Needed' : 'Open Local'), '4. Launch /app.html to Execute'],
+                'Live Local Coordinator Detected',
+                'Local coordinator reachable (<strong style="color:var(--frost);">Ollama model: ' + (health.ollamaModel || 'configured') + '</strong>). Open <a href="/app.html">/app.html</a> to pair and execute real tasks.',
+                true
+              );
+            })
+            .catch(function () {
+              showFixture('No local coordinator answered on 127.0.0.1:4567; showing simulated fixture only.');
+            });
+        });
+      }
+
+      if (copyBtn) {
+        copyBtn.addEventListener('click', function () {
+          if (!lastPayload || !navigator.clipboard) return;
+          navigator.clipboard.writeText(JSON.stringify(lastPayload, null, 2));
+          copyBtn.textContent = 'Copied';
+          setTimeout(function () { copyBtn.textContent = 'Copy JSON'; }, 1200);
+        });
+      }
+
+      showFixture('Static fixture loaded (no local runtime contacted yet).');
+    })();
+  </script>
+</body>
+</html>

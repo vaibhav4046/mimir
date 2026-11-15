@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="Go Realm Step">
+  <title>Go Realm Step</title>
+  <desc>16x16 pixel UI icon (actions).</desc>
+  <g id="ui-go-outline">
+    <path fill="#081019" d="M5 4h3v1h-3zM4 5h1v1h-1zM8 5h2v1h-2zM4 6h1v1h-1zM10 6h2v1h-2zM4 7h1v1h-1zM12 7h1v1h-1zM4 8h1v1h-1zM12 8h1v1h-1zM4 9h1v1h-1zM12 9h1v1h-1zM4 10h1v1h-1zM10 10h2v1h-2zM4 11h1v1h-1zM8 11h2v1h-2zM5 12h3v1h-3z" />
+  </g>
+  <g id="ui-go-ice">
+    <path fill="#3ac9ff" d="M5 5h3v1h-3zM5 6h5v1h-5zM5 7h7v1h-7zM5 8h5v1h-5zM5 9h7v1h-7zM5 10h5v1h-5zM5 11h3v1h-3z" />
+    <path fill="#a9eeff" d="M10 8h2v1h-2z" />
+  </g>
+</svg>

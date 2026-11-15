@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Brass Guardian Round Shield">
+  <title>Brass Guardian Round Shield</title>
+  <desc>Modular shields pixel overlay socket for Mimir custom bot avatars.</desc>
+  <g id="shields-guardian-round-outline">
+    <path fill="#081019" d="M39 29h1v1h-1zM36 30h3v1h-3zM40 30h3v1h-3zM35 31h1v1h-1zM43 31h1v1h-1zM34 32h1v1h-1zM44 32h1v1h-1zM33 33h1v1h-1zM45 33h1v1h-1zM32 34h1v1h-1zM46 34h1v1h-1zM32 35h1v1h-1zM46 35h1v1h-1zM32 36h1v1h-1zM46 36h1v1h-1zM31 37h1v1h-1zM47 37h1v1h-1zM32 38h1v1h-1zM46 38h1v1h-1zM32 39h1v1h-1zM46 39h1v1h-1zM32 40h1v1h-1zM46 40h1v1h-1zM33 41h1v1h-1zM45 41h1v1h-1zM34 42h1v1h-1zM44 42h1v1h-1zM35 43h1v1h-1zM43 43h1v1h-1zM36 44h3v1h-3zM40 44h3v1h-3zM39 45h1v1h-1z" />
+  </g>
+  <g id="shields-guardian-round-base">
+    <path fill="#4c6782" d="M39 32h1v1h-1zM36 33h7v1h-7zM35 34h9v1h-9zM35 35h4v1h-4zM40 35h4v1h-4zM35 36h3v1h-3zM41 36h3v1h-3zM34 37h3v1h-3zM42 37h3v1h-3zM35 38h3v1h-3zM41 38h3v1h-3zM35 39h4v1h-4zM40 39h4v1h-4zM35 40h9v1h-9zM36 41h7v1h-7zM39 42h1v1h-1z" />
+  </g>
+  <g id="shields-guardian-round-gold">
+    <path fill="#e6ab42" d="M39 30h1v1h-1zM36 31h7v1h-7zM35 32h4v1h-4zM40 32h4v1h-4zM34 33h2v1h-2zM43 33h2v1h-2zM33 34h2v1h-2zM44 34h2v1h-2zM33 35h2v1h-2zM44 35h2v1h-2zM33 36h2v1h-2zM44 36h2v1h-2zM32 37h2v1h-2zM45 37h2v1h-2zM33 38h2v1h-2zM44 38h2v1h-2zM33 39h2v1h-2zM44 39h2v1h-2zM33 40h2v1h-2zM44 40h2v1h-2zM34 41h2v1h-2zM43 41h2v1h-2zM35 42h4v1h-4zM40 42h4v1h-4zM36 43h7v1h-7zM39 44h1v1h-1z" />
+    <path fill="#ffd878" d="M39 35h1v1h-1zM38 36h3v1h-3zM37 37h5v1h-5zM38 38h3v1h-3zM39 39h1v1h-1z" />
+  </g>
+</svg>

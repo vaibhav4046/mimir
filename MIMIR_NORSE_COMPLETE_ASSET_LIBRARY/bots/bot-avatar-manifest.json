@@ -1,0 +1,253 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "mimir-head",
+      "name": "Mimir",
+      "role": "Central Assistant, Knowledge & Orchestration",
+      "svg": "bots/svg/mimir-head.svg",
+      "png": "bots/png/mimir-head.png",
+      "publicUrl": "/assets/mimir/characters/mimir-head.svg",
+      "states": {
+        "idle": "/assets/mimir/characters/states/mimir-head-idle.svg",
+        "active": "/assets/mimir/characters/states/mimir-head-active.svg",
+        "selected": "/assets/mimir/characters/states/mimir-head-selected.svg",
+        "thinking": "/assets/mimir/characters/states/mimir-head-thinking.svg",
+        "running": "/assets/mimir/characters/states/mimir-head-running.svg",
+        "succeeded": "/assets/mimir/characters/states/mimir-head-succeeded.svg",
+        "failed": "/assets/mimir/characters/states/mimir-head-failed.svg",
+        "disabled": "/assets/mimir/characters/states/mimir-head-disabled.svg"
+      }
+    },
+    {
+      "id": "all-father-warrior",
+      "name": "Guardian Father Warrior",
+      "role": "Guardian, Reliability & System Execution",
+      "svg": "bots/svg/all-father-warrior.svg",
+      "png": "bots/png/all-father-warrior.png",
+      "publicUrl": "/assets/mimir/characters/all-father-warrior.svg",
+      "states": {
+        "idle": "/assets/mimir/characters/states/all-father-warrior-idle.svg",
+        "active": "/assets/mimir/characters/states/all-father-warrior-active.svg",
+        "selected": "/assets/mimir/characters/states/all-father-warrior-selected.svg",
+        "thinking": "/assets/mimir/characters/states/all-father-warrior-thinking.svg",
+        "running": "/assets/mimir/characters/states/all-father-warrior-running.svg",
+        "succeeded": "/assets/mimir/characters/states/all-father-warrior-succeeded.svg",
+        "failed": "/assets/mimir/characters/states/all-father-warrior-failed.svg",
+        "disabled": "/assets/mimir/characters/states/all-father-warrior-disabled.svg"
+      }
+    },
+    {
+      "id": "young-archer",
+      "name": "Young Archer Scout",
+      "role": "Scout, Browser Research & Retrieval",
+      "svg": "bots/svg/young-archer.svg",
+      "png": "bots/png/young-archer.png",
+      "publicUrl": "/assets/mimir/characters/young-archer.svg",
+      "states": {
+        "idle": "/assets/mimir/characters/states/young-archer-idle.svg",
+        "active": "/assets/mimir/characters/states/young-archer-active.svg",
+        "selected": "/assets/mimir/characters/states/young-archer-selected.svg",
+        "thinking": "/assets/mimir/characters/states/young-archer-thinking.svg",
+        "running": "/assets/mimir/characters/states/young-archer-running.svg",
+        "succeeded": "/assets/mimir/characters/states/young-archer-succeeded.svg",
+        "failed": "/assets/mimir/characters/states/young-archer-failed.svg",
+        "disabled": "/assets/mimir/characters/states/young-archer-disabled.svg"
+      }
+    },
+    {
+      "id": "forge-bot-brok",
+      "name": "Forge Bot Brok",
+      "role": "Builder, Tool Execution & Infrastructure",
+      "svg": "bots/svg/forge-bot-brok.svg",
+      "png": "bots/png/forge-bot-brok.png",
+      "publicUrl": "/assets/mimir/characters/forge-bot-brok.svg",
+      "states": {
+        "idle": "/assets/mimir/characters/states/forge-bot-brok-idle.svg",
+        "active": "/assets/mimir/characters/states/forge-bot-brok-active.svg",
+        "selected": "/assets/mimir/characters/states/forge-bot-brok-selected.svg",
+        "thinking": "/assets/mimir/characters/states/forge-bot-brok-thinking.svg",
+        "running": "/assets/mimir/characters/states/forge-bot-brok-running.svg",
+        "succeeded": "/assets/mimir/characters/states/forge-bot-brok-succeeded.svg",
+        "failed": "/assets/mimir/characters/states/forge-bot-brok-failed.svg",
+        "disabled": "/assets/mimir/characters/states/forge-bot-brok-disabled.svg"
+      }
+    },
+    {
+      "id": "forge-bot-sindri",
+      "name": "Forge Bot Sindri",
+      "role": "Artificer, Polish, Refinement & QA",
+      "svg": "bots/svg/forge-bot-sindri.svg",
+      "png": "bots/png/forge-bot-sindri.png",
+      "publicUrl": "/assets/mimir/characters/forge-bot-sindri.svg",
+      "states": {
+        "idle": "/assets/mimir/characters/states/forge-bot-sindri-idle.svg",
+        "active": "/assets/mimir/characters/states/forge-bot-sindri-active.svg",
+        "selected": "/assets/mimir/characters/states/forge-bot-sindri-selected.svg",
+        "thinking": "/assets/mimir/characters/states/forge-bot-sindri-thinking.svg",
+        "running": "/assets/mimir/characters/states/forge-bot-sindri-running.svg",
+        "succeeded": "/assets/mimir/characters/states/forge-bot-sindri-succeeded.svg",
+        "failed": "/assets/mimir/characters/states/forge-bot-sindri-failed.svg",
+        "disabled": "/assets/mimir/characters/states/forge-bot-sindri-disabled.svg"
+      }
+    },
+    {
+      "id": "freya-valkyrie",
+      "name": "Freya Valkyrie Healer",
+      "role": "Healer, Diagnostics & Recovery",
+      "svg": "bots/svg/freya-valkyrie.svg",
+      "png": "bots/png/freya-valkyrie.png",
+      "publicUrl": "/assets/mimir/characters/freya-valkyrie.svg",
+      "states": {}
+    },
+    {
+      "id": "odin-archivist",
+      "name": "Odin Wanderer Archivist",
+      "role": "Archivist, Memory & Knowledge Indexing",
+      "svg": "bots/svg/odin-archivist.svg",
+      "png": "bots/png/odin-archivist.png",
+      "publicUrl": "/assets/mimir/characters/odin-archivist.svg",
+      "states": {}
+    },
+    {
+      "id": "thor-thunderer",
+      "name": "Thor Thunder Enforcer",
+      "role": "Heavy Parallel Compute & Burst Ops",
+      "svg": "bots/svg/thor-thunderer.svg",
+      "png": "bots/png/thor-thunderer.png",
+      "publicUrl": "/assets/mimir/characters/thor-thunderer.svg",
+      "states": {}
+    },
+    {
+      "id": "tyr-diplomat",
+      "name": "Tyr Strategist Diplomat",
+      "role": "Diplomat, Coordination & Comms",
+      "svg": "bots/svg/tyr-diplomat.svg",
+      "png": "bots/png/tyr-diplomat.png",
+      "publicUrl": "/assets/mimir/characters/tyr-diplomat.svg",
+      "states": {}
+    },
+    {
+      "id": "angrboda-mystic",
+      "name": "Angrboda Jotun Mystic",
+      "role": "Prophetic Pattern & Creative Synthesis",
+      "svg": "bots/svg/angrboda-mystic.svg",
+      "png": "bots/png/angrboda-mystic.png",
+      "publicUrl": "/assets/mimir/characters/angrboda-mystic.svg",
+      "states": {}
+    },
+    {
+      "id": "heimdall-sentinel",
+      "name": "Heimdall Foresight Sentinel",
+      "role": "Sentinel, Monitoring & Guardrails",
+      "svg": "bots/svg/heimdall-sentinel.svg",
+      "png": "bots/png/heimdall-sentinel.png",
+      "publicUrl": "/assets/mimir/characters/heimdall-sentinel.svg",
+      "states": {}
+    },
+    {
+      "id": "durlin-crafter",
+      "name": "Durlin Rebel Scribe",
+      "role": "Schema Governance & Audit Trails",
+      "svg": "bots/svg/durlin-crafter.svg",
+      "png": "bots/png/durlin-crafter.png",
+      "publicUrl": "/assets/mimir/characters/durlin-crafter.svg",
+      "states": {}
+    },
+    {
+      "id": "lunda-smith",
+      "name": "Lunda Master Armorer",
+      "role": "Gear Upgrade & Runtime Tuning",
+      "svg": "bots/svg/lunda-smith.svg",
+      "png": "bots/png/lunda-smith.png",
+      "publicUrl": "/assets/mimir/characters/lunda-smith.svg",
+      "states": {}
+    }
+  ],
+  "accessories": [
+    {
+      "id": "helmets-valkyrie-crest",
+      "slot": "helmets",
+      "label": "Valkyrie Brass Winged Crest",
+      "publicUrl": "/assets/mimir/characters/accessories/helmets-valkyrie-crest.svg"
+    },
+    {
+      "id": "headwear-scout-hood",
+      "slot": "headwear",
+      "label": "Norse Ranger Hood",
+      "publicUrl": "/assets/mimir/characters/accessories/headwear-scout-hood.svg"
+    },
+    {
+      "id": "hair-braided-crown",
+      "slot": "hair",
+      "label": "Braided Silver Crown",
+      "publicUrl": "/assets/mimir/characters/accessories/hair-braided-crown.svg"
+    },
+    {
+      "id": "beards-braided-sage",
+      "slot": "beards",
+      "label": "Twin-Clasp Sage Beard",
+      "publicUrl": "/assets/mimir/characters/accessories/beards-braided-sage.svg"
+    },
+    {
+      "id": "masks-artificer-visor",
+      "slot": "masks",
+      "label": "Sindri Gold Optical Visor",
+      "publicUrl": "/assets/mimir/characters/accessories/masks-artificer-visor.svg"
+    },
+    {
+      "id": "armor-wolf-pauldron",
+      "slot": "armor",
+      "label": "Wolf-Pelt & Steel Mantle",
+      "publicUrl": "/assets/mimir/characters/accessories/armor-wolf-pauldron.svg"
+    },
+    {
+      "id": "eye-effects-bifrost-flare",
+      "slot": "eye-effects",
+      "label": "Bifrost Cyan Eye Flare",
+      "publicUrl": "/assets/mimir/characters/accessories/eye-effects-bifrost-flare.svg"
+    },
+    {
+      "id": "crystals-shoulder-shard",
+      "slot": "crystals",
+      "label": "Bifrost Crystal Cluster",
+      "publicUrl": "/assets/mimir/characters/accessories/crystals-shoulder-shard.svg"
+    },
+    {
+      "id": "runes-brow-raido",
+      "slot": "runes",
+      "label": "Glowing Elder Futhark Halo",
+      "publicUrl": "/assets/mimir/characters/accessories/runes-brow-raido.svg"
+    },
+    {
+      "id": "weapons-frost-axe",
+      "slot": "weapons",
+      "label": "Shoulder Frost Battleaxe",
+      "publicUrl": "/assets/mimir/characters/accessories/weapons-frost-axe.svg"
+    },
+    {
+      "id": "books-lore-codex",
+      "slot": "books",
+      "label": "Chained Edda Codex",
+      "publicUrl": "/assets/mimir/characters/accessories/books-lore-codex.svg"
+    },
+    {
+      "id": "scrolls-prophecy",
+      "slot": "scrolls",
+      "label": "Rolled Prophecy Scroll",
+      "publicUrl": "/assets/mimir/characters/accessories/scrolls-prophecy.svg"
+    },
+    {
+      "id": "tools-smith-hammer",
+      "slot": "tools",
+      "label": "Dwarven Forging Mallet",
+      "publicUrl": "/assets/mimir/characters/accessories/tools-smith-hammer.svg"
+    },
+    {
+      "id": "shields-guardian-round",
+      "slot": "shields",
+      "label": "Brass Guardian Round Shield",
+      "publicUrl": "/assets/mimir/characters/accessories/shields-guardian-round.svg"
+    }
+  ]
+}

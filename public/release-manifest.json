@@ -1,0 +1,72 @@
+{
+  "product": "Mimir OS",
+  "version": "1.0.3",
+  "branch": "fix/mimir-trustworthy-golden-path",
+  "commit": "1506bdd",
+  "license": "MIT",
+  "status": {
+    "desktopWindows": "verified-nsis-x64-unsigned",
+    "webApp": "verified",
+    "ollamaLocalInference": "verified-when-ollama-running",
+    "codeSigning": "unsigned-local-build"
+  },
+  "installer": {
+    "fileName": "Mimir Setup 1.0.3.exe",
+    "bytes": 93669224,
+    "sha256": "dd2b6eb09c1b921f0df7e487469eb165b6f0438649cdb5def508ecb859f4273a",
+    "target": "nsis-x64"
+  },
+  "platforms": [
+    {
+      "os": "Windows x64",
+      "target": "npm run dist:win",
+      "status": "supported",
+      "notes": "NSIS installer via electron-builder"
+    },
+    {
+      "os": "Node + Vite Local Web",
+      "target": "npm run dev:daemon && npm run build",
+      "status": "verified",
+      "notes": "Loopback HTTP coordinator + React UI"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "package.json",
+      "bytes": 1917,
+      "sha256": "530f930fd4961ff1fa41d986fe5e9cb6f303b175fbcc7f3246f5477f5f2a5c30"
+    },
+    {
+      "path": "daemon/coordinator.mjs",
+      "bytes": 104890,
+      "sha256": "2d1ebabc451d9f9a8c2a339e165261f4aa44cfd54a15e610a67de4a3b82baf79"
+    },
+    {
+      "path": "daemon/receipt.mjs",
+      "bytes": 13851,
+      "sha256": "1a32f8919fb643f576a76b7a0e49d8eb7441ecc9ef6f1dff3cb9f93f90efb448"
+    },
+    {
+      "path": "daemon/deep-research.mjs",
+      "bytes": 75576,
+      "sha256": "aeacb830a2ffe1958e5547b420594a2bafa5ffddc47a03a8821935d9fc36d9c6"
+    },
+    {
+      "path": "docs/eval-results.json",
+      "bytes": 25484,
+      "sha256": "cc1edc55e11944b12e7a6ef705d92ebaf5e38e7de0947d565030c4a3ccc1a9e8"
+    },
+    {
+      "path": "public/assets/mimir/manifest.json",
+      "bytes": 30886,
+      "sha256": "0f69ff02fdadd2a4d2c0ef7c621365f7f2609c97d3a82134f6c8092ca91a9b04"
+    }
+  ],
+  "verificationCommands": [
+    "npm test",
+    "npx vite build",
+    "cargo test --workspace --manifest-path rust/Cargo.toml",
+    "npm run test:e2e"
+  ],
+  "generatedAt": "2026-11-14T16:24:05.190Z"
+}

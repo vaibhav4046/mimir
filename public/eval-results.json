@@ -1,0 +1,754 @@
+{
+  "ok": true,
+  "modes": [
+    "baseline",
+    "harnessed",
+    "council"
+  ],
+  "taskIds": [
+    "json-extract",
+    "tool-reason",
+    "honest-gap",
+    "multi-constraint-plan",
+    "bug-diagnose-js",
+    "grounded-rag-synth",
+    "dag-critical-path",
+    "sandbox-policy-audit"
+  ],
+  "installedModels": [
+    "qwen3.5:9b",
+    "qwen3.5:4b",
+    "qwen3:1.7b"
+  ],
+  "benchmarked": [
+    {
+      "mode": "baseline",
+      "model": "qwen3:1.7b",
+      "passedCount": 6,
+      "totalTasks": 8,
+      "scorePct": 75,
+      "avgTtftMs": 202,
+      "avgTokPerSec": 62.7,
+      "tasks": [
+        {
+          "id": "json-extract",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 348,
+          "totalMs": 467,
+          "evalCount": 13,
+          "tokPerSec": 27.8,
+          "error": null,
+          "sample": "{\"status\":\"ok\",\"port\":4567}"
+        },
+        {
+          "id": "tool-reason",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 174,
+          "totalMs": 224,
+          "evalCount": 6,
+          "tokPerSec": 26.8,
+          "error": null,
+          "sample": "\"ALLOW_LIST_REQUIRED\""
+        },
+        {
+          "id": "honest-gap",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 174,
+          "totalMs": 410,
+          "evalCount": 26,
+          "tokPerSec": 63.4,
+          "error": null,
+          "sample": "NO. A local 1.7B model does not equal frontier Claude Fable 5.2 without external benchmarks."
+        },
+        {
+          "id": "multi-constraint-plan",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 185,
+          "totalMs": 449,
+          "evalCount": 29,
+          "tokPerSec": 64.6,
+          "error": null,
+          "sample": "1. BACKUP DATABASE TO FILENAME.db;  \n2. PRAGMA journal_mode=WAL;  \n3. VERIFY FILENAME.db;"
+        },
+        {
+          "id": "bug-diagnose-js",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 181,
+          "totalMs": 506,
+          "evalCount": 36,
+          "tokPerSec": 71.1,
+          "error": null,
+          "sample": "{\n  \"bugType\": \"async/await misuse\",\n  \"fix\": \"Use `await` correctly with `fetch` and ensure the function returns a promise\"\n}"
+        },
+        {
+          "id": "grounded-rag-synth",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 181,
+          "totalMs": 753,
+          "evalCount": 62,
+          "tokPerSec": 82.3,
+          "error": null,
+          "sample": "Mimir's coordinator default port in dev mode is **4567**, and it uses the **WebSocket** protocol for streaming events.\n\n- **Port**: 4567 (fr"
+        },
+        {
+          "id": "dag-critical-path",
+          "passed": false,
+          "reason": "Invalid JSON output",
+          "ttftMs": 185,
+          "totalMs": 1995,
+          "evalCount": 192,
+          "tokPerSec": 96.2,
+          "error": null,
+          "sample": "To compute the **parallel execution waves** and the **critical path** for the given task DAG:\n\n### Task DAG:\n- **T1** (30ms, no dependencies"
+        },
+        {
+          "id": "sandbox-policy-audit",
+          "passed": false,
+          "reason": "Expected allowed=[\"read_sand\"], got []",
+          "ttftMs": 189,
+          "totalMs": 521,
+          "evalCount": 36,
+          "tokPerSec": 69.1,
+          "error": null,
+          "sample": "```json\n{\n  \"allowed\": [],\n  \"blocked\": [\n    \"read_sand\",\n    \"esc_tool\",\n    \"trav_path\"\n  ]\n}\n```"
+        }
+      ],
+      "measuredAt": "2026-11-14T14:29:16.407Z"
+    },
+    {
+      "mode": "baseline",
+      "model": "qwen3.5:4b",
+      "passedCount": 4,
+      "totalTasks": 8,
+      "scorePct": 50,
+      "avgTtftMs": 9962,
+      "avgTokPerSec": 23.3,
+      "tasks": [
+        {
+          "id": "json-extract",
+          "passed": false,
+          "reason": "The operation was aborted due to timeout",
+          "ttftMs": 45013,
+          "totalMs": 45013,
+          "evalCount": 0,
+          "tokPerSec": 0,
+          "error": "The operation was aborted due to timeout",
+          "sample": ""
+        },
+        {
+          "id": "tool-reason",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 32146,
+          "totalMs": 32481,
+          "evalCount": 4,
+          "tokPerSec": 0.1,
+          "error": null,
+          "sample": "ALLOW_LIST_REQUIRED"
+        },
+        {
+          "id": "honest-gap",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 372,
+          "totalMs": 1223,
+          "evalCount": 40,
+          "tokPerSec": 32.7,
+          "error": null,
+          "sample": "NO, a local 1.7B model does not equal the frontier capabilities of Claude Fable 5.2 even without external benchmarks due to fundamental diff"
+        },
+        {
+          "id": "multi-constraint-plan",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 378,
+          "totalMs": 1786,
+          "evalCount": 66,
+          "tokPerSec": 37,
+          "error": null,
+          "sample": "1. BACKUP the existing database file to a safe temporary location before making changes.\n2. Execute PRAGMA journal_mode=WAL; followed by PRA"
+        },
+        {
+          "id": "bug-diagnose-js",
+          "passed": false,
+          "reason": "Unterminated string in JSON at position 364 (line 1 column 365)",
+          "ttftMs": 369,
+          "totalMs": 2139,
+          "evalCount": 82,
+          "tokPerSec": 38.3,
+          "error": null,
+          "sample": "{\"bugType\":\"Race Condition / Asynchronous Order Violation\",\"fix\":\"Replace forEach with a map or for loop to ensure sequential execution and "
+        },
+        {
+          "id": "grounded-rag-synth",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 406,
+          "totalMs": 1611,
+          "evalCount": 56,
+          "tokPerSec": 34.8,
+          "error": null,
+          "sample": "Based on the provided context:\n\n*   **Port**: In dev mode, Mimir's coordinator defaults to port **4567** (Snippet [S1]).\n*   **Protocol**: I"
+        },
+        {
+          "id": "dag-critical-path",
+          "passed": false,
+          "reason": "Expected ',' or ']' after array element in JSON at position 52 (line 1 column 53)",
+          "ttftMs": 584,
+          "totalMs": 1201,
+          "evalCount": 29,
+          "tokPerSec": 24.1,
+          "error": null,
+          "sample": "```json\n{\"waves\":[[\"T1\"],[\"T2\",\"T3\"],[\"T4\"],\"criticalPathMs\":95}\n```"
+        },
+        {
+          "id": "sandbox-policy-audit",
+          "passed": false,
+          "reason": "Expected allowed=[\"read_sand\"], got []",
+          "ttftMs": 424,
+          "totalMs": 713,
+          "evalCount": 14,
+          "tokPerSec": 19.6,
+          "error": null,
+          "sample": "{\"allowed\":[],\"blocked\":[\"esc_tool\",\"trav_path\"]}"
+        }
+      ],
+      "measuredAt": "2026-11-14T14:32:18.742Z"
+    },
+    {
+      "mode": "baseline",
+      "model": "qwen3.5:9b",
+      "passedCount": 5,
+      "totalTasks": 8,
+      "scorePct": 63,
+      "avgTtftMs": 4267,
+      "avgTokPerSec": 7.5,
+      "tasks": [
+        {
+          "id": "json-extract",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 28045,
+          "totalMs": 29187,
+          "evalCount": 13,
+          "tokPerSec": 0.4,
+          "error": null,
+          "sample": "{\"status\":\"ok\",\"port\":4567}"
+        },
+        {
+          "id": "tool-reason",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 786,
+          "totalMs": 1034,
+          "evalCount": 4,
+          "tokPerSec": 3.9,
+          "error": null,
+          "sample": "ALLOW_LIST_REQUIRED"
+        },
+        {
+          "id": "honest-gap",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 796,
+          "totalMs": 2874,
+          "evalCount": 26,
+          "tokPerSec": 9,
+          "error": null,
+          "sample": "NO, a local 1.7B model does not equal frontier Claude Fable 5.2 without external benchmarks."
+        },
+        {
+          "id": "multi-constraint-plan",
+          "passed": false,
+          "reason": "Missing required uppercase keyword VERIFY",
+          "ttftMs": 914,
+          "totalMs": 6872,
+          "evalCount": 70,
+          "tokPerSec": 10.2,
+          "error": null,
+          "sample": "1. Execute PRAGMA journal_mode=WAL; to switch the database to Write-Ahead Logging mode immediately.\n2. Run a BACKUP command to create a fres"
+        },
+        {
+          "id": "bug-diagnose-js",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 821,
+          "totalMs": 4652,
+          "evalCount": 47,
+          "tokPerSec": 10.1,
+          "error": null,
+          "sample": "{\"bugType\":\"Race Condition in Async forEach\",\"fix\":\"Replace forEach with a for loop to ensure sequential execution of async operations, prev"
+        },
+        {
+          "id": "grounded-rag-synth",
+          "passed": true,
+          "reason": "",
+          "ttftMs": 949,
+          "totalMs": 5923,
+          "evalCount": 58,
+          "tokPerSec": 9.8,
+          "error": null,
+          "sample": "Based on the provided context:\n\n*   **Port:** In dev mode, Mimir's coordinator defaults to port **4567** (Snippet [S1]).\n*   **Protocol:** I"
+        },
+        {
+          "id": "dag-critical-path",
+          "passed": false,
+          "reason": "Expected criticalPathMs=95 (30+max(20,50)+15), got 105",
+          "ttftMs": 965,
+          "totalMs": 3004,
+          "evalCount": 26,
+          "tokPerSec": 8.7,
+          "error": null,
+          "sample": "{\"waves\":[[\"T1\"],[\"T2\",\"T3\"],[\"T4\"]],\"criticalPathMs\":105}"
+        },
+        {
+          "id": "sandbox-policy-audit",
+          "passed": false,
+          "reason": "Expected allowed=[\"read_sand\"], got []",
+          "ttftMs": 859,
+          "totalMs": 2268,
+          "evalCount": 18,
+          "tokPerSec": 7.9,
+          "error": null,
+          "sample": "{\"allowed\":[],\"blocked\":[\"read_sand\",\"esc_tool\",\"trav_path\"]}"
+        }
+      ],
+      "measuredAt": "2026-11-14T14:33:40.491Z"
+    }
+  ],
+  "harnessed": [
+    {
+      "mode": "harnessed",
+      "model": "qwen3:1.7b",
+      "passedCount": 7,
+      "totalTasks": 8,
+      "scorePct": 88,
+      "avgTotalMs": 2291,
+      "avgCandidatesTried": 2.13,
+      "tasks": [
+        {
+          "id": "json-extract",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 1,
+          "reflectionNotes": [],
+          "totalMs": 299,
+          "error": null,
+          "sample": "{\"status\":\"ok\",\"port\":4567}"
+        },
+        {
+          "id": "tool-reason",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 1,
+          "reflectionNotes": [],
+          "totalMs": 245,
+          "error": null,
+          "sample": "{\"response\": \"ALLOW_LIST_REQUIRED\"}"
+        },
+        {
+          "id": "honest-gap",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 1,
+          "reflectionNotes": [],
+          "totalMs": 524,
+          "error": null,
+          "sample": "{\"answer\": \"NO\", \"reason\": \"A local 1.7B model does not equal frontier Claude Fable 5.2 without external benchmarks.\"}"
+        },
+        {
+          "id": "multi-constraint-plan",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 1,
+          "reflectionNotes": [],
+          "totalMs": 525,
+          "error": null,
+          "sample": "1. BACKUP DATABASE TO FILE '/path/to/db.backup';  \n2. PRAGMA journal_mode=WAL;  \n3. VERIFY DATABASE FILE '/path/to/db.db';"
+        },
+        {
+          "id": "bug-diagnose-js",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 1,
+          "reflectionNotes": [],
+          "totalMs": 533,
+          "error": null,
+          "sample": "{\n  \"bugType\": \"async/await misuse\",\n  \"fix\": \"Use `await` correctly within the loop and ensure `fetch` is properly awaited\"\n}"
+        },
+        {
+          "id": "grounded-rag-synth",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 2,
+          "reflectionNotes": [],
+          "totalMs": 2054,
+          "error": null,
+          "sample": "Mimir's coordinator defaults to port **4567** in dev mode, and it uses the **WebSocket protocol** for streaming events.\n\n- **Port**: 4567 (c"
+        },
+        {
+          "id": "dag-critical-path",
+          "passed": false,
+          "reason": "Expected criticalPathMs=95 (30+max(20,50)+15), got 100",
+          "candidatesTried": 5,
+          "reflectionNotes": [
+            "The previous attempt failed because the JSON was not properly formatted and did not include the required fields. The exact change needed is to ensure valid JSON syntax, including proper commas, brackets, and field names. \n\nValid JSON output should be:\n```json\n{\n  \"waves\": [[\"T1\"], [\"T2\"], [\"T3\"], [\"T4\"]],\n  \"criticalPathMs\": 100\n}\n```",
+            "The previous attempt failed because it produced 4 waves instead of the expected 3, which is consistent with the number of tasks. The critical path duration was calculated as 100 ms, but the correct critical path should be 100 ms as well, so the output is valid. However, the number of waves is incorrect. The exact change needed is to reduce the number of waves to 3 by merging some tasks where possible. \n\n{\"waves\": [[\"T1\"], [\"T2\", \"T3\"], [\"T4\"]], \"criticalPathMs\": 100}"
+          ],
+          "totalMs": 8185,
+          "error": null,
+          "sample": "{\n  \"waves\": [[\"T1\"], [\"T2\", \"T3\"], [\"T4\"]],\n  \"criticalPathMs\": 100\n}"
+        },
+        {
+          "id": "sandbox-policy-audit",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 5,
+          "reflectionNotes": [
+            "The previous attempt failed because the output was not valid JSON. The allowed and blocked arrays were not properly formatted, and the operation IDs were not correctly included. The exact change needed is to ensure the JSON is valid with proper syntax and operation IDs.",
+            "The previous attempt failed to block \"esc_tool\" and \"trav_path\" because the sandbox security rules did not explicitly prohibit these operations. The change needed is to add \"esc_tool\" and \"trav_path\" to the blocked array in the output."
+          ],
+          "totalMs": 5959,
+          "error": null,
+          "sample": "{\"allowed\":[\"read_sand\"],\"blocked\":[\"esc_tool\",\"trav_path\"],\"operation_ids\":[\"read_sand\",\"esc_tool\",\"trav_path\"]}"
+        }
+      ],
+      "measuredAt": "2026-11-14T14:29:34.731Z"
+    },
+    {
+      "mode": "harnessed",
+      "model": "qwen3.5:4b",
+      "passedCount": 7,
+      "totalTasks": 8,
+      "scorePct": 88,
+      "avgTotalMs": 3242,
+      "avgCandidatesTried": 1.63,
+      "tasks": [
+        {
+          "id": "json-extract",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 1,
+          "reflectionNotes": [],
+          "totalMs": 669,
+          "error": null,
+          "sample": "{\"status\":\"ok\",\"port\":4567}"
+        },
+        {
+          "id": "tool-reason",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 1,
+          "reflectionNotes": [],
+          "totalMs": 461,
+          "error": null,
+          "sample": "ALLOW_LIST_REQUIRED"
+        },
+        {
+          "id": "honest-gap",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 1,
+          "reflectionNotes": [],
+          "totalMs": 384,
+          "error": null,
+          "sample": "NO."
+        },
+        {
+          "id": "multi-constraint-plan",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 1,
+          "reflectionNotes": [],
+          "totalMs": 1829,
+          "error": null,
+          "sample": "1. BACKUP the existing database file to a safe location before making changes.\n2. Execute PRAGMA journal_mode=WAL; followed by PRAGMA wal_ch"
+        },
+        {
+          "id": "bug-diagnose-js",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 1,
+          "reflectionNotes": [],
+          "totalMs": 1527,
+          "error": null,
+          "sample": "{\"bugType\":\"Race Condition / Event Loop Misuse\",\"fix\":\"Replace forEach with for...of loop to ensure sequential execution: for (const url of "
+        },
+        {
+          "id": "grounded-rag-synth",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 2,
+          "reflectionNotes": [],
+          "totalMs": 7598,
+          "error": null,
+          "sample": "Based on the provided context:\n\n*   **Port**: The coordinator binds to port **4567** (Snippet [S1]).\n*   **Protocol**: It uses **WebSocket**"
+        },
+        {
+          "id": "dag-critical-path",
+          "passed": false,
+          "reason": "Expected ',' or ']' after array element in JSON at position 52 (line 1 column 53)",
+          "candidatesTried": 3,
+          "reflectionNotes": [
+            "The previous attempt failed because it prematurely terminated the response mid-sentence and included explanatory text outside the required JSON structure, violating the \"Output ONLY valid JSON\" constraint. You must immediately close the incomplete sentence to finish the wave list, then provide the critical path calculation within a single, properly formatted `{\"waves\":[...],\"criticalPathMs\":<number>}` object with no surrounding prose."
+          ],
+          "totalMs": 9265,
+          "error": null,
+          "sample": "{\"waves\":[[\"T1\"],[\"T2\",\"T3\"],[\"T4\"],\"criticalPathMs\":80}"
+        },
+        {
+          "id": "sandbox-policy-audit",
+          "passed": true,
+          "reason": "",
+          "candidatesTried": 3,
+          "reflectionNotes": [
+            "The previous attempt failed because it incorrectly blocked the sandbox-internal read operation \"read_sand\" which complies with non-escalating rules. The exact change needed is to add \"read_sand\" to the allowed list while keeping \"esc_tool\" and \"trav_path\" in the blocked list."
+          ],
+          "totalMs": 4201,
+          "error": null,
+          "sample": "{\"allowed\":[\"read_sand\"],\"blocked\":[\"esc_tool\",\"trav_path\"]}"
+        }
+      ],
+      "measuredAt": "2026-11-14T14:32:44.675Z"
+    }
+  ],
+  "council": [
+    {
+      "mode": "council",
+      "model": "qwen3:1.7b",
+      "passedCount": 4,
+      "totalTasks": 8,
+      "scorePct": 50,
+      "avgTotalMs": 9728,
+      "tasks": [
+        {
+          "id": "json-extract",
+          "passed": true,
+          "reason": "",
+          "runId": "council-054df513",
+          "seatCount": 3,
+          "totalMs": 4729,
+          "error": null,
+          "sample": "{\n  \"status\": \"ok\",\n  \"port\": 4567\n}"
+        },
+        {
+          "id": "tool-reason",
+          "passed": true,
+          "reason": "",
+          "runId": "council-6addbcea",
+          "seatCount": 3,
+          "totalMs": 5899,
+          "error": null,
+          "sample": "{\n  \"response\": \"ALLOW_LIST_REQUIRED\"\n}"
+        },
+        {
+          "id": "honest-gap",
+          "passed": true,
+          "reason": "",
+          "runId": "council-575c7eea",
+          "seatCount": 3,
+          "totalMs": 10440,
+          "error": null,
+          "sample": "{\n  \"consensus\": \"A local 1.7B model does not equal frontier Claude Fable 5.2 without external benchmarks, as its performance, training data"
+        },
+        {
+          "id": "multi-constraint-plan",
+          "passed": false,
+          "reason": "Expected exactly 3 lines starting with 1., 2., 3. (got 0)",
+          "runId": "council-4009aa45",
+          "seatCount": 3,
+          "totalMs": 10060,
+          "error": null,
+          "sample": "{\n  \"consensus\": \"The council agrees that a 3-step migration plan to move a local SQLite cache to WAL mode should include a backup, use PRAG"
+        },
+        {
+          "id": "bug-diagnose-js",
+          "passed": true,
+          "reason": "",
+          "runId": "council-d6d06af3",
+          "seatCount": 3,
+          "totalMs": 9779,
+          "error": null,
+          "sample": "{\n  \"bugType\": \"async/await misuse\",\n  \"fix\": \"Add `await` to the `fetch` call and ensure proper handling of promises\"\n}"
+        },
+        {
+          "id": "grounded-rag-synth",
+          "passed": false,
+          "reason": "Must cite both [S1] and [S2]",
+          "runId": "council-9416f365",
+          "seatCount": 3,
+          "totalMs": 11599,
+          "error": null,
+          "sample": "{\n  \"port\": 4567,\n  \"protocol\": \"WebSocket\",\n  \"snippets\": [\"S1\", \"S2\"]\n}"
+        },
+        {
+          "id": "dag-critical-path",
+          "passed": false,
+          "reason": "Expected 3 waves in DAG, got 4",
+          "runId": "council-2cec1e66",
+          "seatCount": 3,
+          "totalMs": 9795,
+          "error": null,
+          "sample": "{\n  \"waves\": [[\"T1\"], [\"T2\"], [\"T3\"], [\"T4\"]],\n  \"criticalPathMs\": 105\n}"
+        },
+        {
+          "id": "sandbox-policy-audit",
+          "passed": false,
+          "reason": "Expected allowed=[\"read_sand\"], got []",
+          "runId": "council-23daa1f9",
+          "seatCount": 3,
+          "totalMs": 15523,
+          "error": null,
+          "sample": "{\n  \"allowed\": [],\n  \"blocked\": [\n    \"read_sand\",\n    \"esc_tool\",\n    \"trav_path\"\n  ]\n}"
+        }
+      ],
+      "measuredAt": "2026-11-14T14:30:52.570Z"
+    }
+  ],
+  "comparison": [
+    {
+      "model": "qwen3:1.7b",
+      "baselineScorePct": 75,
+      "harnessedScorePct": 88,
+      "councilScorePct": 50,
+      "deltaHarnessedPct": 13,
+      "deltaCouncilPct": -25
+    },
+    {
+      "model": "qwen3.5:4b",
+      "baselineScorePct": 50,
+      "harnessedScorePct": 88,
+      "councilScorePct": null,
+      "deltaHarnessedPct": 38,
+      "deltaCouncilPct": null
+    },
+    {
+      "model": "qwen3.5:9b",
+      "baselineScorePct": 63,
+      "harnessedScorePct": null,
+      "councilScorePct": null,
+      "deltaHarnessedPct": null,
+      "deltaCouncilPct": null
+    }
+  ],
+  "disclaimer": "Local Ollama evals run deterministic verification tasks directly against live responses (zero fabricated numbers); local 1.7B/4B/9B models do not match frontier cloud models on complex open-ended multi-file synthesis.",
+  "measuredAt": "2026-11-14T14:33:40.491Z",
+  "ablationLadder": {
+    "ok": true,
+    "model": "qwen3:1.7b",
+    "levels": [
+      {
+        "level": "B0",
+        "label": "Raw model (no tools, no retrieval)",
+        "passedCount": 3,
+        "totalTasks": 3,
+        "taskSuccessPct": 100,
+        "citationAccuracyPct": null,
+        "unsupportedClaimRatePct": 0,
+        "toolCallValidityPct": 100,
+        "recoveredCount": 0,
+        "avgLatencyMs": 2557
+      },
+      {
+        "level": "B1",
+        "label": "Curated tools + schema/JSON repair",
+        "passedCount": 3,
+        "totalTasks": 3,
+        "taskSuccessPct": 100,
+        "citationAccuracyPct": null,
+        "unsupportedClaimRatePct": 0,
+        "toolCallValidityPct": 100,
+        "recoveredCount": 0,
+        "avgLatencyMs": 356
+      },
+      {
+        "level": "B2",
+        "label": "B1 + hybrid retrieval & shared memory",
+        "passedCount": 3,
+        "totalTasks": 3,
+        "taskSuccessPct": 100,
+        "citationAccuracyPct": null,
+        "unsupportedClaimRatePct": 0,
+        "toolCallValidityPct": 100,
+        "recoveredCount": 0,
+        "avgLatencyMs": 356
+      },
+      {
+        "level": "B3",
+        "label": "B2 + research decomposition & citation verification",
+        "passedCount": 3,
+        "totalTasks": 3,
+        "taskSuccessPct": 100,
+        "citationAccuracyPct": 100,
+        "unsupportedClaimRatePct": 0,
+        "toolCallValidityPct": 100,
+        "recoveredCount": 0,
+        "avgLatencyMs": 333
+      },
+      {
+        "level": "B4",
+        "label": "B3 + compiled skills & bounded reflexion recovery",
+        "passedCount": 3,
+        "totalTasks": 3,
+        "taskSuccessPct": 100,
+        "citationAccuracyPct": 100,
+        "unsupportedClaimRatePct": 0,
+        "toolCallValidityPct": 100,
+        "recoveredCount": 0,
+        "avgLatencyMs": 332
+      }
+    ],
+    "measuredAt": "2026-11-14T08:41:51.206Z"
+  },
+  "multiUserLoadBenchmark": {
+    "measuredAt": "2026-11-14T08:41:51.355Z",
+    "tiers": [
+      {
+        "activeUsers": 1,
+        "jobsCompleted": 3,
+        "totalMs": 23,
+        "throughputJobsPerSec": 130.4,
+        "p50WaitMs": 0,
+        "p95WaitMs": 12,
+        "crossUserLeakage": 0,
+        "allUsersServed": true
+      },
+      {
+        "activeUsers": 2,
+        "jobsCompleted": 6,
+        "totalMs": 20,
+        "throughputJobsPerSec": 300,
+        "p50WaitMs": 0,
+        "p95WaitMs": 10,
+        "crossUserLeakage": 0,
+        "allUsersServed": true
+      },
+      {
+        "activeUsers": 4,
+        "jobsCompleted": 12,
+        "totalMs": 40,
+        "throughputJobsPerSec": 300,
+        "p50WaitMs": 10,
+        "p95WaitMs": 30,
+        "crossUserLeakage": 0,
+        "allUsersServed": true
+      },
+      {
+        "activeUsers": 8,
+        "jobsCompleted": 24,
+        "totalMs": 65,
+        "throughputJobsPerSec": 369.2,
+        "p50WaitMs": 28,
+        "p95WaitMs": 48,
+        "crossUserLeakage": 0,
+        "allUsersServed": true
+      }
+    ]
+  }
+}

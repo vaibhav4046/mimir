@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="Spinning Bifrost Rune">
+  <title>Spinning Bifrost Rune</title>
+  <desc>16x16 pixel UI icon (status).</desc>
+  <g id="ui-loading-outline">
+    <path fill="#081019" d="M7 3h3v1h-3zM4 4h3v1h-3zM10 4h3v1h-3zM3 5h1v1h-1zM6 5h5v1h-5zM13 5h1v1h-1zM2 6h1v1h-1zM5 6h1v1h-1zM11 6h2v1h-2zM14 6h1v1h-1zM1 7h1v1h-1zM4 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM1 8h1v1h-1zM4 8h1v1h-1zM13 8h1v1h-1zM15 8h1v1h-1zM2 9h1v1h-1zM5 9h2v1h-2zM10 9h3v1h-3zM14 9h1v1h-1zM3 10h1v1h-1zM7 10h3v1h-3zM13 10h1v1h-1zM4 11h3v1h-3zM10 11h3v1h-3zM7 12h3v1h-3z" />
+  </g>
+  <g id="ui-loading-gold">
+    <path fill="#e6ab42" d="M4 10h3v1h-3zM10 10h3v1h-3zM7 11h3v1h-3z" />
+  </g>
+  <g id="ui-loading-ice">
+    <path fill="#3ac9ff" d="M7 4h3v1h-3zM4 5h2v1h-2zM11 5h2v1h-2zM3 6h2v1h-2zM2 7h2v1h-2zM2 8h2v1h-2zM3 9h2v1h-2z" />
+    <path fill="#a9eeff" d="M13 6h1v1h-1zM14 7h1v1h-1zM14 8h1v1h-1zM13 9h1v1h-1z" />
+  </g>
+</svg>

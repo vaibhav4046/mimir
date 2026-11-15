@@ -1,0 +1,907 @@
+{
+  "name": "Mimir Norse Retro-Pixel Asset Library",
+  "version": "1.0.0",
+  "palette": {
+    "canvas": "#081019",
+    "rail": "#101722",
+    "surface": "#1d2b3b",
+    "brass": "#e6ab42",
+    "frost": "#3ac9ff",
+    "frostHi": "#a9eeff",
+    "ink": "#e5edf4",
+    "inkMuted": "#91a8bd"
+  },
+  "counts": {
+    "characters": 13,
+    "accessories": 14,
+    "realms": 9,
+    "artifacts": 38,
+    "uiIcons": 34,
+    "animations": 6,
+    "totalSvgFilesWritten": 346,
+    "totalPngFilesWritten": 1217
+  },
+  "entries": [
+    {
+      "id": "mimir-head",
+      "category": "characters",
+      "name": "Mimir",
+      "role": "Central Assistant, Knowledge & Orchestration",
+      "svg": "/assets/mimir/characters/mimir-head.svg",
+      "png": "/assets/mimir/characters/mimir-head.png",
+      "circular": "/assets/mimir/characters/mimir-head-circular.svg",
+      "states": {
+        "idle": "/assets/mimir/characters/states/mimir-head-idle.svg",
+        "active": "/assets/mimir/characters/states/mimir-head-active.svg",
+        "selected": "/assets/mimir/characters/states/mimir-head-selected.svg",
+        "thinking": "/assets/mimir/characters/states/mimir-head-thinking.svg",
+        "running": "/assets/mimir/characters/states/mimir-head-running.svg",
+        "succeeded": "/assets/mimir/characters/states/mimir-head-succeeded.svg",
+        "failed": "/assets/mimir/characters/states/mimir-head-failed.svg",
+        "disabled": "/assets/mimir/characters/states/mimir-head-disabled.svg"
+      }
+    },
+    {
+      "id": "all-father-warrior",
+      "category": "characters",
+      "name": "Guardian Father Warrior",
+      "role": "Guardian, Reliability & System Execution",
+      "svg": "/assets/mimir/characters/all-father-warrior.svg",
+      "png": "/assets/mimir/characters/all-father-warrior.png",
+      "circular": "/assets/mimir/characters/all-father-warrior-circular.svg",
+      "states": {
+        "idle": "/assets/mimir/characters/states/all-father-warrior-idle.svg",
+        "active": "/assets/mimir/characters/states/all-father-warrior-active.svg",
+        "selected": "/assets/mimir/characters/states/all-father-warrior-selected.svg",
+        "thinking": "/assets/mimir/characters/states/all-father-warrior-thinking.svg",
+        "running": "/assets/mimir/characters/states/all-father-warrior-running.svg",
+        "succeeded": "/assets/mimir/characters/states/all-father-warrior-succeeded.svg",
+        "failed": "/assets/mimir/characters/states/all-father-warrior-failed.svg",
+        "disabled": "/assets/mimir/characters/states/all-father-warrior-disabled.svg"
+      }
+    },
+    {
+      "id": "young-archer",
+      "category": "characters",
+      "name": "Young Archer Scout",
+      "role": "Scout, Browser Research & Retrieval",
+      "svg": "/assets/mimir/characters/young-archer.svg",
+      "png": "/assets/mimir/characters/young-archer.png",
+      "circular": "/assets/mimir/characters/young-archer-circular.svg",
+      "states": {
+        "idle": "/assets/mimir/characters/states/young-archer-idle.svg",
+        "active": "/assets/mimir/characters/states/young-archer-active.svg",
+        "selected": "/assets/mimir/characters/states/young-archer-selected.svg",
+        "thinking": "/assets/mimir/characters/states/young-archer-thinking.svg",
+        "running": "/assets/mimir/characters/states/young-archer-running.svg",
+        "succeeded": "/assets/mimir/characters/states/young-archer-succeeded.svg",
+        "failed": "/assets/mimir/characters/states/young-archer-failed.svg",
+        "disabled": "/assets/mimir/characters/states/young-archer-disabled.svg"
+      }
+    },
+    {
+      "id": "forge-bot-brok",
+      "category": "characters",
+      "name": "Forge Bot Brok",
+      "role": "Builder, Tool Execution & Infrastructure",
+      "svg": "/assets/mimir/characters/forge-bot-brok.svg",
+      "png": "/assets/mimir/characters/forge-bot-brok.png",
+      "circular": "/assets/mimir/characters/forge-bot-brok-circular.svg",
+      "states": {
+        "idle": "/assets/mimir/characters/states/forge-bot-brok-idle.svg",
+        "active": "/assets/mimir/characters/states/forge-bot-brok-active.svg",
+        "selected": "/assets/mimir/characters/states/forge-bot-brok-selected.svg",
+        "thinking": "/assets/mimir/characters/states/forge-bot-brok-thinking.svg",
+        "running": "/assets/mimir/characters/states/forge-bot-brok-running.svg",
+        "succeeded": "/assets/mimir/characters/states/forge-bot-brok-succeeded.svg",
+        "failed": "/assets/mimir/characters/states/forge-bot-brok-failed.svg",
+        "disabled": "/assets/mimir/characters/states/forge-bot-brok-disabled.svg"
+      }
+    },
+    {
+      "id": "forge-bot-sindri",
+      "category": "characters",
+      "name": "Forge Bot Sindri",
+      "role": "Artificer, Polish, Refinement & QA",
+      "svg": "/assets/mimir/characters/forge-bot-sindri.svg",
+      "png": "/assets/mimir/characters/forge-bot-sindri.png",
+      "circular": "/assets/mimir/characters/forge-bot-sindri-circular.svg",
+      "states": {
+        "idle": "/assets/mimir/characters/states/forge-bot-sindri-idle.svg",
+        "active": "/assets/mimir/characters/states/forge-bot-sindri-active.svg",
+        "selected": "/assets/mimir/characters/states/forge-bot-sindri-selected.svg",
+        "thinking": "/assets/mimir/characters/states/forge-bot-sindri-thinking.svg",
+        "running": "/assets/mimir/characters/states/forge-bot-sindri-running.svg",
+        "succeeded": "/assets/mimir/characters/states/forge-bot-sindri-succeeded.svg",
+        "failed": "/assets/mimir/characters/states/forge-bot-sindri-failed.svg",
+        "disabled": "/assets/mimir/characters/states/forge-bot-sindri-disabled.svg"
+      }
+    },
+    {
+      "id": "freya-valkyrie",
+      "category": "characters",
+      "name": "Freya Valkyrie Healer",
+      "role": "Healer, Diagnostics & Recovery",
+      "svg": "/assets/mimir/characters/freya-valkyrie.svg",
+      "png": "/assets/mimir/characters/freya-valkyrie.png",
+      "circular": "/assets/mimir/characters/freya-valkyrie-circular.svg",
+      "states": {}
+    },
+    {
+      "id": "odin-archivist",
+      "category": "characters",
+      "name": "Odin Wanderer Archivist",
+      "role": "Archivist, Memory & Knowledge Indexing",
+      "svg": "/assets/mimir/characters/odin-archivist.svg",
+      "png": "/assets/mimir/characters/odin-archivist.png",
+      "circular": "/assets/mimir/characters/odin-archivist-circular.svg",
+      "states": {}
+    },
+    {
+      "id": "thor-thunderer",
+      "category": "characters",
+      "name": "Thor Thunder Enforcer",
+      "role": "Heavy Parallel Compute & Burst Ops",
+      "svg": "/assets/mimir/characters/thor-thunderer.svg",
+      "png": "/assets/mimir/characters/thor-thunderer.png",
+      "circular": "/assets/mimir/characters/thor-thunderer-circular.svg",
+      "states": {}
+    },
+    {
+      "id": "tyr-diplomat",
+      "category": "characters",
+      "name": "Tyr Strategist Diplomat",
+      "role": "Diplomat, Coordination & Comms",
+      "svg": "/assets/mimir/characters/tyr-diplomat.svg",
+      "png": "/assets/mimir/characters/tyr-diplomat.png",
+      "circular": "/assets/mimir/characters/tyr-diplomat-circular.svg",
+      "states": {}
+    },
+    {
+      "id": "angrboda-mystic",
+      "category": "characters",
+      "name": "Angrboda Jotun Mystic",
+      "role": "Prophetic Pattern & Creative Synthesis",
+      "svg": "/assets/mimir/characters/angrboda-mystic.svg",
+      "png": "/assets/mimir/characters/angrboda-mystic.png",
+      "circular": "/assets/mimir/characters/angrboda-mystic-circular.svg",
+      "states": {}
+    },
+    {
+      "id": "heimdall-sentinel",
+      "category": "characters",
+      "name": "Heimdall Foresight Sentinel",
+      "role": "Sentinel, Monitoring & Guardrails",
+      "svg": "/assets/mimir/characters/heimdall-sentinel.svg",
+      "png": "/assets/mimir/characters/heimdall-sentinel.png",
+      "circular": "/assets/mimir/characters/heimdall-sentinel-circular.svg",
+      "states": {}
+    },
+    {
+      "id": "durlin-crafter",
+      "category": "characters",
+      "name": "Durlin Rebel Scribe",
+      "role": "Schema Governance & Audit Trails",
+      "svg": "/assets/mimir/characters/durlin-crafter.svg",
+      "png": "/assets/mimir/characters/durlin-crafter.png",
+      "circular": "/assets/mimir/characters/durlin-crafter-circular.svg",
+      "states": {}
+    },
+    {
+      "id": "lunda-smith",
+      "category": "characters",
+      "name": "Lunda Master Armorer",
+      "role": "Gear Upgrade & Runtime Tuning",
+      "svg": "/assets/mimir/characters/lunda-smith.svg",
+      "png": "/assets/mimir/characters/lunda-smith.png",
+      "circular": "/assets/mimir/characters/lunda-smith-circular.svg",
+      "states": {}
+    },
+    {
+      "id": "realm-midgard",
+      "category": "realms",
+      "name": "Midgard",
+      "subtitle": "Frozen Heartland & Pines",
+      "emblem": "/assets/mimir/realms/midgard-icon.svg",
+      "emblemInactive": "/assets/mimir/realms/midgard-icon-inactive.svg",
+      "mapMarker": "/assets/mimir/realms/midgard-map.svg",
+      "scene": "/assets/mimir/realms/midgard-scene.svg",
+      "quickUrl": "https://en.wikipedia.org/wiki/Midgard"
+    },
+    {
+      "id": "realm-asgard",
+      "category": "realms",
+      "name": "Asgard",
+      "subtitle": "Golden Aesir Spires",
+      "emblem": "/assets/mimir/realms/asgard-icon.svg",
+      "emblemInactive": "/assets/mimir/realms/asgard-icon-inactive.svg",
+      "mapMarker": "/assets/mimir/realms/asgard-map.svg",
+      "scene": "/assets/mimir/realms/asgard-scene.svg",
+      "quickUrl": "https://www.playstation.com/en-gb/games/god-of-war-ragnarok/"
+    },
+    {
+      "id": "realm-alfheim",
+      "category": "realms",
+      "name": "Alfheim",
+      "subtitle": "Light-Spire Sanctuary",
+      "emblem": "/assets/mimir/realms/alfheim-icon.svg",
+      "emblemInactive": "/assets/mimir/realms/alfheim-icon-inactive.svg",
+      "mapMarker": "/assets/mimir/realms/alfheim-map.svg",
+      "scene": "/assets/mimir/realms/alfheim-scene.svg",
+      "quickUrl": "https://en.wikipedia.org/wiki/Alfheim"
+    },
+    {
+      "id": "realm-vanaheim",
+      "category": "realms",
+      "name": "Vanaheim",
+      "subtitle": "Vanir Twin-River Canopy",
+      "emblem": "/assets/mimir/realms/vanaheim-icon.svg",
+      "emblemInactive": "/assets/mimir/realms/vanaheim-icon-inactive.svg",
+      "mapMarker": "/assets/mimir/realms/vanaheim-map.svg",
+      "scene": "/assets/mimir/realms/vanaheim-scene.svg",
+      "quickUrl": "https://en.wikipedia.org/wiki/Vanaheim"
+    },
+    {
+      "id": "realm-jotunheim",
+      "category": "realms",
+      "name": "Jötunheim",
+      "subtitle": "Titan Peaks & Amber Mist",
+      "emblem": "/assets/mimir/realms/jotunheim-icon.svg",
+      "emblemInactive": "/assets/mimir/realms/jotunheim-icon-inactive.svg",
+      "mapMarker": "/assets/mimir/realms/jotunheim-map.svg",
+      "scene": "/assets/mimir/realms/jotunheim-scene.svg",
+      "quickUrl": "https://en.wikipedia.org/wiki/J%C3%B6tunheimr"
+    },
+    {
+      "id": "realm-svartalfheim",
+      "category": "realms",
+      "name": "Svartalfheim",
+      "subtitle": "Nidavellir Forge Citadel",
+      "emblem": "/assets/mimir/realms/svartalfheim-icon.svg",
+      "emblemInactive": "/assets/mimir/realms/svartalfheim-icon-inactive.svg",
+      "mapMarker": "/assets/mimir/realms/svartalfheim-map.svg",
+      "scene": "/assets/mimir/realms/svartalfheim-scene.svg",
+      "quickUrl": "https://blog.playstation.com/tag/god-of-war-ragnarok/"
+    },
+    {
+      "id": "realm-muspelheim",
+      "category": "realms",
+      "name": "Muspelheim",
+      "subtitle": "Volcanic Basalt & Magma",
+      "emblem": "/assets/mimir/realms/muspelheim-icon.svg",
+      "emblemInactive": "/assets/mimir/realms/muspelheim-icon-inactive.svg",
+      "mapMarker": "/assets/mimir/realms/muspelheim-map.svg",
+      "scene": "/assets/mimir/realms/muspelheim-scene.svg",
+      "quickUrl": "https://en.wikipedia.org/wiki/Muspelheim"
+    },
+    {
+      "id": "realm-niflheim",
+      "category": "realms",
+      "name": "Niflheim",
+      "subtitle": "Mist-Veiled Permafrost",
+      "emblem": "/assets/mimir/realms/niflheim-icon.svg",
+      "emblemInactive": "/assets/mimir/realms/niflheim-icon-inactive.svg",
+      "mapMarker": "/assets/mimir/realms/niflheim-map.svg",
+      "scene": "/assets/mimir/realms/niflheim-scene.svg",
+      "quickUrl": "https://en.wikipedia.org/wiki/Niflheim"
+    },
+    {
+      "id": "realm-helheim",
+      "category": "realms",
+      "name": "Helheim",
+      "subtitle": "Spectral Underworld Bridge",
+      "emblem": "/assets/mimir/realms/helheim-icon.svg",
+      "emblemInactive": "/assets/mimir/realms/helheim-icon-inactive.svg",
+      "mapMarker": "/assets/mimir/realms/helheim-map.svg",
+      "scene": "/assets/mimir/realms/helheim-scene.svg",
+      "quickUrl": "https://en.wikipedia.org/wiki/Hel_(location)"
+    },
+    {
+      "id": "frost-axe",
+      "category": "artifacts",
+      "subCategory": "weapons",
+      "name": "Leviathan Frost Axe",
+      "svg": "/assets/mimir/artifacts/frost-axe.svg",
+      "png": "/assets/mimir/artifacts/frost-axe.png"
+    },
+    {
+      "id": "ember-twin-blades",
+      "category": "artifacts",
+      "subCategory": "weapons",
+      "name": "Chaos Ember Twin Blades",
+      "svg": "/assets/mimir/artifacts/ember-twin-blades.svg",
+      "png": "/assets/mimir/artifacts/ember-twin-blades.png"
+    },
+    {
+      "id": "draupnir-spear",
+      "category": "artifacts",
+      "subCategory": "weapons",
+      "name": "Draupnir Wind Spear",
+      "svg": "/assets/mimir/artifacts/draupnir-spear.svg",
+      "png": "/assets/mimir/artifacts/draupnir-spear.png"
+    },
+    {
+      "id": "mjolnir-hammer",
+      "category": "artifacts",
+      "subCategory": "weapons",
+      "name": "Mjolnir Thunder Hammer",
+      "svg": "/assets/mimir/artifacts/mjolnir-hammer.svg",
+      "png": "/assets/mimir/artifacts/mjolnir-hammer.png"
+    },
+    {
+      "id": "guardian-shield",
+      "category": "artifacts",
+      "subCategory": "weapons",
+      "name": "Guardian Round Shield",
+      "svg": "/assets/mimir/artifacts/guardian-shield.svg",
+      "png": "/assets/mimir/artifacts/guardian-shield.png"
+    },
+    {
+      "id": "yggdrasil",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Yggdrasil World Tree",
+      "svg": "/assets/mimir/artifacts/yggdrasil.svg",
+      "png": "/assets/mimir/artifacts/yggdrasil.png"
+    },
+    {
+      "id": "well-of-wisdom",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Mimir Well of Wisdom",
+      "svg": "/assets/mimir/artifacts/well-of-wisdom.svg",
+      "png": "/assets/mimir/artifacts/well-of-wisdom.png"
+    },
+    {
+      "id": "odin-eye",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Odin Eye All-Seeing Emblem",
+      "svg": "/assets/mimir/artifacts/odin-eye.svg",
+      "png": "/assets/mimir/artifacts/odin-eye.png"
+    },
+    {
+      "id": "odin-ravens",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Huginn & Muninn Ravens",
+      "svg": "/assets/mimir/artifacts/odin-ravens.svg",
+      "png": "/assets/mimir/artifacts/odin-ravens.png"
+    },
+    {
+      "id": "fenrir-wolf",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Fenrir Frost Wolf",
+      "svg": "/assets/mimir/artifacts/fenrir-wolf.svg",
+      "png": "/assets/mimir/artifacts/fenrir-wolf.png"
+    },
+    {
+      "id": "jormungandr-serpent",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Jormungandr World Serpent",
+      "svg": "/assets/mimir/artifacts/jormungandr-serpent.svg",
+      "png": "/assets/mimir/artifacts/jormungandr-serpent.png"
+    },
+    {
+      "id": "ouroboros",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Ouroboros Eternity Loop",
+      "svg": "/assets/mimir/artifacts/ouroboros.svg",
+      "png": "/assets/mimir/artifacts/ouroboros.png"
+    },
+    {
+      "id": "runestone",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Elder Futhark Runestone",
+      "svg": "/assets/mimir/artifacts/runestone.svg",
+      "png": "/assets/mimir/artifacts/runestone.png"
+    },
+    {
+      "id": "cracked-runestone",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Cracked Runestone (Error)",
+      "svg": "/assets/mimir/artifacts/cracked-runestone.svg",
+      "png": "/assets/mimir/artifacts/cracked-runestone.png"
+    },
+    {
+      "id": "illuminated-rune",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Illuminated Rune (Success)",
+      "svg": "/assets/mimir/artifacts/illuminated-rune.svg",
+      "png": "/assets/mimir/artifacts/illuminated-rune.png"
+    },
+    {
+      "id": "shield-knot",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Triquetra Shield Knot",
+      "svg": "/assets/mimir/artifacts/shield-knot.svg",
+      "png": "/assets/mimir/artifacts/shield-knot.png"
+    },
+    {
+      "id": "bifrost-portal",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Bifrost Realm Portal",
+      "svg": "/assets/mimir/artifacts/bifrost-portal.svg",
+      "png": "/assets/mimir/artifacts/bifrost-portal.png"
+    },
+    {
+      "id": "mystic-gateway",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Yggdrasil Mystic Gateway",
+      "svg": "/assets/mimir/artifacts/mystic-gateway.svg",
+      "png": "/assets/mimir/artifacts/mystic-gateway.png"
+    },
+    {
+      "id": "yggdrasil-seed",
+      "category": "artifacts",
+      "subCategory": "relics",
+      "name": "Yggdrasil Seed Keystone",
+      "svg": "/assets/mimir/artifacts/yggdrasil-seed.svg",
+      "png": "/assets/mimir/artifacts/yggdrasil-seed.png"
+    },
+    {
+      "id": "forge-anvil",
+      "category": "artifacts",
+      "subCategory": "forge",
+      "name": "Huldra Molten Anvil",
+      "svg": "/assets/mimir/artifacts/forge-anvil.svg",
+      "png": "/assets/mimir/artifacts/forge-anvil.png"
+    },
+    {
+      "id": "dwarven-forge-hammer",
+      "category": "artifacts",
+      "subCategory": "forge",
+      "name": "Dwarven Forging Hammer",
+      "svg": "/assets/mimir/artifacts/dwarven-forge-hammer.svg",
+      "png": "/assets/mimir/artifacts/dwarven-forge-hammer.png"
+    },
+    {
+      "id": "dwarven-tongs",
+      "category": "artifacts",
+      "subCategory": "forge",
+      "name": "Dwarven Forge Tongs",
+      "svg": "/assets/mimir/artifacts/dwarven-tongs.svg",
+      "png": "/assets/mimir/artifacts/dwarven-tongs.png"
+    },
+    {
+      "id": "dwarven-gear",
+      "category": "artifacts",
+      "subCategory": "forge",
+      "name": "Nidavellir Dwarven Gear",
+      "svg": "/assets/mimir/artifacts/dwarven-gear.svg",
+      "png": "/assets/mimir/artifacts/dwarven-gear.png"
+    },
+    {
+      "id": "gjallarhorn",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Gjallarhorn War Horn",
+      "svg": "/assets/mimir/artifacts/gjallarhorn.svg",
+      "png": "/assets/mimir/artifacts/gjallarhorn.png"
+    },
+    {
+      "id": "mead-horn",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Horn of Blood Mead",
+      "svg": "/assets/mimir/artifacts/mead-horn.svg",
+      "png": "/assets/mimir/artifacts/mead-horn.png"
+    },
+    {
+      "id": "draupnir-ring",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Draupnir Gold Ring",
+      "svg": "/assets/mimir/artifacts/draupnir-ring.svg",
+      "png": "/assets/mimir/artifacts/draupnir-ring.png"
+    },
+    {
+      "id": "nornir-chest",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Nornir Rune Treasure Chest",
+      "svg": "/assets/mimir/artifacts/nornir-chest.svg",
+      "png": "/assets/mimir/artifacts/nornir-chest.png"
+    },
+    {
+      "id": "golden-apple",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Idunn Golden Apple",
+      "svg": "/assets/mimir/artifacts/golden-apple.svg",
+      "png": "/assets/mimir/artifacts/golden-apple.png"
+    },
+    {
+      "id": "rune-crystal",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Bifrost Rune Crystal Cluster",
+      "svg": "/assets/mimir/artifacts/rune-crystal.svg",
+      "png": "/assets/mimir/artifacts/rune-crystal.png"
+    },
+    {
+      "id": "scroll",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Norse Knowledge Scroll",
+      "svg": "/assets/mimir/artifacts/scroll.svg",
+      "png": "/assets/mimir/artifacts/scroll.png"
+    },
+    {
+      "id": "codex",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Mimir Lore Codex",
+      "svg": "/assets/mimir/artifacts/codex.svg",
+      "png": "/assets/mimir/artifacts/codex.png"
+    },
+    {
+      "id": "quill-inkwell",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Scribe Quill & Inkwell",
+      "svg": "/assets/mimir/artifacts/quill-inkwell.svg",
+      "png": "/assets/mimir/artifacts/quill-inkwell.png"
+    },
+    {
+      "id": "lantern",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Mimir Watch Lantern",
+      "svg": "/assets/mimir/artifacts/lantern.svg",
+      "png": "/assets/mimir/artifacts/lantern.png"
+    },
+    {
+      "id": "campfire",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Realm Campfire Hearth",
+      "svg": "/assets/mimir/artifacts/campfire.svg",
+      "png": "/assets/mimir/artifacts/campfire.png"
+    },
+    {
+      "id": "coin-pouch",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Hacksilver Coin Pouch",
+      "svg": "/assets/mimir/artifacts/coin-pouch.svg",
+      "png": "/assets/mimir/artifacts/coin-pouch.png"
+    },
+    {
+      "id": "ember-flame",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Muspelheim Spark Flame",
+      "svg": "/assets/mimir/artifacts/ember-flame.svg",
+      "png": "/assets/mimir/artifacts/ember-flame.png"
+    },
+    {
+      "id": "lightning-bolt",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Thor Storm Bolt",
+      "svg": "/assets/mimir/artifacts/lightning-bolt.svg",
+      "png": "/assets/mimir/artifacts/lightning-bolt.png"
+    },
+    {
+      "id": "frost-peak",
+      "category": "artifacts",
+      "subCategory": "collectibles",
+      "name": "Midgard Mountain Peak",
+      "svg": "/assets/mimir/artifacts/frost-peak.svg",
+      "png": "/assets/mimir/artifacts/frost-peak.png"
+    },
+    {
+      "id": "ui-chat",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Chat Rune",
+      "svg": "/assets/mimir/ui/chat.svg",
+      "png": "/assets/mimir/ui/chat.png"
+    },
+    {
+      "id": "ui-chronicles",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Chronicles Scroll",
+      "svg": "/assets/mimir/ui/chronicles.svg",
+      "png": "/assets/mimir/ui/chronicles.png"
+    },
+    {
+      "id": "ui-allies",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Allies Grid Crest",
+      "svg": "/assets/mimir/ui/allies.svg",
+      "png": "/assets/mimir/ui/allies.png"
+    },
+    {
+      "id": "ui-forge",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Forge Anvil Icon",
+      "svg": "/assets/mimir/ui/forge.svg",
+      "png": "/assets/mimir/ui/forge.png"
+    },
+    {
+      "id": "ui-rsi-scale",
+      "category": "ui",
+      "group": "navigation",
+      "name": "RSI Telemetry Pulse",
+      "svg": "/assets/mimir/ui/rsi-scale.svg",
+      "png": "/assets/mimir/ui/rsi-scale.png"
+    },
+    {
+      "id": "ui-routines",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Runic Horn Clock",
+      "svg": "/assets/mimir/ui/routines.svg",
+      "png": "/assets/mimir/ui/routines.png"
+    },
+    {
+      "id": "ui-mcp-box",
+      "category": "ui",
+      "group": "navigation",
+      "name": "MCP Rune Cube",
+      "svg": "/assets/mimir/ui/mcp-box.svg",
+      "png": "/assets/mimir/ui/mcp-box.png"
+    },
+    {
+      "id": "ui-vault",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Vault Lock Shield",
+      "svg": "/assets/mimir/ui/vault.svg",
+      "png": "/assets/mimir/ui/vault.png"
+    },
+    {
+      "id": "ui-settings",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Dwarven Gear",
+      "svg": "/assets/mimir/ui/settings.svg",
+      "png": "/assets/mimir/ui/settings.png"
+    },
+    {
+      "id": "ui-screen",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Realm Screen Viewport",
+      "svg": "/assets/mimir/ui/screen.svg",
+      "png": "/assets/mimir/ui/screen.png"
+    },
+    {
+      "id": "ui-workspace",
+      "category": "ui",
+      "group": "navigation",
+      "name": "World Tree Workspace",
+      "svg": "/assets/mimir/ui/workspace.svg",
+      "png": "/assets/mimir/ui/workspace.png"
+    },
+    {
+      "id": "ui-activity",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Runic Activity Trace",
+      "svg": "/assets/mimir/ui/activity.svg",
+      "png": "/assets/mimir/ui/activity.png"
+    },
+    {
+      "id": "ui-memory",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Well of Wisdom Memory",
+      "svg": "/assets/mimir/ui/memory.svg",
+      "png": "/assets/mimir/ui/memory.png"
+    },
+    {
+      "id": "ui-online",
+      "category": "ui",
+      "group": "status",
+      "name": "Online Illuminated Crystal",
+      "svg": "/assets/mimir/ui/online.svg",
+      "png": "/assets/mimir/ui/online.png"
+    },
+    {
+      "id": "ui-offline",
+      "category": "ui",
+      "group": "status",
+      "name": "Offline Cracked Rune",
+      "svg": "/assets/mimir/ui/offline.svg",
+      "png": "/assets/mimir/ui/offline.png"
+    },
+    {
+      "id": "ui-loading",
+      "category": "ui",
+      "group": "status",
+      "name": "Spinning Bifrost Rune",
+      "svg": "/assets/mimir/ui/loading.svg",
+      "png": "/assets/mimir/ui/loading.png"
+    },
+    {
+      "id": "ui-selected",
+      "category": "ui",
+      "group": "status",
+      "name": "Selected Gold Bracket",
+      "svg": "/assets/mimir/ui/selected.svg",
+      "png": "/assets/mimir/ui/selected.png"
+    },
+    {
+      "id": "ui-disabled",
+      "category": "ui",
+      "group": "status",
+      "name": "Disabled Stone Rune",
+      "svg": "/assets/mimir/ui/disabled.svg",
+      "png": "/assets/mimir/ui/disabled.png"
+    },
+    {
+      "id": "ui-error",
+      "category": "ui",
+      "group": "status",
+      "name": "Cracked Runestone Error",
+      "svg": "/assets/mimir/ui/error.svg",
+      "png": "/assets/mimir/ui/error.png"
+    },
+    {
+      "id": "ui-disconnected",
+      "category": "ui",
+      "group": "status",
+      "name": "Severed Bifrost Bridge",
+      "svg": "/assets/mimir/ui/disconnected.svg",
+      "png": "/assets/mimir/ui/disconnected.png"
+    },
+    {
+      "id": "ui-succeeded",
+      "category": "ui",
+      "group": "status",
+      "name": "Illuminated Victory Rune",
+      "svg": "/assets/mimir/ui/succeeded.svg",
+      "png": "/assets/mimir/ui/succeeded.png"
+    },
+    {
+      "id": "ui-refresh",
+      "category": "ui",
+      "group": "actions",
+      "name": "Refresh Cycle",
+      "svg": "/assets/mimir/ui/refresh.svg",
+      "png": "/assets/mimir/ui/refresh.png"
+    },
+    {
+      "id": "ui-send",
+      "category": "ui",
+      "group": "actions",
+      "name": "Send Spear Arrow",
+      "svg": "/assets/mimir/ui/send.svg",
+      "png": "/assets/mimir/ui/send.png"
+    },
+    {
+      "id": "ui-new-chat",
+      "category": "ui",
+      "group": "actions",
+      "name": "New Chat Plus",
+      "svg": "/assets/mimir/ui/new-chat.svg",
+      "png": "/assets/mimir/ui/new-chat.png"
+    },
+    {
+      "id": "ui-search",
+      "category": "ui",
+      "group": "actions",
+      "name": "Odin Eye Lens Search",
+      "svg": "/assets/mimir/ui/search.svg",
+      "png": "/assets/mimir/ui/search.png"
+    },
+    {
+      "id": "ui-attach",
+      "category": "ui",
+      "group": "actions",
+      "name": "Attach File Clip",
+      "svg": "/assets/mimir/ui/attach.svg",
+      "png": "/assets/mimir/ui/attach.png"
+    },
+    {
+      "id": "ui-go",
+      "category": "ui",
+      "group": "actions",
+      "name": "Go Realm Step",
+      "svg": "/assets/mimir/ui/go.svg",
+      "png": "/assets/mimir/ui/go.png"
+    },
+    {
+      "id": "ui-hide-preview",
+      "category": "ui",
+      "group": "actions",
+      "name": "Hide Preview Split",
+      "svg": "/assets/mimir/ui/hide-preview.svg",
+      "png": "/assets/mimir/ui/hide-preview.png"
+    },
+    {
+      "id": "ui-empty-realm",
+      "category": "ui",
+      "group": "empty-states",
+      "name": "Empty Realm Portal",
+      "svg": "/assets/mimir/ui/empty-realm.svg",
+      "png": "/assets/mimir/ui/empty-realm.png"
+    },
+    {
+      "id": "ui-boardroom",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Boardroom Council Table",
+      "svg": "/assets/mimir/ui/boardroom.svg"
+    },
+    {
+      "id": "ui-voice-orb",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Well of Wisdom Orb",
+      "svg": "/assets/mimir/ui/voice-orb.svg"
+    },
+    {
+      "id": "ui-code-mode",
+      "category": "ui",
+      "group": "actions",
+      "name": "Forged Code Anvil",
+      "svg": "/assets/mimir/ui/code-mode.svg"
+    },
+    {
+      "id": "ui-subagent-swarm",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Yggdrasil Subagent Graph",
+      "svg": "/assets/mimir/ui/subagent-swarm.svg"
+    },
+    {
+      "id": "ui-council-crown",
+      "category": "ui",
+      "group": "navigation",
+      "name": "Chairman Triple-Horn Crest",
+      "svg": "/assets/mimir/ui/council-crown.svg"
+    },
+    {
+      "id": "mimir-floating-sage",
+      "category": "animations",
+      "name": "Mimir Floating Sage",
+      "svg": "/assets/mimir/animations/mimir-floating-sage.svg"
+    },
+    {
+      "id": "runic-loader",
+      "category": "animations",
+      "name": "Runic Bifrost Loader",
+      "svg": "/assets/mimir/animations/runic-loader.svg"
+    },
+    {
+      "id": "bifrost-portal-warp",
+      "category": "animations",
+      "name": "Bifrost Portal Warp",
+      "svg": "/assets/mimir/animations/bifrost-portal-warp.svg"
+    },
+    {
+      "id": "pixel-glitch-bars",
+      "category": "animations",
+      "name": "Pixel Glitch Bars",
+      "svg": "/assets/mimir/animations/pixel-glitch-bars.svg"
+    },
+    {
+      "id": "illuminated-rune-success",
+      "category": "animations",
+      "name": "Illuminated Rune Success",
+      "svg": "/assets/mimir/animations/illuminated-rune-success.svg"
+    },
+    {
+      "id": "cracked-runestone-error",
+      "category": "animations",
+      "name": "Cracked Runestone Error",
+      "svg": "/assets/mimir/animations/cracked-runestone-error.svg"
+    }
+  ]
+}

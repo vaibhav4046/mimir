@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/mimir-security",
+    "crates/mimir-core",
+    "crates/mimir-daemon",
+    "crates/mimir-ffi",
+]
+
+[workspace.package]
+version = "1.1.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"

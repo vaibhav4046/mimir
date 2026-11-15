@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Shoulder Frost Battleaxe">
+  <title>Shoulder Frost Battleaxe</title>
+  <desc>Modular weapons pixel overlay socket for Mimir custom bot avatars.</desc>
+  <g id="weapons-frost-axe-outline">
+    <path fill="#081019" d="M36 8h2v1h-2zM35 9h1v1h-1zM38 9h3v1h-3zM35 10h1v1h-1zM41 10h2v1h-2zM35 11h1v1h-1zM43 11h1v1h-1zM35 12h1v1h-1zM44 12h1v1h-1zM34 13h1v1h-1zM44 13h1v1h-1zM34 14h1v1h-1zM44 14h1v1h-1zM34 15h1v1h-1zM44 15h1v1h-1zM34 16h1v1h-1zM43 16h1v1h-1zM34 17h1v1h-1zM43 17h1v1h-1zM34 18h1v1h-1zM37 18h2v1h-2zM43 18h1v1h-1zM33 19h1v1h-1zM37 19h1v1h-1zM39 19h2v1h-2zM43 19h1v1h-1zM33 20h1v1h-1zM36 20h1v1h-1zM41 20h2v1h-2zM33 21h1v1h-1zM36 21h1v1h-1zM33 22h1v1h-1zM36 22h1v1h-1zM33 23h1v1h-1zM36 23h1v1h-1zM33 24h1v1h-1zM36 24h1v1h-1zM32 25h1v1h-1zM36 25h1v1h-1zM32 26h1v1h-1zM35 26h1v1h-1zM32 27h1v1h-1zM35 27h1v1h-1zM32 28h1v1h-1zM35 28h1v1h-1zM32 29h1v1h-1zM35 29h1v1h-1zM32 30h1v1h-1zM35 30h1v1h-1zM32 31h1v1h-1zM35 31h1v1h-1zM31 32h1v1h-1zM35 32h1v1h-1zM31 33h1v1h-1zM34 33h1v1h-1zM31 34h1v1h-1zM34 34h1v1h-1zM31 35h1v1h-1zM34 35h1v1h-1zM31 36h1v1h-1zM34 36h1v1h-1zM31 37h1v1h-1zM34 37h1v1h-1zM30 38h1v1h-1zM34 38h1v1h-1zM30 39h1v1h-1zM33 39h1v1h-1zM30 40h1v1h-1zM33 40h1v1h-1zM30 41h1v1h-1zM33 41h1v1h-1zM30 42h1v1h-1zM33 42h1v1h-1zM31 43h2v1h-2z" />
+  </g>
+  <g id="weapons-frost-axe-ice">
+    <path fill="#3ac9ff" d="M36 9h2v1h-2zM36 10h5v1h-5zM36 11h7v1h-7zM36 12h8v1h-8zM36 13h8v1h-8zM36 14h8v1h-8zM36 15h8v1h-8zM36 16h7v1h-7zM37 17h6v1h-6zM39 18h4v1h-4zM41 19h2v1h-2z" />
+  </g>
+  <g id="weapons-frost-axe-accent">
+    <path fill="#8f552e" d="M35 13h1v1h-1zM35 14h1v1h-1zM35 15h1v1h-1zM35 16h1v1h-1zM35 17h2v1h-2zM35 18h2v1h-2zM34 19h3v1h-3zM34 20h2v1h-2zM34 21h2v1h-2zM34 22h2v1h-2zM34 23h2v1h-2zM34 24h2v1h-2zM33 25h3v1h-3zM33 26h2v1h-2zM33 27h2v1h-2zM33 28h2v1h-2zM33 29h2v1h-2zM33 30h2v1h-2zM33 31h2v1h-2zM32 32h3v1h-3zM32 33h2v1h-2zM32 34h2v1h-2zM32 35h2v1h-2zM32 36h2v1h-2zM32 37h2v1h-2zM31 38h3v1h-3zM31 39h2v1h-2zM31 40h2v1h-2zM31 41h2v1h-2zM31 42h2v1h-2z" />
+  </g>
+</svg>

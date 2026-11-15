@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Hacksilver Coin Pouch">
+  <title>Hacksilver Coin Pouch</title>
+  <desc>Original 16-bit Norse artifact sprite (collectibles). Ref: https://blog.playstation.com/2023/04/11/god-of-war-ragnarok-new-game-plus-build-guide/</desc>
+  <g id="coin-pouch-outline">
+    <path fill="#081019" d="M16 9h12v1h-12zM15 10h1v1h-1zM28 10h1v1h-1zM16 11h1v1h-1zM28 11h1v1h-1zM16 12h1v1h-1zM28 12h1v1h-1zM16 13h1v1h-1zM27 13h1v1h-1zM17 14h1v1h-1zM27 14h1v1h-1zM17 15h1v1h-1zM27 15h1v1h-1zM17 16h1v1h-1zM26 16h1v1h-1zM16 17h1v1h-1zM27 17h1v1h-1zM16 18h1v1h-1zM27 18h1v1h-1zM16 19h1v1h-1zM27 19h1v1h-1zM17 20h5v1h-5zM23 20h5v1h-5zM15 21h2v1h-2zM28 21h2v1h-2zM14 22h1v1h-1zM30 22h1v1h-1zM13 23h1v1h-1zM31 23h1v1h-1zM12 24h1v1h-1zM32 24h1v1h-1zM11 25h1v1h-1zM33 25h1v1h-1zM11 26h1v1h-1zM33 26h1v1h-1zM10 27h1v1h-1zM34 27h1v1h-1zM10 28h1v1h-1zM34 28h1v1h-1zM10 29h1v1h-1zM34 29h1v1h-1zM9 30h1v1h-1zM35 30h1v1h-1zM10 31h1v1h-1zM34 31h1v1h-1zM10 32h1v1h-1zM34 32h1v1h-1zM10 33h1v1h-1zM34 33h1v1h-1zM11 34h1v1h-1zM35 34h4v1h-4zM11 35h1v1h-1zM39 35h1v1h-1zM12 36h1v1h-1zM40 36h1v1h-1zM13 37h1v1h-1zM41 37h1v1h-1zM14 38h1v1h-1zM41 38h1v1h-1zM15 39h2v1h-2zM28 39h3v1h-3zM41 39h1v1h-1zM17 40h5v1h-5zM23 40h5v1h-5zM31 40h4v1h-4zM40 40h1v1h-1zM22 41h1v1h-1zM35 41h1v1h-1zM39 41h1v1h-1zM36 42h3v1h-3z" />
+  </g>
+  <g id="coin-pouch-base">
+    <path fill="#c2d2e3" d="M36 35h3v1h-3zM35 36h5v1h-5zM34 37h7v1h-7zM34 38h3v1h-3zM38 38h3v1h-3zM34 39h7v1h-7zM35 40h5v1h-5zM36 41h3v1h-3z" />
+    <path fill="#e5edf4" d="M37 38h1v1h-1z" />
+  </g>
+  <g id="coin-pouch-gold">
+    <path fill="#e6ab42" d="M17 17h10v1h-10zM17 18h10v1h-10zM17 19h10v1h-10zM31 33h3v1h-3zM30 34h5v1h-5zM29 35h2v1h-2zM34 35h2v1h-2zM29 36h2v1h-2zM34 36h1v1h-1zM29 37h2v1h-2zM30 38h4v1h-4zM31 39h3v1h-3z" />
+    <path fill="#69400b" d="M22 24h1v1h-1zM21 25h2v1h-2zM21 26h3v1h-3zM20 27h1v1h-1zM23 27h1v1h-1zM20 28h1v1h-1zM23 28h2v1h-2zM19 29h6v1h-6z" />
+    <path fill="#ffd878" d="M21 27h2v1h-2zM21 28h2v1h-2zM31 35h3v1h-3zM31 36h3v1h-3zM31 37h3v1h-3z" />
+  </g>
+  <g id="coin-pouch-accent">
+    <path fill="#bd7c4b" d="M16 10h12v1h-12zM17 11h11v1h-11zM17 12h11v1h-11zM17 13h10v1h-10zM18 14h9v1h-9zM18 15h9v1h-9zM18 16h8v1h-8zM22 20h1v1h-1zM17 21h8v1h-8zM26 21h1v1h-1zM15 22h9v1h-9zM14 23h9v1h-9zM24 23h1v1h-1zM13 24h9v1h-9zM23 24h1v1h-1zM12 25h9v1h-9zM12 26h8v1h-8zM11 27h8v1h-8zM11 28h5v1h-5zM17 28h1v1h-1zM11 29h6v1h-6zM18 29h1v1h-1zM10 30h4v1h-4zM15 30h1v1h-1zM11 31h2v1h-2zM14 31h1v1h-1zM11 32h1v1h-1z" />
+    <path fill="#8f552e" d="M25 21h1v1h-1zM27 21h1v1h-1zM24 22h6v1h-6zM23 23h1v1h-1zM25 23h4v1h-4zM24 24h4v1h-4zM23 25h6v1h-6zM20 26h1v1h-1zM24 26h2v1h-2zM19 27h1v1h-1zM24 27h3v1h-3zM16 28h1v1h-1zM18 28h2v1h-2zM17 29h1v1h-1zM14 30h1v1h-1zM16 30h6v1h-6zM13 31h1v1h-1zM15 31h6v1h-6zM22 31h1v1h-1zM12 32h6v1h-6zM19 32h1v1h-1zM11 33h6v1h-6zM18 33h1v1h-1zM12 34h2v1h-2zM15 34h1v1h-1zM12 35h1v1h-1zM14 35h1v1h-1zM16 35h1v1h-1z" />
+    <path fill="#63391f" d="M29 23h2v1h-2zM28 24h4v1h-4zM29 25h4v1h-4zM26 26h6v1h-6zM27 27h4v1h-4zM25 28h5v1h-5zM25 29h4v1h-4zM22 30h6v1h-6zM21 31h1v1h-1zM23 31h4v1h-4zM28 31h1v1h-1zM18 32h1v1h-1zM20 32h4v1h-4zM25 32h1v1h-1zM17 33h1v1h-1zM19 33h6v1h-6zM14 34h1v1h-1zM16 34h6v1h-6zM23 34h1v1h-1zM13 35h1v1h-1zM15 35h1v1h-1zM17 35h6v1h-6zM13 36h5v1h-5zM19 36h1v1h-1zM14 37h3v1h-3zM18 37h1v1h-1zM15 38h1v1h-1z" />
+    <path fill="#382012" d="M32 26h1v1h-1zM31 27h3v1h-3zM30 28h4v1h-4zM29 29h5v1h-5zM28 30h7v1h-7zM27 31h1v1h-1zM29 31h5v1h-5zM24 32h1v1h-1zM26 32h8v1h-8zM25 33h6v1h-6zM22 34h1v1h-1zM24 34h6v1h-6zM23 35h6v1h-6zM18 36h1v1h-1zM20 36h9v1h-9zM17 37h1v1h-1zM19 37h10v1h-10zM16 38h14v1h-14zM17 39h11v1h-11zM22 40h1v1h-1z" />
+  </g>
+</svg>

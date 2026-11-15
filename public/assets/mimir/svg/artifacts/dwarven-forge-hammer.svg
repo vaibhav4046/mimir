@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Dwarven Forging Hammer">
+  <title>Dwarven Forging Hammer</title>
+  <desc>Original 16-bit Norse artifact sprite (forge). Ref: https://en.wikipedia.org/wiki/God_of_War_Ragnar%C3%B6k</desc>
+  <g id="dwarven-forge-hammer-outline">
+    <path fill="#081019" d="M24 8h15v1h-15zM23 9h1v1h-1zM39 9h1v1h-1zM23 10h1v1h-1zM39 10h1v1h-1zM23 11h1v1h-1zM39 11h1v1h-1zM23 12h1v1h-1zM39 12h1v1h-1zM23 13h1v1h-1zM39 13h1v1h-1zM23 14h1v1h-1zM39 14h1v1h-1zM23 15h1v1h-1zM39 15h1v1h-1zM23 16h1v1h-1zM39 16h1v1h-1zM23 17h1v1h-1zM39 17h1v1h-1zM23 18h1v1h-1zM39 18h1v1h-1zM23 19h1v1h-1zM39 19h1v1h-1zM24 20h6v1h-6zM35 20h4v1h-4zM28 21h1v1h-1zM34 21h1v1h-1zM27 22h1v1h-1zM33 22h1v1h-1zM26 23h1v1h-1zM32 23h1v1h-1zM25 24h1v1h-1zM31 24h1v1h-1zM24 25h1v1h-1zM30 25h1v1h-1zM23 26h1v1h-1zM29 26h1v1h-1zM22 27h1v1h-1zM28 27h1v1h-1zM21 28h1v1h-1zM27 28h1v1h-1zM20 29h1v1h-1zM26 29h1v1h-1zM19 30h1v1h-1zM25 30h1v1h-1zM18 31h1v1h-1zM24 31h1v1h-1zM17 32h1v1h-1zM23 32h1v1h-1zM16 33h1v1h-1zM22 33h1v1h-1zM15 34h1v1h-1zM21 34h1v1h-1zM14 35h1v1h-1zM20 35h1v1h-1zM13 36h1v1h-1zM19 36h1v1h-1zM12 37h1v1h-1zM18 37h1v1h-1zM11 38h1v1h-1zM17 38h1v1h-1zM11 39h1v1h-1zM16 39h1v1h-1zM11 40h1v1h-1zM15 40h1v1h-1zM12 41h3v1h-3z" />
+  </g>
+  <g id="dwarven-forge-hammer-base">
+    <path fill="#4893d4" d="M24 9h15v1h-15zM24 10h1v1h-1zM38 10h1v1h-1zM24 11h1v1h-1zM38 11h1v1h-1zM24 12h1v1h-1zM38 12h1v1h-1zM24 13h15v1h-15zM24 14h5v1h-5zM33 14h6v1h-6zM24 15h5v1h-5zM33 15h6v1h-6zM24 16h5v1h-5zM33 16h6v1h-6zM24 17h15v1h-15zM24 18h15v1h-15zM24 19h15v1h-15z" />
+    <path fill="#8ac7f7" d="M25 10h13v1h-13zM25 11h13v1h-13zM25 12h13v1h-13z" />
+  </g>
+  <g id="dwarven-forge-hammer-gold">
+    <path fill="#e6ab42" d="M29 14h4v1h-4zM29 15h4v1h-4zM29 16h4v1h-4z" />
+  </g>
+  <g id="dwarven-forge-hammer-accent">
+    <path fill="#63391f" d="M30 20h5v1h-5zM29 21h5v1h-5zM28 22h5v1h-5zM27 23h5v1h-5zM26 24h5v1h-5zM25 25h5v1h-5zM24 26h5v1h-5zM23 27h5v1h-5zM22 28h5v1h-5zM21 29h5v1h-5zM20 30h5v1h-5zM19 31h5v1h-5zM18 32h5v1h-5zM17 33h5v1h-5zM16 34h5v1h-5zM15 35h5v1h-5zM14 36h5v1h-5zM13 37h5v1h-5zM12 38h5v1h-5zM12 39h4v1h-4zM12 40h3v1h-3z" />
+  </g>
+</svg>

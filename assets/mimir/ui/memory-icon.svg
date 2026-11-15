@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="Well of Wisdom Memory">
+  <title>Well of Wisdom Memory</title>
+  <desc>16x16 pixel UI icon (navigation).</desc>
+  <g id="ui-memory-outline">
+    <path fill="#081019" d="M6 3h4v1h-4zM5 4h1v1h-1zM10 4h1v1h-1zM5 5h1v1h-1zM10 5h1v1h-1zM3 6h2v1h-2zM11 6h2v1h-2zM2 7h1v1h-1zM13 7h1v1h-1zM1 8h1v1h-1zM14 8h1v1h-1zM1 9h1v1h-1zM14 9h1v1h-1zM1 10h1v1h-1zM14 10h1v1h-1zM2 11h1v1h-1zM13 11h1v1h-1zM3 12h10v1h-10z" />
+  </g>
+  <g id="ui-memory-base">
+    <path fill="#4c6782" d="M3 8h10v1h-10zM3 9h2v1h-2zM11 9h2v1h-2zM3 10h2v1h-2zM11 10h2v1h-2zM3 11h10v1h-10z" />
+  </g>
+  <g id="ui-memory-gold">
+    <path fill="#e6ab42" d="M3 7h10v1h-10zM2 8h1v1h-1zM13 8h1v1h-1zM2 9h1v1h-1zM13 9h1v1h-1zM2 10h1v1h-1zM13 10h1v1h-1z" />
+  </g>
+  <g id="ui-memory-ice">
+    <path fill="#3ac9ff" d="M6 4h4v1h-4zM6 5h1v1h-1zM9 5h1v1h-1zM5 6h6v1h-6zM5 9h6v1h-6zM5 10h6v1h-6z" />
+    <path fill="#a9eeff" d="M7 5h2v1h-2z" />
+  </g>
+</svg>

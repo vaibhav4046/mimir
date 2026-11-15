@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 24" shape-rendering="crispEdges" role="img" aria-label="Pixel Glitch Interference Bars">
+  <title>Pixel Glitch Interference Bars</title>
+  <desc>Crisp 8-bit horizontal pixel-slice tremor bars for response decode and error alerts.</desc>
+  <style>
+    #glitch-a { animation: g-shift-a 0.6s steps(3, end) infinite; }
+    #glitch-b { animation: g-shift-b 0.48s steps(2, end) infinite; }
+    @keyframes g-shift-a {
+      0%, 100% { transform: translateX(0px); }
+      33% { transform: translateX(-3px); }
+      66% { transform: translateX(2px); }
+    }
+    @keyframes g-shift-b {
+      0%, 100% { transform: translateX(0px); }
+      50% { transform: translateX(3px); }
+    }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  </style>
+  <g id="glitch-a">
+    <path fill="#3ac9ff" d="M2 3h22v2H2zM38 11h18v1H38zM10 18h28v2H10z" />
+    <path fill="#ffd878" d="M26 3h8v2h-8zM44 18h12v2H44z" />
+  </g>
+  <g id="glitch-b">
+    <path fill="#d94143" d="M12 7h30v2H12zM4 14h20v1H4z" />
+    <path fill="#a9eeff" d="M46 7h12v2H46zM28 14h10v1H28z" />
+  </g>
+</svg>

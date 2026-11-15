@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Huldra Molten Anvil">
+  <title>Huldra Molten Anvil</title>
+  <desc>Original 16-bit Norse artifact sprite (forge). Ref: https://www.playstation.com/en-gb/games/god-of-war-ragnarok/</desc>
+  <g id="forge-anvil-outline">
+    <path fill="#081019" d="M23 13h2v1h-2zM14 14h9v1h-9zM25 14h14v1h-14zM13 15h1v1h-1zM39 15h1v1h-1zM8 16h6v1h-6zM39 16h1v1h-1zM7 17h1v1h-1zM39 17h1v1h-1zM8 18h1v1h-1zM39 18h1v1h-1zM9 19h1v1h-1zM38 19h1v1h-1zM10 20h1v1h-1zM38 20h1v1h-1zM11 21h1v1h-1zM38 21h1v1h-1zM12 22h1v1h-1zM38 22h1v1h-1zM13 23h6v1h-6zM31 23h7v1h-7zM18 24h1v1h-1zM31 24h1v1h-1zM18 25h1v1h-1zM31 25h1v1h-1zM18 26h1v1h-1zM31 26h1v1h-1zM18 27h1v1h-1zM31 27h1v1h-1zM18 28h1v1h-1zM31 28h1v1h-1zM18 29h1v1h-1zM31 29h1v1h-1zM18 30h1v1h-1zM31 30h1v1h-1zM18 31h1v1h-1zM31 31h1v1h-1zM13 32h6v1h-6zM31 32h6v1h-6zM12 33h1v1h-1zM37 33h1v1h-1zM12 34h1v1h-1zM37 34h1v1h-1zM12 35h1v1h-1zM37 35h1v1h-1zM12 36h1v1h-1zM37 36h1v1h-1zM12 37h1v1h-1zM37 37h1v1h-1zM12 38h1v1h-1zM37 38h1v1h-1zM13 39h24v1h-24z" />
+  </g>
+  <g id="forge-anvil-base">
+    <path fill="#7795b3" d="M14 15h9v1h-9zM25 15h11v1h-11zM14 16h9v1h-9zM26 16h10v1h-10zM14 17h10v1h-10zM26 17h10v1h-10z" />
+    <path fill="#4c6782" d="M36 15h3v1h-3zM36 16h3v1h-3zM8 17h6v1h-6zM36 17h3v1h-3zM9 18h15v1h-15zM26 18h13v1h-13zM10 19h14v1h-14zM26 19h12v1h-12zM11 20h13v1h-13zM27 20h11v1h-11zM12 21h13v1h-13zM27 21h11v1h-11zM13 22h12v1h-12zM27 22h11v1h-11z" />
+    <path fill="#2e4359" d="M19 23h5v1h-5zM27 23h4v1h-4zM19 24h5v1h-5zM26 24h5v1h-5zM19 25h5v1h-5zM26 25h5v1h-5zM19 26h5v1h-5zM26 26h5v1h-5zM19 27h4v1h-4zM26 27h5v1h-5zM19 28h4v1h-4zM25 28h6v1h-6zM19 29h4v1h-4zM25 29h6v1h-6zM19 30h4v1h-4zM25 30h6v1h-6zM19 31h3v1h-3zM25 31h6v1h-6zM19 32h3v1h-3zM24 32h7v1h-7z" />
+    <path fill="#1d2b3b" d="M13 33h9v1h-9zM24 33h13v1h-13zM13 34h24v1h-24zM13 35h24v1h-24zM13 36h24v1h-24zM13 37h24v1h-24zM13 38h24v1h-24z" />
+  </g>
+  <g id="forge-anvil-runes">
+    <path fill="#ffd466" d="M23 14h2v1h-2zM23 15h2v1h-2zM23 16h3v1h-3zM24 17h2v1h-2zM24 18h2v1h-2zM24 19h2v1h-2zM24 20h3v1h-3z" />
+    <path fill="#ff7626" d="M25 21h2v1h-2zM25 22h2v1h-2zM24 23h3v1h-3zM24 24h2v1h-2zM24 25h2v1h-2zM24 26h2v1h-2zM23 27h3v1h-3zM23 28h2v1h-2zM23 29h2v1h-2zM23 30h2v1h-2zM22 31h3v1h-3zM22 32h2v1h-2zM22 33h2v1h-2z" />
+  </g>
+</svg>

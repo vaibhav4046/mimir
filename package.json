@@ -1,0 +1,49 @@
+{
+  "name": "mimir",
+  "productName": "Mimir",
+  "version": "1.0.3",
+  "description": "Mimir: local-first desktop agent workspace powered by Ollama, with optional OpenAI-compatible providers.",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev:daemon": "node daemon/coordinator.mjs",
+    "dev:renderer": "vite",
+    "build": "vite build",
+    "start": "electron .",
+    "eval": "node tests/eval-suite.mjs",
+    "test": "node --test tests/daemon.test.mjs tests/proactive.test.mjs tests/commands.test.mjs tests/browser-task.test.mjs tests/mcp-oauth.test.mjs tests/model-setup.test.mjs tests/rag-council.test.mjs tests/autonomy-api.test.mjs tests/voice-duplex.test.mjs tests/team-context.test.mjs tests/model-library.test.mjs tests/workflows.test.mjs tests/trustworthy-golden-path.test.mjs tests/mimir-os-architecture.test.mjs",
+    "test:e2e": "node tests/e2e-ui.mjs",
+    "dist:win": "vite build && electron-builder --win --x64"
+  },
+  "dependencies": {
+    "playwright-core": "^1.52.0",
+    "ws": "^8.18.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "37.2.6",
+    "electron-builder": "^25.1.8",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "vite": "^6.2.0"
+  },
+  "build": {
+    "appId": "dev.mimir.desktop",
+    "productName": "Mimir",
+    "directories": { "output": "release" },
+    "asar": true,
+    "asarUnpack": ["daemon/**", "scripts/**", "rust/**", "node_modules/**"],
+    "files": [
+      "electron/**",
+      "daemon/**",
+      "dist/renderer/**",
+      "scripts/*.py",
+      "scripts/requirements.txt",
+      "rust/target/release/mimir-daemon.exe",
+      "package.json"
+    ],
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "icon": "public/icons/icon-512.png" },
+    "nsis": { "oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true, "shortcutName": "Mimir" }
+  }
+}

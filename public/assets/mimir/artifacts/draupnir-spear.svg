@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Draupnir Wind Spear">
+  <title>Draupnir Wind Spear</title>
+  <desc>Original 16-bit Norse artifact sprite (weapons). Ref: https://www.playstation.com/en-gb/games/god-of-war-ragnarok/</desc>
+  <g id="draupnir-spear-outline">
+    <path fill="#081019" d="M36 5h1v1h-1zM33 6h3v1h-3zM37 6h4v1h-4zM32 7h1v1h-1zM41 7h1v1h-1zM31 8h1v1h-1zM41 8h1v1h-1zM30 9h1v1h-1zM42 9h1v1h-1zM30 10h1v1h-1zM42 10h1v1h-1zM30 11h1v1h-1zM42 11h1v1h-1zM29 12h1v1h-1zM43 12h1v1h-1zM30 13h1v1h-1zM42 13h1v1h-1zM29 14h1v1h-1zM42 14h1v1h-1zM29 15h1v1h-1zM42 15h1v1h-1zM29 16h1v1h-1zM41 16h1v1h-1zM28 17h1v1h-1zM40 17h1v1h-1zM27 18h1v1h-1zM31 18h2v1h-2zM34 18h2v1h-2zM37 18h3v1h-3zM26 19h1v1h-1zM30 19h1v1h-1zM33 19h1v1h-1zM36 19h1v1h-1zM25 20h1v1h-1zM29 20h1v1h-1zM24 21h1v1h-1zM28 21h1v1h-1zM23 22h1v1h-1zM27 22h1v1h-1zM22 23h1v1h-1zM26 23h1v1h-1zM21 24h1v1h-1zM25 24h1v1h-1zM20 25h1v1h-1zM24 25h1v1h-1zM19 26h1v1h-1zM23 26h1v1h-1zM18 27h1v1h-1zM22 27h1v1h-1zM17 28h1v1h-1zM21 28h1v1h-1zM15 29h2v1h-2zM20 29h1v1h-1zM14 30h1v1h-1zM19 30h1v1h-1zM13 31h1v1h-1zM19 31h1v1h-1zM13 32h1v1h-1zM19 32h1v1h-1zM12 33h1v1h-1zM19 33h1v1h-1zM11 34h1v1h-1zM18 34h1v1h-1zM10 35h1v1h-1zM14 35h4v1h-4zM9 36h1v1h-1zM13 36h1v1h-1zM8 37h1v1h-1zM12 37h1v1h-1zM7 38h1v1h-1zM11 38h1v1h-1zM7 39h1v1h-1zM10 39h1v1h-1zM8 40h2v1h-2z" />
+  </g>
+  <g id="draupnir-spear-gold">
+    <path fill="#ffd878" d="M40 7h1v1h-1zM39 8h2v1h-2zM37 9h2v1h-2zM36 10h2v1h-2zM34 11h3v1h-3zM38 11h1v1h-1zM33 12h3v1h-3zM37 12h1v1h-1zM31 13h4v1h-4zM36 13h1v1h-1zM30 14h4v1h-4zM35 14h2v1h-2zM30 15h3v1h-3zM34 15h2v1h-2zM31 16h1v1h-1zM33 16h2v1h-2zM32 17h3v1h-3zM33 18h1v1h-1zM15 30h3v1h-3zM14 31h5v1h-5zM14 32h5v1h-5zM14 33h5v1h-5zM15 34h3v1h-3z" />
+    <path fill="#a86e1c" d="M30 16h1v1h-1zM29 17h2v1h-2zM28 18h3v1h-3zM27 19h3v1h-3zM26 20h3v1h-3zM25 21h3v1h-3zM24 22h3v1h-3zM23 23h3v1h-3zM22 24h3v1h-3zM21 25h3v1h-3zM20 26h3v1h-3zM19 27h3v1h-3zM18 28h3v1h-3zM17 29h3v1h-3zM18 30h1v1h-1zM13 33h1v1h-1zM12 34h3v1h-3zM11 35h3v1h-3zM10 36h3v1h-3zM9 37h3v1h-3zM8 38h3v1h-3zM8 39h2v1h-2z" />
+  </g>
+  <g id="draupnir-spear-ice">
+    <path fill="#0e4873" d="M36 6h1v1h-1zM33 7h7v1h-7zM32 8h7v1h-7zM31 9h6v1h-6zM40 9h2v1h-2zM31 10h5v1h-5zM39 10h3v1h-3zM31 11h3v1h-3zM39 11h3v1h-3zM30 12h3v1h-3zM38 12h5v1h-5zM37 13h5v1h-5zM37 14h5v1h-5zM36 15h6v1h-6zM35 16h6v1h-6zM35 17h5v1h-5zM36 18h1v1h-1z" />
+    <path fill="#e5edf4" d="M39 9h1v1h-1zM38 10h1v1h-1zM37 11h1v1h-1zM36 12h1v1h-1zM35 13h1v1h-1zM34 14h1v1h-1zM33 15h1v1h-1zM32 16h1v1h-1zM31 17h1v1h-1z" />
+  </g>
+</svg>

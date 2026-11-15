@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Wolf-Pelt  Steel Mantle">
+  <title>Wolf-Pelt  Steel Mantle</title>
+  <desc>Modular armor pixel overlay socket for Mimir custom bot avatars.</desc>
+  <g id="armor-wolf-pauldron-outline">
+    <path fill="#081019" d="M13 34h22v1h-22zM12 35h1v1h-1zM35 35h1v1h-1zM12 36h1v1h-1zM35 36h1v1h-1zM11 37h2v1h-2zM36 37h2v1h-2zM9 38h2v1h-2zM38 38h2v1h-2zM8 39h1v1h-1zM40 39h1v1h-1zM8 40h1v1h-1zM40 40h1v1h-1zM7 41h1v1h-1zM41 41h1v1h-1zM8 42h1v1h-1zM40 42h1v1h-1zM8 43h1v1h-1zM40 43h1v1h-1zM9 44h2v1h-2zM38 44h2v1h-2zM11 45h2v1h-2zM36 45h2v1h-2zM13 46h3v1h-3zM33 46h3v1h-3zM16 47h8v1h-8zM25 47h8v1h-8z" />
+  </g>
+  <g id="armor-wolf-pauldron-base">
+    <path fill="#c2d2e3" d="M13 35h22v1h-22zM13 36h22v1h-22zM13 37h22v1h-22z" />
+    <path fill="#1d2b3b" d="M35 37h1v1h-1zM30 38h1v1h-1zM32 38h6v1h-6zM31 39h6v1h-6zM26 40h1v1h-1zM28 40h4v1h-4zM33 40h1v1h-1zM27 41h6v1h-6zM20 42h1v1h-1zM26 42h4v1h-4zM19 43h1v1h-1zM21 43h6v1h-6zM28 43h1v1h-1zM12 44h10v1h-10zM23 44h1v1h-1zM13 45h6v1h-6zM20 45h1v1h-1z" />
+    <path fill="#4c6782" d="M11 38h11v1h-11zM23 38h1v1h-1zM9 39h13v1h-13zM9 40h7v1h-7zM17 40h1v1h-1zM19 40h1v1h-1zM8 41h5v1h-5zM14 41h1v1h-1zM16 41h1v1h-1zM9 42h1v1h-1z" />
+    <path fill="#2e4359" d="M22 38h1v1h-1zM24 38h6v1h-6zM31 38h1v1h-1zM26 39h5v1h-5zM16 40h1v1h-1zM18 40h1v1h-1zM20 40h2v1h-2zM27 40h1v1h-1zM13 41h1v1h-1zM15 41h1v1h-1zM17 41h5v1h-5zM26 41h1v1h-1zM10 42h10v1h-10zM21 42h1v1h-1zM9 43h10v1h-10zM20 43h1v1h-1zM11 44h1v1h-1z" />
+    <path fill="#101722" d="M37 39h3v1h-3zM32 40h1v1h-1zM34 40h6v1h-6zM33 41h8v1h-8zM30 42h10v1h-10zM27 43h1v1h-1zM29 43h11v1h-11zM22 44h1v1h-1zM24 44h14v1h-14zM19 45h1v1h-1zM21 45h15v1h-15zM16 46h17v1h-17zM24 47h1v1h-1z" />
+  </g>
+  <g id="armor-wolf-pauldron-gold">
+    <path fill="#e6ab42" d="M22 39h4v1h-4zM22 40h4v1h-4zM22 41h4v1h-4zM22 42h4v1h-4z" />
+  </g>
+</svg>

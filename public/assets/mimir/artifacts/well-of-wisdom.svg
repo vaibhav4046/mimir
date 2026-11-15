@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Mimir Well of Wisdom">
+  <title>Mimir Well of Wisdom</title>
+  <desc>Original 16-bit Norse artifact sprite (relics). Ref: https://en.wikipedia.org/wiki/Norse_cosmology</desc>
+  <g id="well-of-wisdom-outline">
+    <path fill="#081019" d="M23 12h2v1h-2zM22 13h1v1h-1zM25 13h1v1h-1zM29 13h1v1h-1zM19 14h1v1h-1zM22 14h1v1h-1zM25 14h1v1h-1zM28 14h1v1h-1zM30 14h1v1h-1zM18 15h1v1h-1zM20 15h1v1h-1zM22 15h1v1h-1zM25 15h1v1h-1zM29 15h1v1h-1zM16 16h7v1h-7zM25 16h8v1h-8zM13 17h3v1h-3zM33 17h3v1h-3zM12 18h1v1h-1zM36 18h1v1h-1zM10 19h2v1h-2zM37 19h2v1h-2zM9 20h1v1h-1zM39 20h1v1h-1zM9 21h1v1h-1zM39 21h1v1h-1zM8 22h1v1h-1zM40 22h1v1h-1zM9 23h1v1h-1zM39 23h1v1h-1zM9 24h1v1h-1zM39 24h1v1h-1zM9 25h1v1h-1zM38 25h1v1h-1zM9 26h1v1h-1zM38 26h1v1h-1zM9 27h1v1h-1zM38 27h1v1h-1zM9 28h1v1h-1zM38 28h1v1h-1zM9 29h1v1h-1zM38 29h1v1h-1zM9 30h1v1h-1zM39 30h1v1h-1zM9 31h1v1h-1zM39 31h1v1h-1zM9 32h1v1h-1zM39 32h1v1h-1zM8 33h1v1h-1zM40 33h1v1h-1zM9 34h1v1h-1zM39 34h1v1h-1zM9 35h1v1h-1zM39 35h1v1h-1zM9 36h1v1h-1zM39 36h1v1h-1zM10 37h1v1h-1zM38 37h1v1h-1zM11 38h1v1h-1zM37 38h1v1h-1zM12 39h1v1h-1zM36 39h1v1h-1zM13 40h2v1h-2zM34 40h2v1h-2zM15 41h3v1h-3zM31 41h3v1h-3zM18 42h6v1h-6zM25 42h6v1h-6zM24 43h1v1h-1z" />
+  </g>
+  <g id="well-of-wisdom-base">
+    <path fill="#c2d2e3" d="M16 17h11v1h-11zM28 17h1v1h-1zM13 18h11v1h-11zM25 18h1v1h-1zM12 19h5v1h-5zM10 20h5v1h-5zM10 21h4v1h-4zM9 22h4v1h-4zM10 23h1v1h-1zM12 23h1v1h-1z" />
+    <path fill="#91a8bd" d="M27 17h1v1h-1zM29 17h4v1h-4zM26 18h6v1h-6zM32 19h1v1h-1zM11 23h1v1h-1zM13 23h1v1h-1zM10 24h5v1h-5zM12 25h1v1h-1zM14 25h1v1h-1z" />
+    <path fill="#6d8299" d="M32 18h4v1h-4zM33 19h4v1h-4zM35 20h1v1h-1zM13 25h1v1h-1zM15 25h2v1h-2zM13 26h5v1h-5zM19 26h1v1h-1zM16 27h1v1h-1z" />
+    <path fill="#435366" d="M34 20h1v1h-1zM36 20h3v1h-3zM35 21h4v1h-4zM36 22h4v1h-4zM35 23h4v1h-4zM34 24h5v1h-5zM32 25h5v1h-5zM18 26h1v1h-1zM20 26h4v1h-4zM25 26h11v1h-11zM17 27h16v1h-16z" />
+    <path fill="#4c6782" d="M10 25h2v1h-2zM37 25h1v1h-1zM10 26h3v1h-3zM36 26h2v1h-2zM10 27h6v1h-6zM33 27h5v1h-5zM10 28h1v1h-1zM37 28h1v1h-1zM10 29h1v1h-1zM37 29h1v1h-1zM10 30h28v1h-28zM10 31h28v1h-28zM10 32h24v1h-24zM35 32h3v1h-3zM9 33h5v1h-5zM15 33h23v1h-23zM11 34h1v1h-1zM13 34h1v1h-1zM10 35h1v1h-1zM12 35h1v1h-1z" />
+    <path fill="#101722" d="M38 30h1v1h-1zM38 31h1v1h-1zM38 32h1v1h-1zM38 33h2v1h-2zM30 34h9v1h-9zM29 35h10v1h-10zM26 36h13v1h-13zM25 37h1v1h-1zM27 37h11v1h-11zM22 38h15v1h-15zM19 39h1v1h-1zM21 39h15v1h-15zM16 40h18v1h-18zM18 41h13v1h-13zM24 42h1v1h-1z" />
+    <path fill="#2e4359" d="M10 34h1v1h-1zM12 34h1v1h-1zM14 34h8v1h-8zM23 34h1v1h-1zM11 35h1v1h-1zM13 35h8v1h-8zM22 35h1v1h-1zM10 36h6v1h-6zM17 36h1v1h-1zM11 37h2v1h-2zM14 37h1v1h-1zM16 37h1v1h-1z" />
+    <path fill="#1d2b3b" d="M22 34h1v1h-1zM24 34h6v1h-6zM21 35h1v1h-1zM23 35h6v1h-6zM16 36h1v1h-1zM18 36h8v1h-8zM13 37h1v1h-1zM15 37h1v1h-1zM17 37h8v1h-8zM26 37h1v1h-1zM12 38h10v1h-10zM13 39h6v1h-6zM20 39h1v1h-1zM15 40h1v1h-1z" />
+  </g>
+  <g id="well-of-wisdom-gold">
+    <path fill="#a86e1c" d="M11 28h26v1h-26zM11 29h26v1h-26z" />
+  </g>
+  <g id="well-of-wisdom-ice">
+    <path fill="#1a85c9" d="M24 18h1v1h-1zM17 19h15v1h-15zM15 20h5v1h-5zM29 20h5v1h-5zM14 21h3v1h-3zM32 21h3v1h-3zM13 22h3v1h-3zM33 22h3v1h-3zM14 23h3v1h-3zM32 23h3v1h-3zM15 24h5v1h-5zM29 24h5v1h-5zM17 25h15v1h-15zM24 26h1v1h-1z" />
+    <path fill="#3ac9ff" d="M20 20h9v1h-9zM17 21h3v1h-3zM28 21h4v1h-4zM16 22h4v1h-4zM28 22h5v1h-5zM17 23h15v1h-15zM20 24h9v1h-9z" />
+    <path fill="#a9eeff" d="M20 21h8v1h-8zM20 22h8v1h-8z" />
+  </g>
+  <g id="well-of-wisdom-accent">
+    <path fill="#38bf78" d="M34 32h1v1h-1zM14 33h1v1h-1z" />
+  </g>
+  <g id="well-of-wisdom-runes">
+    <path fill="#3ac9ff" d="M23 13h2v1h-2zM23 14h2v1h-2zM23 15h2v1h-2zM23 16h2v1h-2z" />
+    <path fill="#a9eeff" d="M29 14h1v1h-1zM19 15h1v1h-1z" />
+  </g>
+</svg>

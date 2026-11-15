@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Sindri Gold Optical Visor">
+  <title>Sindri Gold Optical Visor</title>
+  <desc>Modular masks pixel overlay socket for Mimir custom bot avatars.</desc>
+  <g id="masks-artificer-visor-outline">
+    <path fill="#081019" d="M16 18h16v1h-16zM15 19h1v1h-1zM32 19h1v1h-1zM15 20h1v1h-1zM32 20h1v1h-1zM15 21h1v1h-1zM32 21h1v1h-1zM15 22h1v1h-1zM32 22h1v1h-1zM16 23h16v1h-16z" />
+  </g>
+  <g id="masks-artificer-visor-gold">
+    <path fill="#e6ab42" d="M16 19h16v1h-16zM16 20h2v1h-2zM22 20h4v1h-4zM30 20h2v1h-2zM16 21h2v1h-2zM22 21h4v1h-4zM30 21h2v1h-2zM16 22h16v1h-16z" />
+  </g>
+  <g id="masks-artificer-visor-eyes">
+    <path fill="#3ac9ff" d="M18 20h4v1h-4zM26 20h4v1h-4zM18 21h4v1h-4zM26 21h4v1h-4z" />
+  </g>
+</svg>

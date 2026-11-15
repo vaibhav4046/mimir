@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Illuminated Rune (Success)">
+  <title>Illuminated Rune (Success)</title>
+  <desc>Original 16-bit Norse artifact sprite (relics). Ref: https://en.wikipedia.org/wiki/Norse_cosmology</desc>
+  <g id="illuminated-rune-outline">
+    <path fill="#081019" d="M20 8h9v1h-9zM19 9h1v1h-1zM29 9h1v1h-1zM18 10h1v1h-1zM29 10h1v1h-1zM18 11h1v1h-1zM30 11h1v1h-1zM17 12h1v1h-1zM31 12h1v1h-1zM16 13h1v1h-1zM31 13h1v1h-1zM16 14h1v1h-1zM32 14h1v1h-1zM15 15h1v1h-1zM32 15h1v1h-1zM15 16h1v1h-1zM33 16h1v1h-1zM14 17h1v1h-1zM33 17h1v1h-1zM13 18h1v1h-1zM34 18h1v1h-1zM13 19h1v1h-1zM35 19h1v1h-1zM12 20h1v1h-1zM35 20h1v1h-1zM12 21h1v1h-1zM35 21h1v1h-1zM12 22h1v1h-1zM35 22h1v1h-1zM12 23h1v1h-1zM35 23h1v1h-1zM12 24h1v1h-1zM36 24h1v1h-1zM12 25h1v1h-1zM35 25h1v1h-1zM13 26h1v1h-1zM35 26h1v1h-1zM13 27h1v1h-1zM35 27h1v1h-1zM13 28h1v1h-1zM35 28h1v1h-1zM13 29h1v1h-1zM35 29h1v1h-1zM13 30h1v1h-1zM35 30h1v1h-1zM13 31h1v1h-1zM34 31h1v1h-1zM13 32h1v1h-1zM34 32h1v1h-1zM13 33h1v1h-1zM34 33h1v1h-1zM13 34h1v1h-1zM34 34h1v1h-1zM14 35h1v1h-1zM34 35h1v1h-1zM14 36h1v1h-1zM34 36h1v1h-1zM14 37h1v1h-1zM34 37h1v1h-1zM14 38h1v1h-1zM34 38h1v1h-1zM14 39h1v1h-1zM34 39h1v1h-1zM15 40h19v1h-19z" />
+  </g>
+  <g id="illuminated-rune-base">
+    <path fill="#2e4359" d="M20 9h9v1h-9zM19 10h10v1h-10zM19 11h11v1h-11zM18 12h10v1h-10zM30 12h1v1h-1zM17 13h3v1h-3zM22 13h2v1h-2zM25 13h1v1h-1zM30 13h1v1h-1zM17 14h3v1h-3zM29 14h3v1h-3zM16 15h2v1h-2zM31 15h1v1h-1zM16 16h1v1h-1zM32 16h1v1h-1zM15 17h1v1h-1zM14 18h1v1h-1zM14 19h1v1h-1zM34 19h1v1h-1zM13 20h1v1h-1zM13 21h1v1h-1zM13 22h1v1h-1zM13 23h1v1h-1zM13 25h1v1h-1zM14 29h1v1h-1zM34 29h1v1h-1zM14 30h1v1h-1zM34 30h1v1h-1zM14 31h2v1h-2zM33 31h1v1h-1zM14 32h3v1h-3zM32 32h2v1h-2zM14 33h4v1h-4zM31 33h3v1h-3zM14 34h6v1h-6zM29 34h5v1h-5zM15 35h5v1h-5zM22 35h2v1h-2zM25 35h9v1h-9zM15 36h19v1h-19zM15 37h19v1h-19zM15 38h19v1h-19zM15 39h19v1h-19z" />
+  </g>
+  <g id="illuminated-rune-gold">
+    <path fill="#69400b" d="M24 13h1v1h-1zM22 14h2v1h-2zM18 15h2v1h-2zM22 15h1v1h-1zM27 15h4v1h-4zM17 16h3v1h-3zM25 16h7v1h-7zM16 17h4v1h-4zM24 17h9v1h-9zM15 18h5v1h-5zM22 18h5v1h-5zM29 18h5v1h-5zM15 19h5v1h-5zM22 19h3v1h-3zM29 19h5v1h-5zM14 20h6v1h-6zM22 20h2v1h-2zM28 20h7v1h-7zM14 21h6v1h-6zM22 21h1v1h-1zM26 21h9v1h-9zM14 22h6v1h-6zM25 22h10v1h-10zM14 23h6v1h-6zM24 23h11v1h-11zM13 24h7v1h-7zM22 24h14v1h-14zM14 25h6v1h-6zM22 25h13v1h-13zM14 26h6v1h-6zM22 26h13v1h-13zM14 27h6v1h-6zM22 27h13v1h-13zM14 28h6v1h-6zM22 28h13v1h-13zM15 29h5v1h-5zM22 29h12v1h-12zM15 30h5v1h-5zM22 30h12v1h-12zM16 31h4v1h-4zM22 31h11v1h-11zM17 32h3v1h-3zM22 32h10v1h-10zM18 33h2v1h-2zM22 33h9v1h-9zM22 34h7v1h-7zM24 35h1v1h-1z" />
+    <path fill="#ffd878" d="M27 18h2v1h-2zM25 19h4v1h-4zM24 20h4v1h-4zM23 21h3v1h-3zM21 22h4v1h-4zM20 23h4v1h-4zM20 24h2v1h-2z" />
+  </g>
+  <g id="illuminated-rune-runes">
+    <path fill="#3ac9ff" d="M28 12h2v1h-2zM26 13h4v1h-4zM24 14h5v1h-5zM23 15h4v1h-4zM21 16h4v1h-4zM20 17h4v1h-4zM20 18h2v1h-2z" />
+    <path fill="#a9eeff" d="M20 13h2v1h-2zM20 14h2v1h-2zM20 15h2v1h-2zM20 16h1v1h-1zM20 19h2v1h-2zM20 20h2v1h-2zM20 21h2v1h-2zM20 22h1v1h-1zM20 25h2v1h-2zM20 26h2v1h-2zM20 27h2v1h-2zM20 28h2v1h-2zM20 29h2v1h-2zM20 30h2v1h-2zM20 31h2v1h-2zM20 32h2v1h-2zM20 33h2v1h-2zM20 34h2v1h-2zM20 35h2v1h-2z" />
+  </g>
+</svg>

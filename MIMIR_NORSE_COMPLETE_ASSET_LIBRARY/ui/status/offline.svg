@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="Offline Cracked Rune">
+  <title>Offline Cracked Rune</title>
+  <desc>16x16 pixel UI icon (status).</desc>
+  <g id="ui-offline-outline">
+    <path fill="#081019" d="M7 4h2v1h-2zM6 5h1v1h-1zM9 5h1v1h-1zM5 6h1v1h-1zM10 6h1v1h-1zM4 7h1v1h-1zM7 7h2v1h-2zM11 7h1v1h-1zM3 8h1v1h-1zM6 8h1v1h-1zM9 8h1v1h-1zM12 8h1v1h-1zM4 9h1v1h-1zM7 9h2v1h-2zM11 9h1v1h-1zM5 10h1v1h-1zM10 10h1v1h-1zM6 11h1v1h-1zM9 11h1v1h-1zM7 12h2v1h-2z" />
+  </g>
+  <g id="ui-offline-accent">
+    <path fill="#d94143" d="M7 5h2v1h-2zM6 6h4v1h-4zM5 7h2v1h-2zM9 7h2v1h-2zM4 8h2v1h-2zM10 8h2v1h-2zM5 9h2v1h-2zM9 9h2v1h-2zM6 10h4v1h-4zM7 11h2v1h-2z" />
+  </g>
+</svg>

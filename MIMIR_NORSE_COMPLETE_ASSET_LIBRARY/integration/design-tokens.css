@@ -1,0 +1,18 @@
+/* Mimir Norse Retro-Pixel Design Tokens (Generated) */
+:root {
+  --bg-canvas: #081019;
+  --bg-rail: #101722;
+  --bg-surface: #1d2b3b;
+  --bg-surface-hi: #2e4359;
+  --brass: #e6ab42;
+  --brass-hi: #ffd878;
+  --brass-dk: #69400b;
+  --frost: #3ac9ff;
+  --frost-hi: #a9eeff;
+  --frost-dk: #0e4873;
+  --ink: #e5edf4;
+  --ink-muted: #91a8bd;
+  --ember: #ff7626;
+  --danger: #d94143;
+  --leaf: #38bf78;
+}

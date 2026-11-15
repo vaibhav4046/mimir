@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.MimirCompanion" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#081019</item>
+        <item name="android:navigationBarColor">#081019</item>
+        <item name="android:windowBackground">#081019</item>
+    </style>
+</resources>

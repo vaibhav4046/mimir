@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="MCP Rune Cube">
+  <title>MCP Rune Cube</title>
+  <desc>16x16 pixel UI icon (navigation).</desc>
+  <g id="ui-mcp-box-outline">
+    <path fill="#081019" d="M6 2h4v1h-4zM4 3h2v1h-2zM10 3h2v1h-2zM2 4h2v1h-2zM12 4h2v1h-2zM1 5h1v1h-1zM14 5h1v1h-1zM0 6h1v1h-1zM15 6h1v1h-1zM0 7h1v1h-1zM7 7h2v1h-2zM15 7h1v1h-1zM0 8h1v1h-1zM7 8h2v1h-2zM15 8h1v1h-1zM0 9h1v1h-1zM7 9h2v1h-2zM15 9h1v1h-1zM1 10h1v1h-1zM7 10h2v1h-2zM14 10h1v1h-1zM2 11h2v1h-2zM7 11h2v1h-2zM12 11h2v1h-2zM4 12h2v1h-2zM10 12h2v1h-2zM6 13h4v1h-4z" />
+  </g>
+  <g id="ui-mcp-box-shadow">
+    <path fill="#2e4359" d="M2 6h4v1h-4zM10 6h4v1h-4zM2 7h4v1h-4zM10 7h4v1h-4zM2 8h4v1h-4zM10 8h4v1h-4zM2 9h4v1h-4zM10 9h4v1h-4zM4 10h2v1h-2zM10 10h2v1h-2z" />
+  </g>
+  <g id="ui-mcp-box-gold">
+    <path fill="#e6ab42" d="M6 3h4v1h-4zM4 4h8v1h-8zM2 5h2v1h-2zM12 5h2v1h-2zM1 6h1v1h-1zM6 6h4v1h-4zM14 6h1v1h-1zM1 7h1v1h-1zM6 7h1v1h-1zM9 7h1v1h-1zM14 7h1v1h-1zM1 8h1v1h-1zM6 8h1v1h-1zM9 8h1v1h-1zM14 8h1v1h-1zM1 9h1v1h-1zM6 9h1v1h-1zM9 9h1v1h-1zM14 9h1v1h-1zM2 10h2v1h-2zM6 10h1v1h-1zM9 10h1v1h-1zM12 10h2v1h-2zM4 11h3v1h-3zM9 11h3v1h-3zM6 12h4v1h-4z" />
+  </g>
+  <g id="ui-mcp-box-ice">
+    <path fill="#3ac9ff" d="M4 5h8v1h-8z" />
+  </g>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Scribe Quill  Inkwell">
+  <title>Scribe Quill  Inkwell</title>
+  <desc>Original 16-bit Norse artifact sprite (collectibles). Ref: https://en.wikipedia.org/wiki/Norse_cosmology</desc>
+  <g id="quill-inkwell-outline">
+    <path fill="#081019" d="M35 8h2v1h-2zM34 9h1v1h-1zM37 9h1v1h-1zM33 10h1v1h-1zM37 10h1v1h-1zM32 11h1v1h-1zM36 11h1v1h-1zM32 12h1v1h-1zM36 12h1v1h-1zM31 13h1v1h-1zM36 13h1v1h-1zM30 14h1v1h-1zM36 14h1v1h-1zM29 15h1v1h-1zM35 15h1v1h-1zM28 16h1v1h-1zM35 16h1v1h-1zM27 17h1v1h-1zM35 17h1v1h-1zM27 18h1v1h-1zM35 18h1v1h-1zM26 19h1v1h-1zM33 19h2v1h-2zM25 20h1v1h-1zM31 20h2v1h-2zM24 21h1v1h-1zM28 21h3v1h-3zM23 22h1v1h-1zM27 22h1v1h-1zM22 23h1v1h-1zM26 23h1v1h-1zM22 24h1v1h-1zM25 24h1v1h-1zM17 25h5v1h-5zM25 25h1v1h-1zM16 26h1v1h-1zM24 26h1v1h-1zM16 27h1v1h-1zM23 27h1v1h-1zM15 28h2v1h-2zM23 28h2v1h-2zM14 29h1v1h-1zM25 29h1v1h-1zM14 30h1v1h-1zM25 30h1v1h-1zM14 31h1v1h-1zM25 31h1v1h-1zM14 32h1v1h-1zM25 32h1v1h-1zM14 33h1v1h-1zM25 33h1v1h-1zM14 34h1v1h-1zM25 34h1v1h-1zM14 35h1v1h-1zM25 35h1v1h-1zM14 36h1v1h-1zM25 36h1v1h-1zM14 37h1v1h-1zM25 37h1v1h-1zM15 38h10v1h-10z" />
+  </g>
+  <g id="quill-inkwell-base">
+    <path fill="#c2d2e3" d="M35 11h1v1h-1zM34 12h2v1h-2zM33 13h3v1h-3zM32 14h4v1h-4zM31 15h4v1h-4zM30 16h5v1h-5zM29 17h6v1h-6zM28 18h7v1h-7zM27 19h6v1h-6zM26 20h5v1h-5zM25 21h3v1h-3zM24 22h2v1h-2z" />
+    <path fill="#2e4359" d="M15 29h10v1h-10zM15 30h10v1h-10zM15 31h10v1h-10zM15 32h10v1h-10zM15 33h10v1h-10zM15 34h10v1h-10zM15 35h10v1h-10zM15 36h10v1h-10zM15 37h10v1h-10z" />
+  </g>
+  <g id="quill-inkwell-gold">
+    <path fill="#ffd878" d="M35 9h2v1h-2zM34 10h3v1h-3zM33 11h2v1h-2zM33 12h1v1h-1zM32 13h1v1h-1zM31 14h1v1h-1zM30 15h1v1h-1zM29 16h1v1h-1zM28 17h1v1h-1zM26 22h1v1h-1zM23 23h3v1h-3zM23 24h2v1h-2zM22 25h3v1h-3zM21 26h3v1h-3zM20 27h3v1h-3zM20 28h2v1h-2z" />
+    <path fill="#e6ab42" d="M17 26h4v1h-4zM17 27h3v1h-3zM17 28h3v1h-3zM22 28h1v1h-1z" />
+  </g>
+</svg>

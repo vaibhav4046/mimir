@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="Disabled Stone Rune">
+  <title>Disabled Stone Rune</title>
+  <desc>16x16 pixel UI icon (status).</desc>
+  <g id="ui-disabled-outline">
+    <path fill="#081019" d="M3 4h10v1h-10zM2 5h1v1h-1zM13 5h1v1h-1zM1 6h1v1h-1zM14 6h1v1h-1zM1 7h1v1h-1zM14 7h1v1h-1zM1 8h1v1h-1zM14 8h1v1h-1zM1 9h1v1h-1zM14 9h1v1h-1zM1 10h1v1h-1zM14 10h1v1h-1zM2 11h1v1h-1zM13 11h1v1h-1zM3 12h10v1h-10z" />
+  </g>
+  <g id="ui-disabled-shadow">
+    <path fill="#2e4359" d="M4 6h8v1h-8zM3 7h1v1h-1zM12 7h1v1h-1zM3 8h1v1h-1zM11 8h1v1h-1zM3 9h1v1h-1zM12 9h1v1h-1zM4 10h8v1h-8z" />
+  </g>
+  <g id="ui-disabled-base">
+    <path fill="#91a8bd" d="M3 5h10v1h-10zM2 6h2v1h-2zM12 6h2v1h-2zM2 7h1v1h-1zM13 7h1v1h-1zM2 8h1v1h-1zM5 8h2v1h-2zM9 8h2v1h-2zM13 8h1v1h-1zM2 9h1v1h-1zM13 9h1v1h-1zM2 10h2v1h-2zM12 10h2v1h-2zM3 11h10v1h-10z" />
+    <path fill="#4c6782" d="M4 7h8v1h-8zM4 8h1v1h-1zM7 8h2v1h-2zM12 8h1v1h-1zM4 9h8v1h-8z" />
+  </g>
+</svg>

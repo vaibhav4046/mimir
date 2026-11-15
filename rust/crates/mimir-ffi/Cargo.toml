@@ -1,0 +1,14 @@
+[package]
+name = "mimir-ffi"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "mimir_ffi"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+mimir-security = { path = "../mimir-security" }
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"

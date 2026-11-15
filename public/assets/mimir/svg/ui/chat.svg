@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="Chat Rune">
+  <title>Chat Rune</title>
+  <desc>16x16 pixel UI icon (navigation).</desc>
+  <g id="ui-chat-outline">
+    <path fill="#081019" d="M2 2h12v1h-12zM1 3h1v1h-1zM14 3h1v1h-1zM0 4h1v1h-1zM15 4h1v1h-1zM0 5h1v1h-1zM15 5h1v1h-1zM0 6h1v1h-1zM15 6h1v1h-1zM0 7h1v1h-1zM15 7h1v1h-1zM0 8h1v1h-1zM15 8h1v1h-1zM0 9h1v1h-1zM15 9h1v1h-1zM1 10h2v1h-2zM6 10h9v1h-9zM2 11h1v1h-1zM5 11h1v1h-1zM2 12h1v1h-1zM4 12h1v1h-1zM3 13h1v1h-1z" />
+  </g>
+  <g id="ui-chat-shadow">
+    <path fill="#2e4359" d="M2 4h12v1h-12zM2 5h1v1h-1zM12 5h2v1h-2zM2 6h12v1h-12zM2 7h1v1h-1zM9 7h5v1h-5zM2 8h12v1h-12z" />
+  </g>
+  <g id="ui-chat-base">
+    <path fill="#e5edf4" d="M3 5h9v1h-9z" />
+  </g>
+  <g id="ui-chat-gold">
+    <path fill="#e6ab42" d="M2 3h12v1h-12zM1 4h1v1h-1zM14 4h1v1h-1zM1 5h1v1h-1zM14 5h1v1h-1zM1 6h1v1h-1zM14 6h1v1h-1zM1 7h1v1h-1zM14 7h1v1h-1zM1 8h1v1h-1zM14 8h1v1h-1zM1 9h14v1h-14zM3 10h3v1h-3zM3 11h2v1h-2zM3 12h1v1h-1z" />
+  </g>
+  <g id="ui-chat-ice">
+    <path fill="#3ac9ff" d="M3 7h6v1h-6z" />
+  </g>
+</svg>

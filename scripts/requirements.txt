@@ -1,0 +1,11 @@
+# Python packages used by scripts/*.py. Install with: python -m pip install -r scripts/requirements.txt
+reportlab
+pymupdf
+python-docx
+python-pptx
+xlsxwriter
+pillow
+uiautomation
+# Optional: neural voice and speech-to-text
+edge-tts
+faster-whisper

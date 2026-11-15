@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Mimir Lore Codex">
+  <title>Mimir Lore Codex</title>
+  <desc>Original 16-bit Norse artifact sprite (collectibles). Ref: https://en.wikipedia.org/wiki/God_of_War_Ragnar%C3%B6k</desc>
+  <g id="codex-outline">
+    <path fill="#081019" d="M28 9h3v1h-3zM23 10h5v1h-5zM31 10h1v1h-1zM19 11h4v1h-4zM31 11h1v1h-1zM14 12h5v1h-5zM31 12h1v1h-1zM12 13h2v1h-2zM31 13h1v1h-1zM11 14h1v1h-1zM32 14h1v1h-1zM11 15h1v1h-1zM32 15h1v1h-1zM12 16h1v1h-1zM32 16h1v1h-1zM12 17h1v1h-1zM32 17h1v1h-1zM12 18h1v1h-1zM33 18h1v1h-1zM12 19h1v1h-1zM33 19h1v1h-1zM13 20h1v1h-1zM33 20h1v1h-1zM13 21h1v1h-1zM34 21h1v1h-1zM13 22h1v1h-1zM34 22h1v1h-1zM13 23h1v1h-1zM34 23h1v1h-1zM14 24h1v1h-1zM34 24h1v1h-1zM14 25h1v1h-1zM35 25h1v1h-1zM14 26h1v1h-1zM35 26h1v1h-1zM14 27h1v1h-1zM35 27h1v1h-1zM15 28h1v1h-1zM35 28h1v1h-1zM15 29h1v1h-1zM36 29h1v1h-1zM15 30h1v1h-1zM36 30h1v1h-1zM15 31h1v1h-1zM36 31h1v1h-1zM16 32h1v1h-1zM36 32h1v1h-1zM12 33h4v1h-4zM35 33h1v1h-1zM11 34h1v1h-1zM31 34h4v1h-4zM11 35h1v1h-1zM28 35h3v1h-3zM12 36h6v1h-6zM24 36h4v1h-4zM17 37h1v1h-1zM20 37h4v1h-4zM18 38h2v1h-2z" />
+  </g>
+  <g id="codex-base">
+    <path fill="#101722" d="M28 10h3v1h-3zM23 11h8v1h-8zM19 12h8v1h-8zM30 12h1v1h-1zM14 13h8v1h-8zM30 13h1v1h-1zM12 14h5v1h-5zM30 14h2v1h-2zM12 15h2v1h-2zM30 15h2v1h-2zM13 16h1v1h-1zM31 16h1v1h-1zM13 17h2v1h-2zM31 17h1v1h-1zM13 18h2v1h-2zM31 18h2v1h-2zM13 19h2v1h-2zM31 19h2v1h-2zM14 20h1v1h-1zM32 20h1v1h-1zM14 21h2v1h-2zM32 21h2v1h-2zM14 22h2v1h-2zM32 22h2v1h-2zM14 23h2v1h-2zM33 23h1v1h-1zM15 24h1v1h-1zM33 24h1v1h-1zM15 25h2v1h-2zM33 25h2v1h-2zM15 26h2v1h-2zM33 26h2v1h-2zM15 27h2v1h-2zM34 27h1v1h-1zM16 28h1v1h-1zM34 28h1v1h-1zM16 29h2v1h-2zM34 29h2v1h-2zM16 30h2v1h-2zM34 30h2v1h-2zM16 31h2v1h-2zM17 32h1v1h-1zM32 33h3v1h-3zM24 34h7v1h-7zM17 35h11v1h-11zM18 36h6v1h-6zM18 37h2v1h-2z" />
+    <path fill="#2e4359" d="M27 12h3v1h-3zM22 13h8v1h-8zM17 14h13v1h-13zM14 15h16v1h-16zM14 16h17v1h-17zM15 17h16v1h-16zM15 18h16v1h-16zM15 19h7v1h-7zM23 19h8v1h-8zM15 20h6v1h-6zM25 20h7v1h-7zM16 21h5v1h-5zM27 21h5v1h-5zM16 22h4v1h-4zM27 22h5v1h-5zM16 23h3v1h-3zM27 23h6v1h-6zM16 24h4v1h-4zM26 24h7v1h-7zM17 25h5v1h-5zM25 25h8v1h-8zM17 26h6v1h-6zM25 26h8v1h-8zM17 27h17v1h-17zM17 28h17v1h-17zM18 29h16v1h-16zM18 30h16v1h-16zM18 31h13v1h-13zM18 32h5v1h-5z" />
+  </g>
+  <g id="codex-gold">
+    <path fill="#ffd878" d="M22 19h1v1h-1zM21 20h4v1h-4zM21 21h6v1h-6zM20 22h7v1h-7zM19 23h8v1h-8zM20 24h6v1h-6zM22 25h3v1h-3zM23 26h2v1h-2z" />
+  </g>
+  <g id="codex-accent">
+    <path fill="#c2d2e3" d="M31 31h5v1h-5zM23 32h13v1h-13zM16 33h16v1h-16zM12 34h12v1h-12zM12 35h5v1h-5z" />
+  </g>
+</svg>

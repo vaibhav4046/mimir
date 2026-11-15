@@ -1,0 +1,102 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: mimri
+      POSTGRES_USER: mimri
+      POSTGRES_PASSWORD: ${MIMRI_PG_PASSWORD:-mimri_local_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - mimri_pgdata:/var/lib/postgresql/data
+      - ./packages/memory/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mimri -d mimri"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    ports:
+      - "6006:6006"
+      - "4317:4317"
+    environment:
+      PHOENIX_WORKING_DIR: /phoenix-data
+    volumes:
+      - mimri_phoenix:/phoenix-data
+
+  mimri-core:
+    build:
+      context: .
+      dockerfile: services/core/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      MIMRI_DATABASE_URL: postgresql://mimri:${MIMRI_PG_PASSWORD:-mimri_local_dev}@postgres:5432/mimri
+      MIMRI_REDIS_URL: redis://redis:6379/0
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://phoenix:4317
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      SANDBOX_RUNTIME: runsc
+      SANDBOX_MAX_MEMORY: 1g
+      SANDBOX_MAX_CPUS: "1"
+      SANDBOX_TTL_SECONDS: "600"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  mimri-workers:
+    build:
+      context: .
+      dockerfile: services/workers/Dockerfile
+    environment:
+      MIMRI_DATABASE_URL: postgresql://mimri:${MIMRI_PG_PASSWORD:-mimri_local_dev}@postgres:5432/mimri
+      MIMRI_REDIS_URL: redis://redis:6379/0
+      MIMRI_CONFIDENCE_THRESHOLD: "0.80"
+    depends_on:
+      - redis
+      - mimri-core
+
+  crawl4ai:
+    profiles: ["browser"]
+    image: unclecode/crawl4ai:latest
+    ports:
+      - "11235:11235"
+
+  livekit:
+    profiles: ["voice"]
+    image: livekit/livekit-server:latest
+    command: --dev --bind 0.0.0.0
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+
+  mimri-voice:
+    profiles: ["voice"]
+    build:
+      context: .
+      dockerfile: services/voice/Dockerfile
+    environment:
+      LIVEKIT_URL: ws://livekit:7880
+      MIMRI_CORE_URL: http://mimri-core:8080
+    depends_on:
+      - livekit
+      - mimri-core
+
+volumes:
+  mimri_pgdata:
+  mimri_phoenix:

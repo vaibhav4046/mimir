@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="Send Spear Arrow">
+  <title>Send Spear Arrow</title>
+  <desc>16x16 pixel UI icon (actions).</desc>
+  <g id="ui-send-outline">
+    <path fill="#081019" d="M3 4h2v1h-2zM2 5h1v1h-1zM5 5h2v1h-2zM2 6h1v1h-1zM7 6h2v1h-2zM2 7h1v1h-1zM9 7h4v1h-4zM2 8h1v1h-1zM13 8h1v1h-1zM2 9h1v1h-1zM9 9h4v1h-4zM2 10h1v1h-1zM7 10h2v1h-2zM2 11h1v1h-1zM5 11h2v1h-2zM3 12h2v1h-2z" />
+  </g>
+  <g id="ui-send-ice">
+    <path fill="#3ac9ff" d="M3 5h2v1h-2zM3 6h4v1h-4zM3 7h6v1h-6zM3 8h1v1h-1zM10 8h3v1h-3zM3 9h6v1h-6zM3 10h4v1h-4zM3 11h2v1h-2z" />
+    <path fill="#a9eeff" d="M4 8h6v1h-6z" />
+  </g>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Glowing Elder Futhark Halo">
+  <title>Glowing Elder Futhark Halo</title>
+  <desc>Modular runes pixel overlay socket for Mimir custom bot avatars.</desc>
+  <g id="runes-brow-raido-outline">
+    <path fill="#081019" d="M22 6h1v1h-1zM21 7h1v1h-1zM23 7h2v1h-2zM21 8h1v1h-1zM25 8h2v1h-2zM21 9h1v1h-1zM23 9h2v1h-2zM27 9h1v1h-1zM21 10h1v1h-1zM23 10h1v1h-1zM25 10h2v1h-2zM21 11h1v1h-1zM24 11h2v1h-2zM21 12h1v1h-1zM23 12h1v1h-1zM26 12h1v1h-1zM21 13h1v1h-1zM23 13h3v1h-3zM27 13h1v1h-1zM22 14h1v1h-1zM26 14h1v1h-1z" />
+  </g>
+  <g id="runes-brow-raido-runes">
+    <path fill="#a9eeff" d="M22 7h1v1h-1zM23 8h2v1h-2zM25 9h2v1h-2z" />
+    <path fill="#3ac9ff" d="M22 8h1v1h-1zM22 9h1v1h-1zM22 10h1v1h-1zM22 11h2v1h-2zM22 12h1v1h-1zM24 12h2v1h-2zM22 13h1v1h-1zM26 13h1v1h-1z" />
+  </g>
+</svg>

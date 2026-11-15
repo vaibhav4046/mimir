@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Runic Bifrost Loader">
+  <title>Runic Bifrost Loader</title>
+  <desc>Stepped pixel-art Elder Futhark compass spinner with pulsing Bifrost crystal core.</desc>
+  <style>
+    #loader-ring { animation: rune-spin 1.6s steps(8, end) infinite; transform-origin: 24px 24px; }
+    #loader-core { animation: rune-core 0.9s steps(2, end) infinite; transform-origin: 24px 24px; }
+    @keyframes rune-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes rune-core { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  </style>
+  <g id="loader-frame">
+    <path fill="#081019" d="M18 4h12v2h4v2h4v4h2v4h2v12h-2v4h-2v4h-4v2h-4v2H18v-2h-4v-2h-4v-4H8v-4H6V16h2v-4h2V8h4V6h4z" />
+    <path fill="#101722" d="M18 7h12v2h4v4h2v14h-2v4h-4v2H18v-2h-4v-4h-2V13h2V9h4z" />
+  </g>
+  <g id="loader-ring">
+    <path fill="#e6ab42" d="M22 4h4v4h-4zM34 9h3v3h-3zM40 22h4v4h-4zM34 36h3v3h-3zM22 40h4v4h-4zM11 36h3v3h-3zM4 22h4v4H4zM11 9h3v3h-3z" />
+    <path fill="#3ac9ff" d="M23 5h2v2h-2zM41 23h2v2h-2zM23 41h2v2h-2zM5 23h2v2H5z" />
+    <path fill="#a9eeff" d="M23 6h2v1h-2z" />
+  </g>
+  <g id="loader-core">
+    <path fill="#1a85c9" d="M22 15h4v2h2v2h2v10h-2v2h-2v2h-4v-2h-2v-2h-2V19h2v-2h2z" />
+    <path fill="#3ac9ff" d="M23 17h2v2h2v10h-2v2h-2v-2h-2V19h2z" />
+    <path fill="#a9eeff" d="M23 20h2v8h-2z" />
+  </g>
+</svg>

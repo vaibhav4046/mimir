@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Draupnir Gold Ring">
+  <title>Draupnir Gold Ring</title>
+  <desc>Original 16-bit Norse artifact sprite (collectibles). Ref: https://www.playstation.com/en-gb/games/god-of-war-ragnarok/</desc>
+  <g id="draupnir-ring-outline">
+    <path fill="#081019" d="M24 13h1v1h-1zM18 14h6v1h-6zM25 14h6v1h-6zM15 15h3v1h-3zM31 15h3v1h-3zM14 16h1v1h-1zM34 16h1v1h-1zM12 17h2v1h-2zM35 17h2v1h-2zM11 18h1v1h-1zM37 18h1v1h-1zM11 19h1v1h-1zM37 19h1v1h-1zM10 20h1v1h-1zM21 20h7v1h-7zM38 20h1v1h-1zM9 21h1v1h-1zM19 21h2v1h-2zM28 21h2v1h-2zM39 21h1v1h-1zM9 22h1v1h-1zM18 22h1v1h-1zM30 22h1v1h-1zM39 22h1v1h-1zM9 23h1v1h-1zM17 23h1v1h-1zM31 23h1v1h-1zM39 23h1v1h-1zM8 24h1v1h-1zM18 24h1v1h-1zM30 24h1v1h-1zM40 24h1v1h-1zM9 25h1v1h-1zM19 25h2v1h-2zM28 25h2v1h-2zM39 25h1v1h-1zM9 26h1v1h-1zM21 26h7v1h-7zM39 26h1v1h-1zM9 27h1v1h-1zM39 27h1v1h-1zM10 28h1v1h-1zM38 28h1v1h-1zM11 29h1v1h-1zM37 29h1v1h-1zM11 30h1v1h-1zM37 30h1v1h-1zM12 31h2v1h-2zM35 31h2v1h-2zM14 32h1v1h-1zM34 32h1v1h-1zM15 33h3v1h-3zM31 33h3v1h-3zM18 34h6v1h-6zM25 34h6v1h-6zM24 35h1v1h-1z" />
+  </g>
+  <g id="draupnir-ring-shadow">
+    <path fill="#101722" d="M24 18h1v1h-1zM19 19h11v1h-11zM17 20h4v1h-4zM28 20h4v1h-4zM16 21h3v1h-3zM30 21h3v1h-3zM16 22h2v1h-2zM31 22h2v1h-2zM15 23h2v1h-2zM32 23h2v1h-2zM16 24h2v1h-2zM31 24h2v1h-2zM16 25h3v1h-3zM30 25h3v1h-3zM17 26h4v1h-4zM28 26h4v1h-4zM19 27h11v1h-11zM24 28h1v1h-1z" />
+  </g>
+  <g id="draupnir-ring-gold">
+    <path fill="#ffd878" d="M24 14h1v1h-1zM18 15h9v1h-9zM28 15h1v1h-1zM15 16h11v1h-11zM27 16h1v1h-1zM14 17h11v1h-11zM26 17h1v1h-1zM12 18h12v1h-12zM25 18h1v1h-1zM12 19h7v1h-7zM11 20h6v1h-6zM10 21h6v1h-6zM10 22h6v1h-6zM10 23h5v1h-5zM9 24h3v1h-3zM13 24h1v1h-1zM15 24h1v1h-1zM10 25h3v1h-3zM14 25h1v1h-1z" />
+    <path fill="#e6ab42" d="M27 15h1v1h-1zM29 15h2v1h-2zM26 16h1v1h-1zM28 16h4v1h-4zM33 16h1v1h-1zM25 17h1v1h-1zM27 17h6v1h-6zM26 18h4v1h-4zM31 18h1v1h-1zM30 19h1v1h-1zM32 19h1v1h-1zM12 24h1v1h-1zM14 24h1v1h-1zM13 25h1v1h-1zM15 25h1v1h-1zM10 26h7v1h-7zM10 27h9v1h-9zM11 28h3v1h-3zM15 28h1v1h-1zM12 29h1v1h-1zM14 29h1v1h-1z" />
+    <path fill="#a86e1c" d="M32 16h1v1h-1zM33 17h2v1h-2zM30 18h1v1h-1zM32 18h5v1h-5zM31 19h1v1h-1zM33 19h4v1h-4zM32 20h4v1h-4zM33 21h2v1h-2zM33 22h1v1h-1zM14 28h1v1h-1zM16 28h8v1h-8zM25 28h1v1h-1zM13 29h1v1h-1zM15 29h8v1h-8zM24 29h1v1h-1zM12 30h8v1h-8zM21 30h1v1h-1zM14 31h5v1h-5zM20 31h1v1h-1zM15 32h1v1h-1z" />
+    <path fill="#69400b" d="M36 20h2v1h-2zM35 21h4v1h-4zM34 22h5v1h-5zM34 23h5v1h-5zM33 24h7v1h-7zM33 25h6v1h-6zM32 26h7v1h-7zM30 27h9v1h-9zM26 28h12v1h-12zM23 29h1v1h-1zM25 29h12v1h-12zM20 30h1v1h-1zM22 30h15v1h-15zM19 31h1v1h-1zM21 31h14v1h-14zM16 32h18v1h-18zM18 33h13v1h-13zM24 34h1v1h-1z" />
+  </g>
+</svg>

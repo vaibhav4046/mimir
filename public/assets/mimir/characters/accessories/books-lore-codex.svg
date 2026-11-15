@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Chained Edda Codex">
+  <title>Chained Edda Codex</title>
+  <desc>Modular books pixel overlay socket for Mimir custom bot avatars.</desc>
+  <g id="books-lore-codex-outline">
+    <path fill="#081019" d="M5 28h10v1h-10zM4 29h1v1h-1zM15 29h1v1h-1zM4 30h1v1h-1zM15 30h1v1h-1zM4 31h1v1h-1zM15 31h1v1h-1zM4 32h1v1h-1zM15 32h1v1h-1zM4 33h1v1h-1zM15 33h1v1h-1zM4 34h1v1h-1zM15 34h1v1h-1zM4 35h1v1h-1zM15 35h1v1h-1zM4 36h1v1h-1zM15 36h1v1h-1zM4 37h1v1h-1zM15 37h1v1h-1zM4 38h1v1h-1zM15 38h1v1h-1zM4 39h1v1h-1zM15 39h1v1h-1zM4 40h1v1h-1zM15 40h1v1h-1zM5 41h10v1h-10z" />
+  </g>
+  <g id="books-lore-codex-base">
+    <path fill="#101722" d="M5 29h10v1h-10zM5 30h1v1h-1zM14 30h1v1h-1zM5 31h1v1h-1zM14 31h1v1h-1zM5 32h1v1h-1zM14 32h1v1h-1zM5 33h1v1h-1zM14 33h1v1h-1zM5 34h1v1h-1zM14 34h1v1h-1zM5 35h1v1h-1zM14 35h1v1h-1zM5 36h1v1h-1zM14 36h1v1h-1zM5 37h1v1h-1zM14 37h1v1h-1zM5 38h1v1h-1zM14 38h1v1h-1zM5 39h1v1h-1zM14 39h1v1h-1zM5 40h10v1h-10z" />
+  </g>
+  <g id="books-lore-codex-gold">
+    <path fill="#69400b" d="M6 30h8v1h-8zM6 31h8v1h-8zM6 32h8v1h-8zM6 33h3v1h-3zM12 33h2v1h-2zM6 34h3v1h-3zM12 34h2v1h-2zM6 35h3v1h-3zM12 35h2v1h-2zM6 36h3v1h-3zM12 36h2v1h-2zM6 37h8v1h-8zM6 38h8v1h-8zM6 39h8v1h-8z" />
+  </g>
+  <g id="books-lore-codex-runes">
+    <path fill="#3ac9ff" d="M9 33h3v1h-3zM9 34h3v1h-3zM9 35h3v1h-3zM9 36h3v1h-3z" />
+  </g>
+</svg>

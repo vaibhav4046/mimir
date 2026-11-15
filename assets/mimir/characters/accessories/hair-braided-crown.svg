@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Braided Silver Crown">
+  <title>Braided Silver Crown</title>
+  <desc>Modular hair pixel overlay socket for Mimir custom bot avatars.</desc>
+  <g id="hair-braided-crown-outline">
+    <path fill="#081019" d="M14 14h3v1h-3zM31 14h3v1h-3zM13 15h1v1h-1zM17 15h1v1h-1zM30 15h1v1h-1zM34 15h1v1h-1zM13 16h1v1h-1zM17 16h1v1h-1zM30 16h1v1h-1zM34 16h1v1h-1zM13 17h1v1h-1zM17 17h1v1h-1zM30 17h1v1h-1zM34 17h1v1h-1zM13 18h1v1h-1zM17 18h1v1h-1zM30 18h1v1h-1zM34 18h1v1h-1zM13 19h1v1h-1zM17 19h1v1h-1zM30 19h1v1h-1zM34 19h1v1h-1zM13 20h1v1h-1zM17 20h1v1h-1zM30 20h1v1h-1zM34 20h1v1h-1zM13 21h1v1h-1zM17 21h1v1h-1zM30 21h1v1h-1zM34 21h1v1h-1zM13 22h1v1h-1zM17 22h1v1h-1zM30 22h1v1h-1zM34 22h1v1h-1zM13 23h1v1h-1zM17 23h1v1h-1zM30 23h1v1h-1zM34 23h1v1h-1zM13 24h1v1h-1zM17 24h1v1h-1zM30 24h1v1h-1zM34 24h1v1h-1zM13 25h1v1h-1zM17 25h1v1h-1zM30 25h1v1h-1zM34 25h1v1h-1zM13 26h1v1h-1zM17 26h1v1h-1zM30 26h1v1h-1zM34 26h1v1h-1zM13 27h1v1h-1zM17 27h1v1h-1zM30 27h1v1h-1zM34 27h1v1h-1zM13 28h1v1h-1zM17 28h1v1h-1zM30 28h1v1h-1zM34 28h1v1h-1zM14 29h3v1h-3zM31 29h3v1h-3z" />
+  </g>
+  <g id="hair-braided-crown-base">
+    <path fill="#c2d2e3" d="M14 15h3v1h-3zM31 15h3v1h-3zM14 16h3v1h-3zM31 16h3v1h-3zM14 17h3v1h-3zM31 17h3v1h-3zM14 18h3v1h-3zM31 18h3v1h-3zM14 19h3v1h-3zM31 19h3v1h-3zM14 20h3v1h-3zM31 20h3v1h-3zM14 21h3v1h-3zM31 21h3v1h-3zM14 22h3v1h-3zM31 22h3v1h-3zM14 23h3v1h-3zM31 23h3v1h-3zM14 24h3v1h-3zM31 24h3v1h-3zM14 25h3v1h-3zM31 25h3v1h-3zM14 26h1v1h-1zM16 26h1v1h-1zM31 26h1v1h-1zM33 26h1v1h-1zM14 27h3v1h-3zM31 27h3v1h-3zM14 28h3v1h-3zM31 28h3v1h-3z" />
+  </g>
+  <g id="hair-braided-crown-gold">
+    <path fill="#e6ab42" d="M15 26h1v1h-1zM32 26h1v1h-1z" />
+  </g>
+</svg>

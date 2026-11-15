@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Dwarven Forging Mallet">
+  <title>Dwarven Forging Mallet</title>
+  <desc>Modular tools pixel overlay socket for Mimir custom bot avatars.</desc>
+  <g id="tools-smith-hammer-outline">
+    <path fill="#081019" d="M5 12h9v1h-9zM4 13h1v1h-1zM14 13h1v1h-1zM4 14h1v1h-1zM14 14h1v1h-1zM4 15h1v1h-1zM14 15h1v1h-1zM4 16h1v1h-1zM14 16h1v1h-1zM4 17h1v1h-1zM14 17h1v1h-1zM4 18h1v1h-1zM14 18h1v1h-1zM5 19h3v1h-3zM10 19h4v1h-4zM7 20h1v1h-1zM10 20h1v1h-1zM7 21h1v1h-1zM10 21h1v1h-1zM7 22h1v1h-1zM10 22h1v1h-1zM7 23h1v1h-1zM10 23h1v1h-1zM7 24h1v1h-1zM10 24h1v1h-1zM7 25h1v1h-1zM10 25h1v1h-1zM7 26h1v1h-1zM10 26h1v1h-1zM7 27h1v1h-1zM10 27h1v1h-1zM7 28h1v1h-1zM10 28h1v1h-1zM7 29h1v1h-1zM10 29h1v1h-1zM7 30h1v1h-1zM10 30h1v1h-1zM7 31h1v1h-1zM10 31h1v1h-1zM7 32h1v1h-1zM10 32h1v1h-1zM7 33h1v1h-1zM10 33h1v1h-1zM7 34h1v1h-1zM10 34h1v1h-1zM7 35h1v1h-1zM10 35h1v1h-1zM7 36h1v1h-1zM10 36h1v1h-1zM7 37h1v1h-1zM10 37h1v1h-1zM7 38h1v1h-1zM10 38h1v1h-1zM7 39h1v1h-1zM10 39h1v1h-1zM7 40h1v1h-1zM10 40h1v1h-1zM7 41h1v1h-1zM10 41h1v1h-1zM7 42h1v1h-1zM10 42h1v1h-1zM7 43h1v1h-1zM10 43h1v1h-1zM8 44h2v1h-2z" />
+  </g>
+  <g id="tools-smith-hammer-base">
+    <path fill="#4c6782" d="M5 13h9v1h-9zM5 14h9v1h-9zM5 15h2v1h-2zM12 15h2v1h-2zM5 16h2v1h-2zM12 16h2v1h-2zM5 17h9v1h-9zM5 18h9v1h-9z" />
+  </g>
+  <g id="tools-smith-hammer-gold">
+    <path fill="#e6ab42" d="M7 15h5v1h-5zM7 16h5v1h-5z" />
+  </g>
+  <g id="tools-smith-hammer-accent">
+    <path fill="#63391f" d="M8 19h2v1h-2zM8 20h2v1h-2zM8 21h2v1h-2zM8 22h2v1h-2zM8 23h2v1h-2zM8 24h2v1h-2zM8 25h2v1h-2zM8 26h2v1h-2zM8 27h2v1h-2zM8 28h2v1h-2zM8 29h2v1h-2zM8 30h2v1h-2zM8 31h2v1h-2zM8 32h2v1h-2zM8 33h2v1h-2zM8 34h2v1h-2zM8 35h2v1h-2zM8 36h2v1h-2zM8 37h2v1h-2zM8 38h2v1h-2zM8 39h2v1h-2zM8 40h2v1h-2zM8 41h2v1h-2zM8 42h2v1h-2zM8 43h2v1h-2z" />
+  </g>
+</svg>

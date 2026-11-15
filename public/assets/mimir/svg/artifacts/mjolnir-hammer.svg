@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges" role="img" aria-label="Mjolnir Thunder Hammer">
+  <title>Mjolnir Thunder Hammer</title>
+  <desc>Original 16-bit Norse artifact sprite (weapons). Ref: https://www.playstation.com/en-gb/games/god-of-war-ragnarok/</desc>
+  <g id="mjolnir-hammer-outline">
+    <path fill="#081019" d="M10 8h28v1h-28zM9 9h1v1h-1zM38 9h1v1h-1zM9 10h1v1h-1zM38 10h1v1h-1zM10 11h1v1h-1zM38 11h1v1h-1zM10 12h1v1h-1zM38 12h1v1h-1zM10 13h1v1h-1zM37 13h1v1h-1zM10 14h1v1h-1zM37 14h1v1h-1zM11 15h1v1h-1zM37 15h1v1h-1zM11 16h1v1h-1zM37 16h1v1h-1zM11 17h1v1h-1zM37 17h1v1h-1zM11 18h1v1h-1zM36 18h1v1h-1zM11 19h1v1h-1zM36 19h1v1h-1zM12 20h1v1h-1zM36 20h1v1h-1zM12 21h1v1h-1zM36 21h1v1h-1zM13 22h9v1h-9zM26 22h10v1h-10zM21 23h1v1h-1zM26 23h1v1h-1zM21 24h1v1h-1zM26 24h1v1h-1zM21 25h1v1h-1zM26 25h1v1h-1zM21 26h1v1h-1zM26 26h1v1h-1zM21 27h1v1h-1zM26 27h1v1h-1zM21 28h1v1h-1zM26 28h1v1h-1zM21 29h1v1h-1zM26 29h1v1h-1zM21 30h1v1h-1zM26 30h1v1h-1zM21 31h1v1h-1zM26 31h1v1h-1zM21 32h1v1h-1zM26 32h1v1h-1zM21 33h1v1h-1zM26 33h1v1h-1zM21 34h1v1h-1zM26 34h1v1h-1zM21 35h1v1h-1zM26 35h1v1h-1zM21 36h1v1h-1zM26 36h1v1h-1zM21 37h1v1h-1zM26 37h1v1h-1zM20 38h2v1h-2zM26 38h2v1h-2zM19 39h1v1h-1zM28 39h1v1h-1zM19 40h1v1h-1zM28 40h1v1h-1zM19 41h1v1h-1zM28 41h1v1h-1zM20 42h2v1h-2zM26 42h2v1h-2zM22 43h4v1h-4z" />
+  </g>
+  <g id="mjolnir-hammer-base">
+    <path fill="#2e4359" d="M10 9h28v1h-28zM10 10h2v1h-2zM36 10h2v1h-2zM11 11h1v1h-1zM36 11h2v1h-2zM11 12h1v1h-1zM36 12h2v1h-2zM11 13h26v1h-26zM11 14h13v1h-13zM25 14h12v1h-12zM12 15h3v1h-3zM16 15h7v1h-7zM24 15h1v1h-1zM26 15h7v1h-7zM34 15h3v1h-3zM12 16h4v1h-4zM17 16h5v1h-5zM23 16h3v1h-3zM27 16h5v1h-5zM33 16h4v1h-4zM12 17h5v1h-5zM19 17h3v1h-3zM23 17h4v1h-4zM28 17h3v1h-3zM32 17h5v1h-5zM12 18h7v1h-7zM20 18h1v1h-1zM22 18h6v1h-6zM29 18h1v1h-1zM31 18h5v1h-5zM12 19h8v1h-8zM21 19h8v1h-8zM30 19h6v1h-6zM13 20h23v1h-23zM13 21h23v1h-23z" />
+    <path fill="#7795b3" d="M12 10h24v1h-24zM12 11h24v1h-24zM12 12h24v1h-24z" />
+  </g>
+  <g id="mjolnir-hammer-gold">
+    <path fill="#e6ab42" d="M24 14h1v1h-1zM15 15h1v1h-1zM25 15h1v1h-1zM16 16h1v1h-1zM26 16h1v1h-1zM17 17h2v1h-2zM27 17h1v1h-1zM19 18h1v1h-1zM28 18h1v1h-1zM20 39h8v1h-8zM20 40h8v1h-8zM20 41h2v1h-2zM26 41h2v1h-2z" />
+    <path fill="#ffd878" d="M33 15h1v1h-1zM32 16h1v1h-1zM31 17h1v1h-1zM30 18h1v1h-1zM29 19h1v1h-1zM22 41h4v1h-4zM22 42h4v1h-4z" />
+    <path fill="#a86e1c" d="M22 25h4v1h-4zM22 29h4v1h-4zM22 33h4v1h-4z" />
+  </g>
+  <g id="mjolnir-hammer-ice">
+    <path fill="#3ac9ff" d="M23 15h1v1h-1zM22 16h1v1h-1zM22 17h1v1h-1zM21 18h1v1h-1zM20 19h1v1h-1z" />
+  </g>
+  <g id="mjolnir-hammer-accent">
+    <path fill="#8f552e" d="M22 22h1v1h-1zM25 22h1v1h-1zM22 23h1v1h-1zM25 23h1v1h-1zM22 24h1v1h-1zM25 24h1v1h-1zM22 26h1v1h-1zM25 26h1v1h-1zM22 27h1v1h-1zM25 27h1v1h-1zM22 28h1v1h-1zM25 28h1v1h-1zM22 30h1v1h-1zM25 30h1v1h-1zM22 31h1v1h-1zM25 31h1v1h-1zM22 32h1v1h-1zM25 32h1v1h-1zM22 34h1v1h-1zM25 34h1v1h-1zM22 35h1v1h-1zM25 35h1v1h-1zM22 36h1v1h-1zM25 36h1v1h-1zM22 37h1v1h-1zM25 37h1v1h-1zM22 38h1v1h-1zM25 38h1v1h-1z" />
+    <path fill="#bd7c4b" d="M23 22h2v1h-2zM23 23h2v1h-2zM23 24h2v1h-2zM23 26h2v1h-2zM23 27h2v1h-2zM23 28h2v1h-2zM23 30h2v1h-2zM23 31h2v1h-2zM23 32h2v1h-2zM23 34h2v1h-2zM23 35h2v1h-2zM23 36h2v1h-2zM23 37h2v1h-2zM23 38h2v1h-2z" />
+  </g>
+</svg>

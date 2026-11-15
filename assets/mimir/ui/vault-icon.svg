@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="Vault Lock Shield">
+  <title>Vault Lock Shield</title>
+  <desc>16x16 pixel UI icon (navigation).</desc>
+  <g id="ui-vault-outline">
+    <path fill="#081019" d="M5 2h6v1h-6zM4 3h1v1h-1zM11 3h1v1h-1zM3 4h1v1h-1zM6 4h4v1h-4zM12 4h1v1h-1zM2 5h2v1h-2zM6 5h4v1h-4zM12 5h2v1h-2zM1 6h1v1h-1zM14 6h1v1h-1zM0 7h1v1h-1zM15 7h1v1h-1zM0 8h1v1h-1zM15 8h1v1h-1zM0 9h1v1h-1zM15 9h1v1h-1zM0 10h1v1h-1zM15 10h1v1h-1zM0 11h1v1h-1zM15 11h1v1h-1zM1 12h1v1h-1zM14 12h1v1h-1zM2 13h12v1h-12z" />
+  </g>
+  <g id="ui-vault-shadow">
+    <path fill="#2e4359" d="M2 7h12v1h-12zM2 8h5v1h-5zM9 8h5v1h-5zM2 9h5v1h-5zM9 9h5v1h-5zM2 10h5v1h-5zM9 10h5v1h-5zM2 11h12v1h-12z" />
+  </g>
+  <g id="ui-vault-gold">
+    <path fill="#e6ab42" d="M5 3h6v1h-6zM4 4h2v1h-2zM10 4h2v1h-2zM4 5h2v1h-2zM10 5h2v1h-2zM2 6h12v1h-12zM1 7h1v1h-1zM14 7h1v1h-1zM1 8h1v1h-1zM14 8h1v1h-1zM1 9h1v1h-1zM14 9h1v1h-1zM1 10h1v1h-1zM14 10h1v1h-1zM1 11h1v1h-1zM14 11h1v1h-1zM2 12h12v1h-12z" />
+  </g>
+  <g id="ui-vault-ice">
+    <path fill="#3ac9ff" d="M7 8h2v1h-2zM7 9h2v1h-2z" />
+    <path fill="#a9eeff" d="M7 10h2v1h-2z" />
+  </g>
+</svg>
