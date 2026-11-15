@@ -21,15 +21,21 @@ export function FirstRunSetup({ settings, onDone, onUseCloud }) {
   const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState('');
   const [settingUp, setSettingUp] = useState(false);
+  const [offline, setOffline] = useState(false);
+  const fail = err => {
+    setError(err.message);
+    setOffline(err.code === 'OFFLINE');
+  };
 
   const load = useCallback(async () => {
     try {
       const next = await apiFetch('/v1/models/library');
       setLib(next);
       setError('');
+      setOffline(false);
       return next;
     } catch (err) {
-      setError(err.message);
+      fail(err);
       return null;
     }
   }, []);
@@ -46,8 +52,8 @@ export function FirstRunSetup({ settings, onDone, onUseCloud }) {
   const pull = row?.pull;
   const engineOk = Boolean(lib?.ollama.running);
 
-  // Poll while waiting for the engine to start or a download to finish.
-  const waiting = lib && (!engineOk || lib.catalog.some(m => m.pull && !m.pull.done));
+  // Poll while the service is unreachable, the engine is not up, or a download is running.
+  const waiting = !lib || offline || !engineOk || lib.catalog.some(m => m.pull && !m.pull.done);
   useEffect(() => {
     if (!waiting) return undefined;
     const id = setInterval(load, 2000);
@@ -62,7 +68,7 @@ export function FirstRunSetup({ settings, onDone, onUseCloud }) {
       });
       onDone(updated);
     } catch (err) {
-      setError(err.message);
+      fail(err);
       setSettingUp(false);
     }
   }, [settings?.ollamaUrl, target, onDone]);
@@ -84,7 +90,7 @@ export function FirstRunSetup({ settings, onDone, onUseCloud }) {
       await apiFetch('/v1/models/pull', { method: 'POST', body: JSON.stringify({ name: target }) });
       await load();
     } catch (err) {
-      setError(err.message);
+      fail(err);
       setSettingUp(false);
     }
   };
@@ -93,7 +99,7 @@ export function FirstRunSetup({ settings, onDone, onUseCloud }) {
     try {
       onDone(await apiFetch('/v1/settings', { method: 'PATCH', body: JSON.stringify({ firstRunDismissed: true }) }));
     } catch (err) {
-      setError(err.message);
+      fail(err);
     }
   };
 

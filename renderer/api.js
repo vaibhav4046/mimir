@@ -160,10 +160,15 @@ export async function apiFetch(path, options = {}) {
   };
   if (cfg.token) headers.Authorization = `Bearer ${cfg.token}`;
 
-  const res = await fetch(`${cfg.url}${path}`, {
-    ...options,
-    headers,
-  });
+  let res;
+  try {
+    res = await fetch(`${cfg.url}${path}`, { ...options, headers });
+  } catch (cause) {
+    if (cause?.name === 'AbortError') throw cause;
+    const err = new Error("Can't reach Mimir's background service. Make sure Mimir is running; this retries on its own.", { cause });
+    err.code = 'OFFLINE';
+    throw err;
+  }
   const text = await res.text();
   let data = null;
   try {
