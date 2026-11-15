@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '../api.js';
 import { MimirAsset } from './MimirAsset.jsx';
 
+const ATLAS_TYPE_LABELS = { Bot: 'Teammate', Artifact: 'Creation', Memory: 'Note', Evidence: 'Proof' };
+
 const ATLAS_TYPES = [
   'all',
   'Project',
@@ -49,7 +51,7 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
         setSelected({ kind: 'node', item: data.nodes[0] });
       }
     } catch (e) {
-      setErr(e.message || 'Failed to load Midgard Project Map');
+      setErr(e.message || 'Could not load the project map');
     }
   };
 
@@ -113,17 +115,17 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
           <div>
             <h2 style={{ margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
               <MimirAsset category="artifacts" name="bifrost-portal" size={22} />
-              <span>Midgard Nine-Realms Project Map</span>
+              <span>Project map</span>
             </h2>
             <p style={{ margin: 0, color: 'var(--ink-muted)', fontSize: 12.5 }}>
-              {mapData?.attribution || 'Original Lake-of-Nine Mimir project topology inspired by Norse realms (non-franchise schematic coordinates).'}
+              A picture of your projects, chats, teammates and saved notes, and how they connect.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-            <div role="group" aria-label="Atlas View Mode" style={{ display: 'inline-flex', gap: 4 }}>
+            <div role="group" aria-label="How to show the map" style={{ display: 'inline-flex', gap: 4 }}>
               {[
-                { id: 'graph', label: 'Graph View' },
-                { id: 'list', label: 'Atlas List' },
+                { id: 'graph', label: 'Map' },
+                { id: 'list', label: 'List' },
                 { id: 'timeline', label: 'Timeline' },
               ].map(vm => (
                 <button
@@ -141,13 +143,13 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
             {viewMode === 'graph' && (
               <>
                 <button type="button" className="btn btn-sm" onClick={() => setZoom(z => Math.max(0.55, Number((z - 0.15).toFixed(2))))}>
-                  Zoom -
+                  Zoom out
                 </button>
                 <button type="button" className="btn btn-sm" onClick={() => { setPan({ x: 0, y: 0 }); setZoom(1); }}>
                   Reset ({Math.round(zoom * 100)}%)
                 </button>
                 <button type="button" className="btn btn-sm" onClick={() => setZoom(z => Math.min(2.2, Number((z + 0.15).toFixed(2))))}>
-                  Zoom +
+                  Zoom in
                 </button>
               </>
             )}
@@ -167,8 +169,8 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
               type="search"
               className="input"
               data-testid="atlas-search-input"
-              aria-label="Search Yggdrasil Memory Atlas"
-              placeholder="Search memories, decisions, sources, files..."
+              aria-label="Search the project map"
+              placeholder="Search notes, decisions, files..."
               value={atlasQuery}
               onChange={e => setAtlasQuery(e.target.value)}
               style={{ maxWidth: 280, minHeight: 30, padding: '4px 10px', fontSize: 12 }}
@@ -182,16 +184,16 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
                   style={{ minHeight: 24, padding: '2px 8px', fontSize: 11 }}
                   onClick={() => setTypeFilter(t)}
                 >
-                  {t === 'all' ? 'All' : t}
+                  {t === 'all' ? 'All' : ATLAS_TYPE_LABELS[t] || t}
                 </button>
               ))}
             </div>
           </div>
           {atlasData && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', fontSize: 11.5, color: 'var(--ink-muted)', fontFamily: 'var(--sand-mono)' }}>
-              <span>{atlasData.totalNodes} nodes · {atlasData.totalEdges} edges · {atlasData.tombstones?.length || 0} tombstones</span>
+              <span>{atlasData.totalNodes} items · {atlasData.totalEdges} links · {atlasData.tombstones?.length || 0} deleted</span>
               <span className="pill" data-testid="atlas-diagnostics-badge" style={{ fontSize: 10.5 }}>
-                {atlasData.diagnostics?.duplicateNodes?.length || 0} duplicates · {atlasData.diagnostics?.staleMemories?.length || 0} stale · {atlasData.diagnostics?.contradictions?.length || 0} conflicts
+                {atlasData.diagnostics?.duplicateNodes?.length || 0} duplicates · {atlasData.diagnostics?.staleMemories?.length || 0} out of date · {atlasData.diagnostics?.contradictions?.length || 0} that disagree
               </span>
             </div>
           )}
@@ -206,10 +208,10 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
               setAtlasQuery('');
             }}
           >
-            Yggdrasil Atlas
+            Everything
           </button>
           <span className="muted">/</span>
-          <span className="pill is-cyan">{typeFilter === 'all' ? 'All 11 Entity Types' : typeFilter}</span>
+          <span className="pill is-cyan">{typeFilter === 'all' ? 'All kinds' : ATLAS_TYPE_LABELS[typeFilter] || typeFilter}</span>
           {selected?.item?.label && (
             <>
               <span className="muted">/</span>
@@ -226,7 +228,7 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
             <div
               className="map-viewport"
               tabIndex={0}
-              aria-label="Interactive Nine Realms project canvas. Use mouse drag or arrow keys to pan, +/- to zoom."
+              aria-label="Project map. Drag or use arrow keys to move around, plus and minus keys to zoom."
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
@@ -310,8 +312,8 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
               </div>
             </div>
             <div style={{ padding: '6px 10px', borderTop: '1px solid var(--rule)', display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: 'var(--ink-muted)' }}>
-              <span>{realms.length} realms · {nodes.length} mapped workspace/bot/chronicle nodes</span>
-              <span>Drag or arrow keys to pan · +/- to zoom</span>
+              <span>{realms.length} areas · {nodes.length} items on the map</span>
+              <span>Drag or use arrow keys to move · + and - to zoom</span>
             </div>
           </div>
           )}
@@ -319,10 +321,10 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
           {viewMode === 'list' && (
             <div className="card" data-testid="atlas-list-view" style={{ gap: 8 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brass)' }}>
-                Yggdrasil Memory Atlas — Entities ({atlasData?.nodes?.length || 0})
+                Everything Mimir knows ({atlasData?.nodes?.length || 0})
               </div>
               {!(atlasData?.nodes?.length) ? (
-                <div style={{ color: 'var(--ink-muted)', fontSize: 12.5 }}>No matching memory or artifact nodes.</div>
+                <div style={{ color: 'var(--ink-muted)', fontSize: 12.5 }}>Nothing matches your search.</div>
               ) : (
                 atlasData.nodes.map(item => (
                   <div
@@ -338,7 +340,7 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
                       </span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         <span className={`pill ${item.stale ? 'is-crimson' : 'is-emerald'}`} style={{ fontSize: 10 }}>
-                          {item.stale ? 'stale' : item.verified ? 'verified' : 'unverified'}
+                          {item.stale ? 'out of date' : item.verified ? 'checked' : 'not checked'}
                         </span>
                         {item.deletable && (
                           <button
@@ -350,14 +352,14 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
                               handleTombstoneDelete(item);
                             }}
                           >
-                            Tombstone Delete
+                            Delete
                           </button>
                         )}
                       </span>
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--ink-muted)' }}>{item.subtitle}</div>
                     <div style={{ fontSize: 11, fontFamily: 'var(--sand-mono)', color: 'var(--ink-subtle)' }}>
-                      source: {item.provenance} · conf: {Math.round((item.confidence ?? 1) * 100)}%
+                      from: {item.provenance} · sure: {Math.round((item.confidence ?? 1) * 100)}%
                     </div>
                   </div>
                 ))
@@ -368,7 +370,7 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
           {viewMode === 'timeline' && (
             <div className="card" data-testid="atlas-timeline-view" style={{ gap: 8 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--frost)' }}>
-                Yggdrasil Chronological Timeline
+                Timeline (newest first)
               </div>
               {[...(atlasData?.nodes || [])]
                 .sort((a, b) => Date.parse(b.updatedAt || b.createdAt || 0) - Date.parse(a.updatedAt || a.createdAt || 0))
@@ -397,20 +399,20 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
 
           <aside className="card" style={{ gap: 10 }} data-testid="map-inspector">
             <h3 className="card-title" style={{ margin: 0 }}>
-              {selected?.item?.label || 'Inspector'}
+              {selected?.item?.label || 'Details'}
             </h3>
             {selected?.item ? (
               <>
                 <div className="pill" style={{ alignSelf: 'flex-start' }}>
-                  {selected.item.type} · realm: {selected.item.realmId}
+                  {ATLAS_TYPE_LABELS[selected.item.type] || selected.item.type} · area: {selected.item.realmId}
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--ink-muted)' }}>
                   {selected.item.subtitle}
                 </div>
                 {selected.item.provenance && (
                   <div style={{ fontSize: 11.5, fontFamily: 'var(--sand-mono)', color: 'var(--ink-subtle)' }}>
-                    Provenance: {selected.item.provenance}
-                    {typeof selected.item.confidence === 'number' ? ` · Confidence: ${Math.round(selected.item.confidence * 100)}%` : ''}
+                    Came from: {selected.item.provenance}
+                    {typeof selected.item.confidence === 'number' ? ` · How sure: ${Math.round(selected.item.confidence * 100)}%` : ''}
                   </div>
                 )}
                 {selected.item.deletable && (
@@ -420,7 +422,7 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
                       className="btn btn-sm"
                       data-testid="atlas-edit-memory-btn"
                       onClick={async () => {
-                        const nextVal = window.prompt(`Update memory "${selected.item.memoryKey || selected.item.label}":`, selected.item.value || selected.item.subtitle || '');
+                        const nextVal = window.prompt(`Update note "${selected.item.memoryKey || selected.item.label}":`, selected.item.value || selected.item.subtitle || '');
                         if (nextVal === null) return;
                         await apiFetch('/v1/memory', {
                           method: 'POST',
@@ -433,14 +435,14 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
                         await loadMap();
                       }}
                     >
-                      Edit Memory
+                      Edit note
                     </button>
                     <button
                       type="button"
                       className="btn btn-sm"
                       onClick={() => handleTombstoneDelete(selected.item)}
                     >
-                      Tombstone Delete Memory
+                      Delete note
                     </button>
                   </div>
                 )}
@@ -463,16 +465,16 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
               </>
             ) : (
               <div style={{ color: 'var(--ink-muted)', fontSize: 12.5 }}>
-                Select a pin on the map to inspect its branch, bot, or chronicle details.
+                Click anything on the map to see its details.
               </div>
             )}
 
             <hr style={{ border: 'none', borderTop: '1px solid var(--rule)', width: '100%' }} />
             <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brass)' }}>
-              Repository &amp; Recent Commits
+              Recent changes to your project
             </div>
             <div style={{ fontSize: 11.5, fontFamily: 'var(--sand-mono)', color: 'var(--ink-muted)' }}>
-              Branch: {mapData?.repo?.branch || 'local workspace'} · Worktrees: {mapData?.repo?.worktrees?.length || 1}
+              Version: {mapData?.repo?.branch || 'this computer'} · Copies: {mapData?.repo?.worktrees?.length || 1}
             </div>
             {(mapData?.repo?.recentCommits || []).map((c, idx) => (
               <div key={idx} style={{ fontSize: 11.5, fontFamily: 'var(--sand-mono)', color: 'var(--ink)' }}>
@@ -481,7 +483,7 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
             ))}
 
             <hr style={{ border: 'none', borderTop: '1px solid var(--rule)', width: '100%' }} />
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--frost)' }}>Realms Directory</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--frost)' }}>Areas</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
               {realms.map(r => (
                 <button

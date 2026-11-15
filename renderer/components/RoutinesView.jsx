@@ -82,10 +82,10 @@ export function RoutinesView({ routines, recordings, bots, onRefresh, onOpenThre
         <div>
           <h2 style={{ margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <MimirAsset category="ui" name="routines" size={22} />
-            <span>Routines & Teach-a-Task Recordings</span>
+            <span>Scheduled tasks &amp; recordings</span>
           </h2>
           <p style={{ margin: 0, color: 'var(--ink-muted)' }}>
-            Schedule autonomous runs for any Personal or Team Bot, route outputs to Slack/Teams webhooks, or promote recorded chat workflows.
+            Run tasks on a schedule, post updates to Slack or Microsoft Teams, or turn a recorded task into a schedule.
           </p>
         </div>
 
@@ -96,15 +96,15 @@ export function RoutinesView({ routines, recordings, bots, onRefresh, onOpenThre
         <form className="card" onSubmit={createRoutine}>
           <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <MimirAsset category="artifacts" name="gjallarhorn" size={18} />
-            <span>Create Routine</span>
+            <span>New scheduled task</span>
           </h3>
           <div className="grid-2">
             <label className="field-label">
-              Routine Name
-              <input className="input" required placeholder="Hourly Health Digest" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+              Task name
+              <input className="input" required placeholder="Daily summary" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
             </label>
             <label className="field-label">
-              Target Bot
+              Who runs it
               <select className="select" value={form.botId} onChange={e => setForm(f => ({ ...f, botId: e.target.value }))}>
                 {bots.map(b => (
                   <option key={b.id} value={b.id}>
@@ -117,7 +117,7 @@ export function RoutinesView({ routines, recordings, bots, onRefresh, onOpenThre
 
           <div className="grid-2">
             <label className="field-label">
-              Interval (minutes, 0 = manual only)
+              Repeat every (minutes, 0 = only when you click Run)
               <input
                 type="number"
                 min="0"
@@ -157,13 +157,13 @@ export function RoutinesView({ routines, recordings, bots, onRefresh, onOpenThre
           </div>
 
           <label className="field-label">
-            Prompt
-            <textarea className="textarea" required rows={3} placeholder="Check workspace logs and write a short report..." value={form.prompt} onChange={e => setForm(f => ({ ...f, prompt: e.target.value }))} />
+            What it should do
+            <textarea className="textarea" required rows={3} placeholder="Check my folder and write a short update..." value={form.prompt} onChange={e => setForm(f => ({ ...f, prompt: e.target.value }))} />
           </label>
 
           <div>
             <button type="submit" className="btn btn-primary">
-              Save Routine
+              Save task
             </button>
           </div>
         </form>
@@ -171,10 +171,10 @@ export function RoutinesView({ routines, recordings, bots, onRefresh, onOpenThre
         <div className="card">
           <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <MimirAsset category="ui" name="routines" size={18} />
-            <span>Scheduled Routines ({routines.length})</span>
+            <span>Scheduled tasks ({routines.length})</span>
           </h3>
           {routines.length === 0 ? (
-            <div style={{ color: 'var(--sand-text-subtle)' }}>No routines yet.</div>
+            <div style={{ color: 'var(--sand-text-subtle)' }}>No scheduled tasks yet.</div>
           ) : (
             routines.map(r => (
               <div
@@ -218,10 +218,10 @@ export function RoutinesView({ routines, recordings, bots, onRefresh, onOpenThre
         <div className="card">
           <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <MimirAsset category="artifacts" name="scroll" size={18} />
-            <span>Teach-a-Task Recordings ({recordings.length})</span>
+            <span>Recorded tasks ({recordings.length})</span>
           </h3>
           {recordings.length === 0 ? (
-            <div style={{ color: 'var(--sand-text-subtle)' }}>Click "Teach Task" in Chat to record reusable step sequences.</div>
+            <div style={{ color: 'var(--sand-text-subtle)' }}>Click &quot;Record a task&quot; in Chat to save steps Mimir can repeat later.</div>
           ) : (
             recordings.map(rec => (
               <div
@@ -244,7 +244,7 @@ export function RoutinesView({ routines, recordings, bots, onRefresh, onOpenThre
                   </div>
                   {rec.skillLogicalPath && (
                     <span className="pill" style={{ fontSize: 11, width: 'fit-content' }}>
-                      Skill Compiled: <code>{rec.skillLogicalPath}</code>
+                      Skill saved: <code>{rec.skillLogicalPath}</code>
                     </span>
                   )}
                 </div>
@@ -255,10 +255,10 @@ export function RoutinesView({ routines, recordings, bots, onRefresh, onOpenThre
                     data-testid={`compile-skill-btn-${rec.id}`}
                     onClick={() => compileSkill(rec.id)}
                   >
-                    Compile Skill (.md)
+                    Save as reusable skill
                   </button>
                   <button type="button" className="btn btn-primary btn-sm" onClick={() => promoteRecording(rec.id)}>
-                    Promote to Routine
+                    Schedule this
                   </button>
                   <button type="button" className="btn btn-danger btn-sm" onClick={() => deleteRecording(rec.id)}>
                     Delete
@@ -271,7 +271,7 @@ export function RoutinesView({ routines, recordings, bots, onRefresh, onOpenThre
             <div className="card" style={{ padding: 12, gap: 6, borderColor: 'var(--brass)' }} data-testid="compiled-skill-preview">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <strong style={{ fontSize: 12.5, color: 'var(--brass)' }}>
-                  Compiled Skill · <code>{skillPreview.logicalPath}</code>
+                  Saved skill · <code>{skillPreview.logicalPath}</code>
                 </strong>
                 <button type="button" className="btn btn-sm" onClick={() => setSkillPreview(null)}>
                   Close

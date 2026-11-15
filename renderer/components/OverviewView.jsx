@@ -131,17 +131,16 @@ export function OverviewView({
           </div>
         </section>
 
-        <section className="card grokbot-replacement-card" data-testid="grokbot-replacement-card" aria-label="Grok Bot Drop-In Replacement">
+        <section className="card grokbot-replacement-card" data-testid="grokbot-replacement-card" aria-label="Ready-made team setup">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 320px' }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <strong style={{ fontSize: 12.5, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--frost)' }}>
-                  Grok Bot Drop-In Replacement + 10x Local Upgrades
+                  Ready-made team
                 </strong>
-                <span className="pill is-gold" style={{ fontSize: 10 }}>1-for-1 Ready</span>
               </div>
               <span style={{ fontSize: 12, color: 'var(--ink-muted)' }}>
-                Provisions the 6-bot Chief of Staff fleet, 4 team channels (#Growth Team, #Product Launch, #Executive Updates, #All Hands Prep), Teach-a-Task v1.0 skill cards, zero-password session handoff, and verified <code>/workspace</code> persistence in one click.
+                Adds a team lead and 5 helpers, 4 group chats (Growth, Product launch, Updates, Team meeting prep) and a few starter skills, in one click.
               </span>
             </div>
             <button
@@ -152,7 +151,7 @@ export function OverviewView({
               onClick={handleActivateReplacement}
             >
               <ChiefCrownPixelSvg size={14} />
-              <span>{activatingBundle ? 'Activating Fleet...' : 'Activate Grok Bot Fleet + Skills + Playbook'}</span>
+              <span>{activatingBundle ? 'Setting up…' : 'Set up ready-made team'}</span>
             </button>
           </div>
           {bundleNotice && (

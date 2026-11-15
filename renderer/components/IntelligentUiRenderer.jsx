@@ -33,7 +33,7 @@ export function IntelligentUiRenderer({ spec, onAction, apiBase = '' }) {
     try {
       const out = await onAction({ actionId, payload, surface: spec.surface, roleId: spec.assignedRoleId || 'mimir' });
       if (out?.gate?.decision === 'DENY') {
-        setActionNotice(`Blocked by Sentinel: ${out.gate.reason}`);
+        setActionNotice(`Blocked by safety check: ${out.gate.reason}`);
       } else if (out?.gate?.decision === 'REQUIRE_APPROVAL') {
         setActionNotice(`Approval required: ${out.gate.reason}`);
       }
@@ -200,7 +200,7 @@ export function IntelligentUiRenderer({ spec, onAction, apiBase = '' }) {
                     </label>
                   ))}
                   <div>
-                    <button type="submit" className="btn btn-primary btn-sm">Submit via Sentinel</button>
+                    <button type="submit" className="btn btn-primary btn-sm">Submit</button>
                   </div>
                 </form>
               )}
@@ -297,7 +297,7 @@ export function IntelligentUiRenderer({ spec, onAction, apiBase = '' }) {
                 <div className="iui-row-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>{d.totalNodes || 0} nodes · {d.totalEdges || 0} relationships</span>
                   <button type="button" className="btn btn-sm" onClick={() => triggerAction('open_surface', { tab: 'map' })}>
-                    Inspect Atlas
+                    View map
                   </button>
                 </div>
               )}

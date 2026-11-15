@@ -2794,21 +2794,20 @@ dialog.mimir-dialog::backdrop {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  padding: 4px 2px;
+  padding: 2px 0;
 }
 
 .mention-quick-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 2px 7px;
-  min-height: 22px;
+  padding: 3px 9px;
+  min-height: 24px;
   border: 1px solid var(--rule);
   background: var(--bg-elevated);
   color: var(--ink);
-  font-family: var(--sand-mono);
-  font-size: 11px;
-  border-radius: 3px;
+  font-size: 11.5px;
+  border-radius: 4px;
 }
 
 .mention-quick-btn:hover {
@@ -3357,7 +3356,7 @@ dialog.mimir-dialog::backdrop {
 
 .sidebar-nav-secondary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
 }
 

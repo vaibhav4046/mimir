@@ -40,30 +40,30 @@ export function VaultView({ entries, onRefresh }) {
         <div>
           <h2 style={{ margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <MimirAsset category="artifacts" name="nornir-chest" size={22} />
-            <span>Encrypted Vault</span>
+            <span>Passwords &amp; keys</span>
           </h2>
           <p style={{ margin: 0, color: 'var(--ink-muted)' }}>
-            Stored locally with AES-256-GCM encryption (`vault.enc.json`). Secret strings are masked in listings and automatically scrubbed from LLM transcripts and logs.
+            Saved safely on this computer. Hidden in lists and kept out of AI chats and logs.
           </p>
         </div>
 
         <form className="card" onSubmit={handleAdd}>
           <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <MimirAsset category="artifacts" name="guardian-shield" size={18} />
-            <span>Add Vault Entry</span>
+            <span>Add password or key</span>
           </h3>
           <div className="grid-2">
             <label className="field-label">
               Kind
               <select className="select" value={kind} onChange={e => setKind(e.target.value)}>
-                <option value="secret">API Secret / Token</option>
-                <option value="login">Website Login</option>
-                <option value="card">Payment Card</option>
+                <option value="secret">App key or token</option>
+                <option value="login">Website login</option>
+                <option value="card">Payment card</option>
               </select>
             </label>
             <label className="field-label">
               Label
-              <input className="input" required placeholder="github-pat / staging-login" value={label} onChange={e => setLabel(e.target.value)} />
+              <input className="input" required placeholder="e.g. github-pat or work-login" value={label} onChange={e => setLabel(e.target.value)} />
             </label>
           </div>
 
@@ -89,7 +89,7 @@ export function VaultView({ entries, onRefresh }) {
 
           <div>
             <button type="submit" className="btn btn-primary" data-testid="vault-add-btn">
-              Encrypt & Store
+              Save securely
             </button>
           </div>
         </form>
@@ -97,10 +97,10 @@ export function VaultView({ entries, onRefresh }) {
         <div className="card">
           <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <MimirAsset category="ui" name="vault" size={18} />
-            <span>Stored Entries ({entries.length})</span>
+            <span>Saved items ({entries.length})</span>
           </h3>
           {entries.length === 0 ? (
-            <div style={{ color: 'var(--sand-text-subtle)' }}>No entries stored yet.</div>
+            <div style={{ color: 'var(--sand-text-subtle)' }}>Nothing saved yet.</div>
           ) : (
             entries.map(ent => (
               <div

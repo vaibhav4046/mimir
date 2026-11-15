@@ -27,40 +27,40 @@ import {
 } from './Icons.jsx';
 
 const EXECUTION_MODES = [
-  { id: 'agent', label: 'Agent', hint: 'Full tools' },
-  { id: 'code', label: 'Code', hint: 'Code & shell', Icon: CodeModeSvg },
-  { id: 'chat', label: 'Chat', hint: 'Read-only' },
+  { id: 'agent', label: 'Do tasks', hint: 'Can use the web, files and apps for you' },
+  { id: 'code', label: 'Write code', hint: 'Writes and runs code', Icon: CodeModeSvg },
+  { id: 'chat', label: 'Just talk', hint: 'Answers only, changes nothing' },
 ];
 
 const SMART_ACTION_CARDS = [
   {
-    title: 'Deep Research Report',
-    subtitle: 'Structured report + download MD, DOCX, PDF & 6 more docs',
+    title: 'Research report',
+    subtitle: 'Looks things up and writes a report you can download',
     prompt: 'Gather multi-domain research on AI agents and 3D pipelines',
   },
   {
-    title: 'Expense Tracker Web App',
-    subtitle: 'Multi-file app with auth, SVG charts, export & tests',
+    title: 'Expense tracker app',
+    subtitle: 'A small app with login, charts and export',
     prompt: 'Build an expense-tracking web app with authentication, charts and export',
   },
   {
-    title: 'Music & Audio Studio',
-    subtitle: 'Synthesize multi-track stereo WAV audio with stems',
+    title: 'Make music',
+    subtitle: 'Creates a short music track you can play',
     prompt: 'Create an ambient synthwave music track at 110 BPM',
   },
   {
-    title: 'Dream-Loop 3D',
-    subtitle: 'Generate a 3D mesh with 2-pass critic review',
+    title: '3D model',
+    subtitle: 'Makes a 3D object and checks it twice',
     prompt: 'Create a 3D model of a Valkyrie Starfighter',
   },
   {
-    title: 'REA Architecture X-Ray',
-    subtitle: 'Inspect how Mimir routes, verifies, and stores runs',
+    title: 'How Mimir works',
+    subtitle: 'A plain tour of what happens when you ask something',
     prompt: 'Reverse-engineer how this app works with REA',
   },
   {
-    title: 'Playable Game Studio',
-    subtitle: 'Build an interactive arcade game inline',
+    title: 'Make a game',
+    subtitle: 'Builds a small game you can play right here',
     prompt: 'Create a playable arcade space shooter game with cyber lasers',
   },
 ];
@@ -77,58 +77,51 @@ const WORKSPACE_MODES = [
   { id: 'automation', label: 'Automation' },
 ];
 
-const PROJECT_SCOPES = [
-  { id: 'midgard-default', label: 'Midgard Workspace (Default)' },
-  { id: 'expense-tracker', label: 'Expense Tracker App' },
-  { id: 'multimodal-studio', label: 'Multimodal Studio' },
-  { id: 'research-briefings', label: 'Research & Briefings' },
-];
-
 function detectDraftIntent(rawText, modeOverride = 'auto') {
   if (modeOverride && modeOverride !== 'auto') {
     const found = WORKSPACE_MODES.find(m => m.id === modeOverride);
-    if (found) return { kind: modeOverride, label: `Mode Override -> ${found.label}` };
+    if (found) return { kind: modeOverride, label: `Mode: ${found.label}` };
   }
   const text = String(rawText || '').trim();
   if (!text) return null;
   if (text.startsWith('/')) {
-    return { kind: 'command', label: `Command · ${text.split(/\s+/)[0]}` };
+    return { kind: 'command', label: `Shortcut ${text.split(/\s+/)[0]}` };
   }
   if (/(?:^|\s)@[a-zA-Z0-9_-]+/.test(text) || /\b(?:ask\s+the\s+team|have\s+the\s+team|grok\s*bot\s+team|team\s+launch\s+brief)\b/i.test(text)) {
-    return { kind: 'team', label: 'Route -> Grok Bot Team (@Mara @Cole)' };
+    return { kind: 'team', label: 'Will ask your team' };
   }
   if (/\b(?:wav|music|song|soundtrack|audio\s+track|lofi|synthwave|beat|melody|\d+\s*bpm)\b/i.test(text) && /\b(create|make|build|generate|forge|design|compose|produce)\b/i.test(text)) {
-    return { kind: 'music', label: 'Route -> Music & Audio Studio (.WAV)' };
+    return { kind: 'music', label: 'Will make music' };
   }
   if (/\b(?:3d\s*model|3d\s*mesh|glb|obj|stl)\b/i.test(text) && /\b(create|make|build|generate|forge|design|render)\b/i.test(text)) {
-    return { kind: 'dream3d', label: 'Route -> Dream-Loop 3D + Critic' };
+    return { kind: 'dream3d', label: 'Will make a 3D model' };
   }
   if (/\b(?:video|animation|motion\s+clip|webm|mp4|gif)\b/i.test(text) && /\b(create|make|build|generate|forge|render|animate)\b/i.test(text)) {
-    return { kind: 'dreamvideo', label: 'Route -> Tier 1 Video Composition' };
+    return { kind: 'dreamvideo', label: 'Will make a video' };
   }
   if (/\b(?:playable\s+game|video\s*game|arcade\s+game|browser\s+game|space\s+shooter|dungeon\s+crawler|brick\s+breaker)\b/i.test(text)) {
-    return { kind: 'dreamgame', label: 'Route -> Playable Game Studio' };
+    return { kind: 'dreamgame', label: 'Will make a game' };
   }
   if (/\b(?:web\s*app|webapp|expense[- ]tracker|full[- ]?stack\s+(?:web\s*)?app|interactive\s+web)\b/i.test(text) && /\b(create|make|build|generate|forge|design)\b/i.test(text)) {
-    return { kind: 'dreamwebapp', label: 'Route -> Multi-File Web App Builder' };
+    return { kind: 'dreamwebapp', label: 'Will build an app' };
   }
   if (/\b(?:hd\s+image|artwork|concept\s+art|poster|illustration|svg\s+diagram)\b/i.test(text) && /\b(create|make|build|generate|forge|design|render)\b/i.test(text)) {
-    return { kind: 'dreamart', label: 'Route -> Dream-Loop HD Art + Critic' };
+    return { kind: 'dreamart', label: 'Will make a picture' };
   }
   if (/\b(?:run|execute|start)\s+(?:a\s+|the\s+)?brutal\b|\bbrutal\s*(?:8\/8|stress|self[- ]?test|test\s*suite|audit)\b/i.test(text)) {
-    return { kind: 'brutal', label: 'Route -> Brutal 8/8 Self-Test Suite' };
+    return { kind: 'brutal', label: 'Will run the self-test' };
   }
   if (/\breverse[- ]engineer\b|\brea\s+(?:x[- ]?ray|inspect|architecture|scan)\b|\bhow\s+(?:this|the)\s+(?:app|site|system|codebase|mimir)\s+works\b/i.test(text)) {
-    return { kind: 'rea', label: 'Route -> REA Architecture X-Ray' };
+    return { kind: 'rea', label: 'Will explain how it works' };
   }
   if (/\b(?:automate|schedule|set\s*up)\b.*\b(?:research|harvester|harvest|monitoring|briefings?)\b|\brun\s+research\s+every\b/i.test(text)) {
-    return { kind: 'automate', label: 'Route -> Autonomous Research Schedule' };
+    return { kind: 'automate', label: 'Will schedule research' };
   }
   if (/\b(?:gather|collect|run|harvest)\b.*\b(?:multi[- ]domain\s+)?(?:research|data)\b|\bresearch\s+harvester\b|\bmulti[- ]domain\s+research\b/i.test(text)) {
-    return { kind: 'harvest', label: 'Route -> Multi-Domain Research Harvester' };
+    return { kind: 'harvest', label: 'Will gather research' };
   }
   if (/^(?:please\s+|can\s+you\s+)?(?:deep[- ]?research|research(?:\s+(?:about|on|into|for))?|investigate|write\s+(?:a|an)\s+(?:deep\s+)?research\s+report\s+(?:on|about)|analyze\s+and\s+report\s+on|find\s+out\s+about)\s+.{3,}/i.test(text) || /\b(?:research\s+report|deep\s+research|comprehensive\s+report)\s+(?:on|about|into|for)\s+.{3,}/i.test(text)) {
-    return { kind: 'deep', label: 'Route -> Deep Research Report (MD · DOCX · PDF + 6 Docs)' };
+    return { kind: 'deep', label: 'Will write a research report' };
   }
   return null;
 }
@@ -260,7 +253,7 @@ function ChatInsightCards({ m }) {
           return next;
         });
       }
-      setExportStatus('All 9 documents forged & ready for download.');
+      setExportStatus('All 9 files ready to download.');
     } catch (err) {
       setExportStatus(`Batch export failed: ${err.message}`);
     } finally {
@@ -283,12 +276,12 @@ function ChatInsightCards({ m }) {
         <div className="chat-insight-card chat-rea-card" data-testid="chat-rea-card">
           <div className="insight-card-head">
             <div>
-              <strong>{m.reaCard.title || 'REA Architecture X-Ray'}</strong>
+              <strong>{m.reaCard.title || 'How this app works'}</strong>
               <div className="muted num">
-                {m.reaCard.metrics?.filesScanned || 0} modules · {(m.reaCard.metrics?.totalLines || 0).toLocaleString()} lines · {m.reaCard.metrics?.routesCount || 0} endpoints
+                {m.reaCard.metrics?.filesScanned || 0} files scanned · {(m.reaCard.metrics?.totalLines || 0).toLocaleString()} lines · {m.reaCard.metrics?.routesCount || 0} routes
               </div>
             </div>
-            <span className="pill is-cyan">REA Live Scan</span>
+            <span className="pill is-cyan">Code check</span>
           </div>
           {m.reaCard.flow && (
             <div className="insight-flow-line">
@@ -321,8 +314,8 @@ function ChatInsightCards({ m }) {
             <div>
               <strong>{m.researchCard.title || `Research Report · ${m.researchCard.packId || 'all'}`}</strong>
               <div className="muted num">
-                {m.researchCard.topicsCount || 1} tracks · {m.researchCard.totalSources || 0} verified sources ·{' '}
-                {m.researchCard.knowledgeIngestion?.chunksAdded || 0} KB chunks · Citation Check PASS
+                {m.researchCard.topicsCount || 1} topics · {m.researchCard.totalSources || 0} checked sources ·{' '}
+                {m.researchCard.knowledgeIngestion?.chunksAdded || 0} saved notes · Sources checked
               </div>
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -332,7 +325,7 @@ function ChatInsightCards({ m }) {
                 data-testid="research-copy-md-btn"
                 onClick={handleCopyMarkdown}
               >
-                {copiedMd ? 'Copied MD' : 'Copy Markdown'}
+                {copiedMd ? 'Copied' : 'Copy text'}
               </button>
               <button
                 type="button"
@@ -340,7 +333,7 @@ function ChatInsightCards({ m }) {
                 data-testid="research-reader-toggle"
                 onClick={() => setReaderOpen(v => !v)}
               >
-                {readerOpen ? 'Hide Reader' : 'Reader View'}
+                {readerOpen ? 'Hide reader' : 'Read here'}
               </button>
               <button
                 type="button"
@@ -350,12 +343,12 @@ function ChatInsightCards({ m }) {
                 onClick={() => triggerHourlyAutomate(m.researchCard.packId)}
               >
                 {autoState === 'done'
-                  ? 'Hourly Active'
+                  ? 'Runs every hour'
                   : autoState === 'saving'
-                    ? 'Scheduling...'
+                    ? 'Saving...'
                     : autoState === 'error'
-                      ? 'Retry Automate'
-                      : 'Automate Hourly'}
+                      ? 'Try again'
+                      : 'Run every hour'}
               </button>
             </div>
           </div>
@@ -363,7 +356,7 @@ function ChatInsightCards({ m }) {
           <div className="research-doc-shelf" data-testid="research-doc-downloads">
             <div className="research-doc-shelf-head">
               <span className="muted" style={{ fontSize: 11.5, fontWeight: 600 }}>
-                Download Research Documents ({Object.keys(docsByFmt).length}/9 ready)
+                Download report files ({Object.keys(docsByFmt).length}/9 ready)
               </span>
               <button
                 type="button"
@@ -372,7 +365,7 @@ function ChatInsightCards({ m }) {
                 disabled={Boolean(busyFmt)}
                 onClick={handleExportAll}
               >
-                {busyFmt === 'all' ? 'Generating All...' : 'Export All 9 Docs'}
+                {busyFmt === 'all' ? 'Creating all...' : 'Create all 9 files'}
               </button>
             </div>
             <div className="research-doc-pills">
@@ -424,7 +417,7 @@ function ChatInsightCards({ m }) {
       {m.brutalReport && (
         <div className="chat-insight-card chat-brutal-card" data-testid="chat-brutal-card">
           <div className="insight-card-head">
-            <strong>Brutal Stress Suite</strong>
+            <strong>System self-test</strong>
             <span className={`pill ${m.brutalReport.allPassed ? 'is-emerald' : 'is-crimson'} num`}>
               {m.brutalReport.passedCount}/{m.brutalReport.totalChecks} Passed
             </span>
@@ -445,7 +438,7 @@ function ChatInsightCards({ m }) {
       {m.automationCard && (
         <div className="chat-insight-card chat-automation-card" data-testid="chat-automation-card">
           <div className="insight-card-head">
-            <strong>Autonomous Schedule · {m.automationCard.packId}</strong>
+            <strong>Scheduled check · {m.automationCard.packId}</strong>
             <span className="pill is-emerald num">Every {m.automationCard.intervalMinutes}m</span>
           </div>
         </div>
@@ -484,11 +477,11 @@ function TimelineStepIcon({ icon }) {
 
 // Original lines written for this app's Mimir (not taken from any game script).
 const MIMIR_GREETINGS = [
-  'The well runs deep today. What shall we draw up from it?',
+  'The well runs deep today. What shall we look into?',
   'Ask plainly and I will answer plainly — and tell you what I have not checked.',
-  'Nine realms, one workspace, no shortcuts. Where do we start?',
-  'A head without a body still has a fine memory. Put it to work.',
-  'Every rune in this hall was carved by hand. Point me at the next one.',
+  'One place for all your work. Where do we start?',
+  'A good memory makes work easy. Put mine to work.',
+  'Tell me what you need and I will walk you through it.',
 ];
 
 /** Strip markdown so the voice reads words, not symbols. */
@@ -535,7 +528,7 @@ function SpeakButton({ text, autoPlay = false }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- play once on mount only
   }, []);
 
-  const label = { idle: 'Speak', loading: 'Voicing…', playing: 'Stop', error: 'Voice unavailable' }[state];
+  const label = { idle: 'Read aloud', loading: 'Loading…', playing: 'Stop', error: 'Voice not available' }[state];
   return (
     <button type="button" className="speak-btn" data-state={state} onClick={play} disabled={state === 'loading'} aria-label={`${label} this reply`}>
       {label}
@@ -792,7 +785,6 @@ export function ChatView({
   const [draft, setDraft] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [workspaceMode, setWorkspaceMode] = useState('auto');
-  const [selectedProject, setSelectedProject] = useState('midgard-default');
   const [recName, setRecName] = useState('');
   const [commands, setCommands] = useState([]);
   const [micState, setMicState] = useState('idle'); // idle | recording | transcribing | error
@@ -1062,7 +1054,11 @@ export function ChatView({
         <div className="chat-session-meta">
           <span className="chat-mode-hint">{activeModeMeta.hint}</span>
           {bot?.specialistTag && (
-            <span className="status-pill badge-specialist">{bot.specialistTag}</span>
+            <span className="status-pill badge-specialist">
+              {bot.specialistTag === 'chief-of-staff'
+                ? 'Team lead'
+                : bot.specialistTag.replace(/-/g, ' ')}
+            </span>
           )}
         </div>
       </div>
@@ -1096,7 +1092,7 @@ export function ChatView({
               <p className="mimir-greeting" data-testid="mimir-greeting">“{greeting}”</p>
             )}
             <p className="chat-hero-subtitle">
-              Your AI workspace for getting things done. Type, speak, or drop files to build apps, research reports, music, video, or 3D assets.
+              Ask in plain words, talk, or drop in files. Mimir can research, write, build small apps, and make music, pictures, videos and 3D models.
             </p>
             <div className="smart-prompt-grid" data-testid="smart-prompt-grid">
               {SMART_ACTION_CARDS.map(card => (
@@ -1118,7 +1114,7 @@ export function ChatView({
           if (m.role === 'tool') {
             const isDenied = m.approved === false;
             const isFailed = !isDenied && String(m.content || '').startsWith('ERROR:');
-            const badgeText = isDenied ? 'Denied' : isFailed ? 'Failed' : 'Executed';
+            const badgeText = isDenied ? 'You said no' : isFailed ? 'Did not work' : 'Done';
             const badgeColor = isDenied || isFailed ? 'var(--err)' : 'var(--ok)';
 
             return (
@@ -1131,7 +1127,7 @@ export function ChatView({
                         name={isDenied || isFailed ? 'cracked-runestone-error' : 'illuminated-rune-success'}
                         size={18}
                       />
-                      <span>Tool: {m.toolName}</span>
+                      <span>Used: {String(m.toolName).replace(/_/g, ' ')}</span>
                     </span>
                     <span
                       className="status-pill"
@@ -1148,16 +1144,16 @@ export function ChatView({
                   </div>
                   <details className="tool-card-details">
                     <summary>
-                      {isDenied ? 'Gate decision' : isFailed ? 'Error payload' : 'Request & response details'}
+                      {isDenied ? 'Reason blocked' : isFailed ? 'Error details' : 'Details'}
                     </summary>
                     {m.toolArgs && Object.keys(m.toolArgs).length > 0 && (
                       <>
-                        <div className="tool-section-label">Request</div>
+                        <div className="tool-section-label">What was asked</div>
                         <pre className="tool-output-pre">{JSON.stringify(m.toolArgs, null, 2)}</pre>
                       </>
                     )}
                     <div className="tool-section-label">
-                      {isDenied ? 'Gate Decision' : isFailed ? 'Error Output' : 'Response'}
+                      {isDenied ? 'Reason' : isFailed ? 'Error' : 'Result'}
                     </div>
                     <pre className="tool-output-pre">{m.content}</pre>
                   </details>
@@ -1234,7 +1230,7 @@ export function ChatView({
               >
                 {m.thinking && (
                   <details className="msg-thinking">
-                    <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Thinking trace</summary>
+                    <summary style={{ cursor: 'pointer', fontWeight: 700 }}>How it thought</summary>
                     <div style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{m.thinking}</div>
                   </details>
                 )}
@@ -1253,7 +1249,7 @@ export function ChatView({
                   <div className="chip-list" style={{ marginTop: hasText ? 8 : 0 }}>
                     {pendingToolCalls.map((tc, idx) => (
                       <span key={tc.id || idx} className="chip">
-                        Pending Tool: <code>{tc.name}</code>
+                        About to use: {String(tc.name).replace(/_/g, ' ')}
                       </span>
                     ))}
                   </div>
@@ -1289,7 +1285,7 @@ export function ChatView({
               <div className="msg-meta">
                 <span>{m.role === 'user' ? 'You' : m.speakerName || bot?.name || 'Mimir'}</span>
                 {m.model && !m.speakerName && <span>• {m.provider}:{m.model}</span>}
-                {m.fallbackFrom && <span>• Fallback from {m.fallbackFrom}</span>}
+                {m.fallbackFrom && <span>• Backup used after {m.fallbackFrom}</span>}
                 {m.role === 'assistant' && hasText && (
                   <SpeakButton text={m.content} autoPlay={Boolean(m.voice) && msgIdx === messages.length - 1} />
                 )}
@@ -1330,7 +1326,7 @@ export function ChatView({
         ) : isRunning && pendingApprovals.length === 0 ? (
           <div className="msg-row assistant" role="status" aria-live="polite">
             <div className="msg-bubble" data-testid="loading-indicator" style={{ color: 'var(--ink-muted)' }}>
-              <RunicLoader label={`Running ${bot?.name || 'Mimir'}...`} size={24} />
+              <RunicLoader label={`Working with ${bot?.name || 'Mimir'}...`} size={24} />
             </div>
           </div>
         ) : null}
@@ -1359,11 +1355,11 @@ export function ChatView({
               {card?.timestampLabel && <span style={{ fontSize: 11, color: 'var(--ink-subtle)' }}>{card.timestampLabel}</span>}
             </div>
             <div className="dialogue-card-title">
-              {card?.title || <>Runic Approval Gate — <code>{apr.toolName}</code></>}
+              {card?.title || <>Needs your OK — <code>{apr.toolName}</code></>}
             </div>
             <div className="dialogue-card-sub">{card?.subtitle || apr.reason}</div>
             <details>
-              <summary style={{ fontSize: 11.5, color: 'var(--ink-muted)', cursor: 'pointer' }}>Inspect tool arguments</summary>
+              <summary style={{ fontSize: 11.5, color: 'var(--ink-muted)', cursor: 'pointer' }}>See what it wants to do</summary>
               <pre className="tool-output-pre">{JSON.stringify(apr.args, null, 2)}</pre>
             </details>
             <div className="approval-actions">
@@ -1414,13 +1410,13 @@ export function ChatView({
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <TeachCrystalSvg size={14} active />
-            Recording Teach-a-Task steps ({recordedSteps.length} captured)
+            Recording your steps ({recordedSteps.length} so far). Do the task once; Mimir learns to repeat it.
           </span>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
             <input
               className="input"
               style={{ width: 170, padding: '4px 8px' }}
-              placeholder="Workflow name..."
+              placeholder="Name this task"
               value={recName}
               onChange={e => setRecName(e.target.value)}
             />
@@ -1429,11 +1425,11 @@ export function ChatView({
               className="btn btn-primary btn-sm"
               disabled={recordedSteps.length === 0}
               onClick={() => {
-                onSaveRecording(recName || 'Taught Workflow');
+                onSaveRecording(recName || 'Recorded task');
                 setRecName('');
               }}
             >
-              Save Recording
+              Save task
             </button>
             <button type="button" className="btn btn-sm" onClick={onToggleTeachMode}>
               Cancel
@@ -1484,8 +1480,8 @@ export function ChatView({
 
           {specialistMentions.length > 0 && (
             <div className="mention-quickbar" data-testid="mention-quickbar">
-              <span style={{ fontSize: 10.5, color: 'var(--ink-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Delegate:
+              <span style={{ fontSize: 11, color: 'var(--ink-subtle)', fontWeight: 600 }}>
+                Ask a teammate:
               </span>
               {specialistMentions.slice(0, 6).map(sp => (
                 <button
@@ -1503,16 +1499,16 @@ export function ChatView({
           )}
 
           <div className="mention-quickbar" data-testid="studio-chat-quickbar">
-            <span style={{ fontSize: 10.5, color: 'var(--ink-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Create:
+            <span style={{ fontSize: 11, color: 'var(--ink-subtle)', fontWeight: 600 }}>
+              Quick make:
             </span>
             {[
-              { label: 'Music (.WAV)', cmd: 'Create an ambient synthwave music track at 110 BPM' },
-              { label: 'Expense App', cmd: 'Build an expense-tracking web app with authentication, charts and export' },
-              { label: '3D Model (.GLB)', cmd: 'Create a 3D model of a Valkyrie Starfighter' },
-              { label: 'HD Art (.PNG)', cmd: 'Generate HD artwork of the Cosmic Odin Observatory' },
-              { label: 'Video (.MP4)', cmd: 'Create a motion clip animation mp4 of a hyperdrive pulse loop' },
-              { label: 'Playable Game', cmd: 'Create a playable arcade space shooter game' },
+              { label: 'Music', cmd: 'Create an ambient synthwave music track at 110 BPM' },
+              { label: 'App', cmd: 'Build an expense-tracking web app with authentication, charts and export' },
+              { label: '3D model', cmd: 'Create a 3D model of a Valkyrie Starfighter' },
+              { label: 'Picture', cmd: 'Generate HD artwork of the Cosmic Odin Observatory' },
+              { label: 'Video', cmd: 'Create a motion clip animation mp4 of a hyperdrive pulse loop' },
+              { label: 'Game', cmd: 'Create a playable arcade space shooter game' },
             ].map(item => (
               <button
                 key={item.label}
@@ -1525,51 +1521,18 @@ export function ChatView({
             ))}
           </div>
 
-          <div className="adaptive-workspace-bar" data-testid="adaptive-workspace-bar">
-            <select
-              className="adaptive-select"
-              data-testid="composer-project-select"
-              aria-label="Select Project Scope"
-              value={selectedProject}
-              onChange={e => setSelectedProject(e.target.value)}
-            >
-              {PROJECT_SCOPES.map(p => (
-                <option key={p.id} value={p.id}>{p.label}</option>
-              ))}
-            </select>
-            <select
-              className="adaptive-select"
-              data-testid="composer-mode-override"
-              aria-label="Workspace Surface"
-              value={activeSurface || workspaceMode}
-              onChange={e => {
-                setWorkspaceMode(e.target.value);
-                onSelectSurface?.(e.target.value === 'auto' ? 'chat' : e.target.value);
-              }}
-            >
-              {WORKSPACE_MODES.map(m => (
-                <option key={m.id} value={m.id}>{m.label}</option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="adaptive-connect-btn"
-              data-testid="composer-connect-btn"
-              onClick={() => onNavigateTab?.('mcp')}
-            >
-              Connect Account
-            </button>
-            {(() => {
-              const draftIntent = detectDraftIntent(draft, workspaceMode);
-              if (!draftIntent) return null;
-              return (
+          {(() => {
+            const draftIntent = detectDraftIntent(draft, workspaceMode);
+            if (!draftIntent) return null;
+            return (
+              <div className="adaptive-workspace-bar" data-testid="adaptive-workspace-bar">
                 <div className="smart-intent-badge" data-testid="smart-intent-badge">
                   <span className="smart-intent-dot" />
                   <span>{draftIntent.label}</span>
                 </div>
-              );
-            })()}
-          </div>
+              </div>
+            );
+          })()}
 
           <UsageBar threadId={thread?.id} isRunning={isRunning} />
 
@@ -1585,8 +1548,8 @@ export function ChatView({
               type="button"
               className="btn btn-icon"
               data-testid="attach-file-btn"
-              aria-label="Attach file to workspace"
-              title="Attach file to workspace"
+              aria-label="Attach file"
+              title="Attach file"
               onClick={handlePickFiles}
             >
               <PlusPixelSvg size={16} />
@@ -1623,8 +1586,8 @@ export function ChatView({
               type="button"
               className={`mic-btn ${micState === 'recording' ? 'is-recording' : ''}`}
               data-testid="mic-ptt-btn"
-              aria-label={micState === 'recording' ? 'Stop voice recording' : 'Push to talk voice input'}
-              title={micError || (micState === 'recording' ? 'Stop & transcribe (faster-whisper offline)' : 'Push to talk (local faster-whisper STT)')}
+              aria-label={micState === 'recording' ? 'Stop and turn speech into text' : 'Talk instead of typing'}
+              title={micError || (micState === 'recording' ? 'Stop and turn your speech into text (works offline)' : 'Talk instead of typing (works offline)')}
               disabled={micState === 'transcribing'}
               onClick={toggleMic}
             >
@@ -1639,12 +1602,12 @@ export function ChatView({
               type="button"
               className="btn btn-sm live-voice-btn"
               data-testid="live-voice-btn"
-              aria-label="Open Live Duplex Voice mode"
-              title="Open Live Duplex Voice Call"
+              aria-label="Start a voice call with Mimir"
+              title="Talk back and forth out loud"
               onClick={() => onOpenLiveVoice?.()}
             >
               <VoiceOrbSvg size={14} />
-              <span>Live Voice</span>
+              <span>Voice call</span>
             </button>
             {isRunning ? (
               <button key="abort-btn" type="button" className="btn btn-danger" onClick={onAbort} data-testid="abort-btn">
@@ -1672,7 +1635,7 @@ export function ChatView({
               onClick={onToggleTeachMode}
             >
               <TeachCrystalSvg size={13} active={teachMode} />
-              <span>{teachMode ? 'Recording...' : 'Teach Task'}</span>
+              <span>{teachMode ? 'Stop recording' : 'Record a task'}</span>
             </button>
           </div>
         </div>

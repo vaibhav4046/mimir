@@ -353,7 +353,7 @@ export function App() {
         setRunningThreadId(null);
         setStreaming({ content: '', thinking: '' });
         setSwarmSteps([]);
-        setKillNotice(`Kill switch engaged (${data.runsKilled || 0} run(s) stopped)`);
+        setKillNotice(`Stopped all running tasks (${data.runsKilled || 0} stopped)`);
         setComputerState(await apiFetch(`/v1/computer/${encodeURIComponent(activeBotRef.current)}/state`));
       } else if (event === 'council:step') {
         setCouncilSteps(prev => [...prev.slice(-99), { ...data, receivedAt: Date.now() }]);
@@ -529,7 +529,7 @@ export function App() {
     const out = await apiFetch('/v1/kill-switch', { method: 'POST', body: '{}' });
     setRunningThreadId(null);
     setStreaming({ content: '', thinking: '' });
-    setKillNotice(`Kill switch stopped ${out.runsKilled || 0} run(s)`);
+    setKillNotice(`Stopped ${out.runsKilled || 0} running task(s)`);
     await refreshBotContext(activeBotId);
   };
 
@@ -701,7 +701,7 @@ export function App() {
       try {
         const res = await apiFetch('/v1/agent/run', {
           method: 'POST',
-          body: JSON.stringify({ botId: activeBotId, userText: spotlightText.trim(), title: 'Spotlight Query' }),
+          body: JSON.stringify({ botId: activeBotId, userText: spotlightText.trim(), title: 'Quick ask' }),
         });
         setSpotlightResult(res.reply || '(Completed)');
       } catch (err) {
@@ -722,7 +722,7 @@ export function App() {
               size={24}
               state={runningThreadId !== null && runningThreadId === activeThreadId ? 'running' : 'idle'}
             />
-            Spotlight — {activeBot?.name || 'Mimir'}
+            Quick ask — {activeBot?.name || 'Mimir'}
           </div>
           <button type="button" className="btn btn-sm" onClick={() => window.desktop?.hideCurrentWindow()}>
             Esc
@@ -785,6 +785,7 @@ export function App() {
           onSelectSpace={handleSelectSpace}
           onCreateSpace={handleCreateSpace}
           onDeleteSpace={handleDeleteSpace}
+          showDeveloperTools={Boolean(settings?.showDeveloperTools)}
         />
       )}
 
@@ -813,8 +814,8 @@ export function App() {
             <strong className="topbar-bot-name">
               {activeBot?.name || 'Mimir'}
             </strong>
-            <span className="topbar-model-chip">
-              <span className="topbar-provider-prefix">{settings?.provider || 'ollama'}:</span>
+            <span className="topbar-model-chip" title="The AI model answering in this chat">
+              <span className="topbar-provider-prefix">{settings?.provider === 'openai-compat' ? 'Cloud ·' : 'On this computer ·'}</span>
               {activeBot?.modelOverride ||
                 (settings?.provider === 'openai-compat'
                   ? settings?.openaiModel || 'gpt-4o-mini'
@@ -827,27 +828,28 @@ export function App() {
                 type="button"
                 className="btn btn-sm"
                 data-testid="unpair-runtime-btn"
-                title="Disconnect paired browser session"
+                title="Disconnect this browser from Mimir"
                 onClick={handleUnpairSession}
               >
-                Unpair
+                Disconnect
               </button>
             )}
             <button
               type="button"
               className="btn btn-sm kill-switch-btn"
               data-testid="kill-switch-btn"
-              title="Immediately abort active runs and close open browser sessions"
+              title="Stop every running task right now and close any web pages Mimir opened"
               onClick={handleKillSwitch}
             >
-              <span>STOP</span>
-              <span className="kill-label">Kill Switch</span>
+              <span>Stop</span>
+              <span className="kill-label">everything</span>
             </button>
             {mode !== 'popout' && (
             <button
               type="button"
               className="btn btn-sm"
               data-testid="toggle-preview-btn"
+              title="See the screen, web pages and files Mimir is working on"
               onClick={() => setShowComputer(v => !v)}
             >
               <img
@@ -859,7 +861,7 @@ export function App() {
                 className="pixel-sprite"
                 style={{ width: 14, height: 14, imageRendering: 'pixelated' }}
               />
-              {showComputer ? 'Hide Preview' : 'Preview'}
+              {showComputer ? 'Hide work' : 'Show work'}
             </button>
             )}
           </div>

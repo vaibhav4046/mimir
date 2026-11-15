@@ -3,9 +3,9 @@ import { apiFetch } from '../api.js';
 import { CouncilRuneSvg } from './Icons.jsx';
 
 const SAMPLE_TOPICS = [
-  'Should we route routine coding turns to qwen3:1.7b + Reflexion or qwen3.5:4b on 6GB VRAM?',
-  'Audit our sandboxed tool approval gates for privilege-escalation edge cases.',
-  'Design an offline-first voice + CRAG knowledge retrieval workflow.',
+  'Compare the fast AI model vs the stronger AI model for everyday tasks on this computer.',
+  'Check what safety approvals we should ask for before changing files or sending emails.',
+  'Design a simple daily routine that works offline and keeps notes organized.',
 ];
 
 function seatKey(seat) {
@@ -165,15 +165,15 @@ export function BoardMeetingView({
           <div>
             <h2 style={{ margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
               <CouncilRuneSvg size={20} />
-              <span>Boardroom · Model Council</span>
+              <span>Team meeting</span>
             </h2>
             <p style={{ margin: 0, color: 'var(--ink-muted)' }}>
-              Convene bots and local/BYOK models for parallel Stage 1 opinions, anonymized Stage 2 Borda ranking, and Chairman synthesis.
+              Ask several helpers or AI models at once, let them score each other&apos;s answers blindly, and combine the best parts into one final answer.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button type="button" className="btn btn-sm" onClick={loadData}>
-              Refresh Seats
+              Refresh group
             </button>
             {onNavigate && (
               <button type="button" className="btn btn-sm" onClick={() => onNavigate('chat')}>
@@ -191,11 +191,11 @@ export function BoardMeetingView({
 
         <form className="card" onSubmit={handleConvene}>
           <label className="field-label">
-            Council Topic
+            Question or decision
             <textarea
               className="textarea"
               rows={2}
-              placeholder="Pose an architecture question, code audit, or strategic trade-off for the council..."
+              placeholder="Ask a question or paste a problem you want a second opinion on..."
               value={topic}
               onChange={e => setTopic(e.target.value)}
             />
@@ -218,14 +218,14 @@ export function BoardMeetingView({
 
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-muted)', marginBottom: 6 }}>
-              Councilors ({selectedSeatIds.length} selected of {seats.length})
+              Who joins ({selectedSeatIds.length} picked out of {seats.length})
             </div>
             {seats.length === 0 ? (
               <div style={{ fontSize: 12, color: 'var(--ink-subtle)' }}>
-                No seats reported yet. Click Refresh Seats or ensure the daemon is running.
+                No helpers available yet. Click Refresh group or check that Mimir is running.
               </div>
             ) : (
-              <div className="council-seat-grid" role="group" aria-label="Council Seats">
+              <div className="council-seat-grid" role="group" aria-label="Meeting participants">
                 {seats.map(seat => {
                   const id = seatKey(seat);
                   const isSelected = selectedSeatIds.includes(id);
@@ -239,7 +239,7 @@ export function BoardMeetingView({
                     >
                       <span className="council-seat-name">{seat.name || seat.label || id}</span>
                       <span className="council-seat-meta">
-                        {seat.model || seat.provider || 'local'} · {seat.role || seat.perspective || 'Councilor'}
+                        {seat.model || seat.provider || 'on this computer'} · {seat.role || seat.perspective || 'Helper'}
                       </span>
                     </button>
                   );
@@ -250,7 +250,7 @@ export function BoardMeetingView({
 
           <div className="council-controls-row">
             <label className="field-label" style={{ flex: '1 1 200px', minWidth: 0 }}>
-              Chairman
+              Who writes the final answer
               <select
                 className="select"
                 value={chairmanSeatId}
@@ -260,18 +260,18 @@ export function BoardMeetingView({
                   const id = seatKey(seat);
                   return (
                     <option key={id} value={id}>
-                      {seat.name || id} ({seat.model || 'local'})
+                      {seat.name || id} ({seat.model || 'this computer'})
                     </option>
                   );
                 })}
               </select>
             </label>
 
-            <label className="field-label" style={{ flex: '0 1 150px', minWidth: 0 }}>
-              Mode
+            <label className="field-label" style={{ flex: '0 1 180px', minWidth: 0 }}>
+              How thorough
               <select className="select" value={mode} onChange={e => setMode(e.target.value)}>
-                <option value="standard">Standard (3-Stage)</option>
-                <option value="fast">Fast Parallel</option>
+                <option value="standard">Full review (discuss, score, combine)</option>
+                <option value="fast">Quick answers only</option>
               </select>
             </label>
 
@@ -281,7 +281,7 @@ export function BoardMeetingView({
                 checked={useRag}
                 onChange={e => setUseRag(e.target.checked)}
               />
-              <span>CRAG + Web Grounding</span>
+              <span>Check saved notes &amp; web first</span>
             </label>
 
             <button
@@ -291,18 +291,18 @@ export function BoardMeetingView({
               disabled={busy || !topic.trim() || (seats.length > 0 && selectedSeatIds.length === 0)}
             >
               <CouncilRuneSvg size={15} />
-              <span>{busy ? 'Convening Council...' : 'Convene Council'}</span>
+              <span>{busy ? 'Asking everyone...' : 'Start meeting'}</span>
             </button>
           </div>
         </form>
 
         {(busy || activeRun || liveSteps.length > 0) && (
           <div className="card">
-            <div className="council-stage-rail" aria-label="Council stages">
+            <div className="council-stage-rail" aria-label="Meeting steps">
               {[
-                { num: 1, label: 'Stage 1 · Parallel Opinions' },
-                { num: 2, label: 'Stage 2 · Anonymized Peer Rank' },
-                { num: 3, label: 'Stage 3 · Chairman Synthesis' },
+                { num: 1, label: 'Step 1 · First ideas' },
+                { num: 2, label: 'Step 2 · Blind ranking' },
+                { num: 3, label: 'Step 3 · Final answer' },
               ].map(st => {
                 const done = liveStage > st.num || (!busy && Boolean(synthesisText) && liveStage >= st.num);
                 const active = busy && (liveStage === st.num || (liveStage === 0 && st.num === 1));
@@ -318,7 +318,7 @@ export function BoardMeetingView({
             </div>
             {busy && (
               <div style={{ fontSize: 12, color: 'var(--frost)' }}>
-                {lastLiveStep?.detail || lastLiveStep?.stage || 'Gathering Stage 1 council opinions (bounded concurrency <= 3)...'}
+                {lastLiveStep?.detail || lastLiveStep?.stage || 'Gathering everyone’s first answers...'}
               </div>
             )}
           </div>
@@ -326,7 +326,7 @@ export function BoardMeetingView({
 
         {liveOpinions.length > 0 && (
           <section className="card">
-            <h3 className="card-title">Stage 1 · Parallel Opinions ({liveOpinions.length})</h3>
+            <h3 className="card-title">Step 1 · First ideas ({liveOpinions.length})</h3>
             <div className="council-opinions-grid">
               {liveOpinions.map((op, idx) => {
                 const failed = op.ok === false || Boolean(op.error);
@@ -334,7 +334,7 @@ export function BoardMeetingView({
                 <article key={op.seatId || op.name || idx} className="council-opinion-card">
                   <div className="council-opinion-head">
                     <div>
-                      <strong>{op.name || op.seatId || `Councilor ${idx + 1}`}</strong>
+                      <strong>{op.name || op.seatId || `Member ${idx + 1}`}</strong>
                       <div style={{ fontSize: 11, color: 'var(--ink-subtle)' }}>{op.model || 'local'}</div>
                     </div>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -362,19 +362,19 @@ export function BoardMeetingView({
 
         {(liveLeaderboard.length > 0 || peerMatrix) && (
           <section className="card">
-            <h3 className="card-title">Stage 2 · Anonymized Peer Ranking &amp; Borda Leaderboard</h3>
+            <h3 className="card-title">Step 2 · Blind ranking &amp; scores</h3>
             {liveLeaderboard.length > 0 && (
               <div className="council-table-wrap">
                 <table className="council-matrix-table">
                   <thead>
                     <tr>
-                      <th>Rank</th>
-                      <th>Blind Label</th>
-                      <th>Councilor</th>
+                      <th>Place</th>
+                      <th>Hidden label</th>
+                      <th>Helper</th>
                       <th>Model</th>
-                      <th>Borda Score</th>
-                      <th>Avg Rank</th>
-                      <th>Peer Critiques</th>
+                      <th>Score</th>
+                      <th>Avg place</th>
+                      <th>Notes from others</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -398,7 +398,7 @@ export function BoardMeetingView({
 
             {Array.isArray(peerMatrix) && peerMatrix.length > 0 && (
               <details className="tool-card-details" style={{ marginTop: 6 }}>
-                <summary>Inspect Peer Reviewer Rankings ({peerMatrix.length})</summary>
+                <summary>See how each helper ranked the answers ({peerMatrix.length})</summary>
                 <div className="council-table-wrap" style={{ marginTop: 6 }}>
                   <table className="council-matrix-table">
                     <thead>
@@ -428,11 +428,11 @@ export function BoardMeetingView({
           <section className="card council-synthesis-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               <h3 className="card-title" style={{ margin: 0 }}>
-                Stage 3 · Chairman Final Synthesis
+                Step 3 · Final answer
               </h3>
               {(activeRun?.chairmanName || activeRun?.chairman?.name) && (
                 <span className="status-pill" style={{ borderColor: 'var(--brass)', color: 'var(--brass)' }}>
-                  Chair: {activeRun.chairmanName || activeRun.chairman.name}
+                  Written by: {activeRun.chairmanName || activeRun.chairman.name}
                 </span>
               )}
             </div>
@@ -444,7 +444,7 @@ export function BoardMeetingView({
             {dissentList.length > 0 && (
               <div className="council-dissent-box">
                 <div style={{ fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', color: 'var(--warn)' }}>
-                  Minority Dissent
+                  Other views
                 </div>
                 <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
                   {dissentList.map((d, i) => (

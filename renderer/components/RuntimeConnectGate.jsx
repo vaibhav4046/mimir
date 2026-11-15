@@ -95,21 +95,21 @@ export function RuntimeConnectGate({
 
   const heading =
     status === 'checking'
-      ? 'Checking local Mimir runtime...'
+      ? 'Looking for Mimir on your computer...'
       : status === 'session_expired'
-        ? 'Pairing session expired'
+        ? 'Connection expired'
         : isAuthState
-          ? 'Pair with your local Mimir runtime'
-          : 'Local Mimir runtime not running';
+          ? 'Connect to Mimir on this computer'
+          : 'Mimir is not running yet';
 
   const subtitle =
     status === 'checking'
-      ? 'Inspecting http://127.0.0.1:4567 on your device...'
+      ? 'Checking http://127.0.0.1:4567 on your computer...'
       : status === 'session_expired'
-        ? 'Your temporary pairing session expired or was revoked. Request a new 6-character code from your local Mimir runtime.'
+        ? 'Your sign-in code expired. Get a new 6-character code from the Mimir desktop app.'
         : isAuthState
-          ? 'A local Mimir coordinator is running on your device and requires explicit pairing. Tokens stay on localhost and are never placed in URLs.'
-          : 'Mimir executes AI models, browser tasks, files, and receipts locally on your machine. Start the Mimir desktop app or local daemon, then retry.';
+          ? 'Mimir is running on this computer and needs a quick one-time code to connect this page.'
+          : 'Mimir runs AI, browsing, and files privately on your computer. Open the Mimir desktop app, then click Check connection.';
 
   return (
     <div className="runtime-gate-backdrop" data-testid="runtime-connect-gate" role="main" aria-labelledby="runtime-gate-title">
@@ -119,18 +119,18 @@ export function RuntimeConnectGate({
             src="./assets/mimir/characters/mimir-head.svg"
             width={40}
             height={40}
-            alt="Mimir workspace emblem"
+            alt="Mimir emblem"
             style={{ imageRendering: 'pixelated', flexShrink: 0 }}
           />
           <div>
             <div className={`runtime-gate-pill is-${isAuthState ? 'warn' : 'offline'}`} data-testid="runtime-status-pill">
               {status === 'checking'
-                ? 'Probing Loopback'
+                ? 'Checking'
                 : status === 'session_expired'
-                  ? 'Session Expired (401)'
+                  ? 'Connection expired'
                   : isAuthState
-                    ? 'Pairing Required (Localhost Only)'
-                    : 'Runtime Offline'}
+                    ? 'Code needed'
+                    : 'Not running'}
             </div>
             <h1 id="runtime-gate-title" className="runtime-gate-title">{heading}</h1>
           </div>
@@ -146,7 +146,7 @@ export function RuntimeConnectGate({
 
         <div className="runtime-gate-section">
           <label htmlFor="runtime-url-field" className="runtime-gate-label">
-            Local Coordinator Address (loopback only)
+            Mimir address on this computer
           </label>
           <div className="runtime-gate-row">
             <input
@@ -165,14 +165,14 @@ export function RuntimeConnectGate({
               disabled={busy}
               onClick={handleProbe}
             >
-              {busy ? 'Checking...' : 'Check Connection'}
+              {busy ? 'Checking...' : 'Check connection'}
             </button>
           </div>
         </div>
 
         {isAuthState && (
           <form className="runtime-gate-section" onSubmit={handleExchangeCode} data-testid="pairing-form">
-            <div className="runtime-gate-label">Explicit Two-Step Device Pairing</div>
+            <div className="runtime-gate-label">Connect with a 6-character code</div>
             <div className="runtime-gate-row" style={{ marginBottom: 10 }}>
               <button
                 type="button"
@@ -181,7 +181,7 @@ export function RuntimeConnectGate({
                 disabled={busy}
                 onClick={handleRequestCode}
               >
-                1. Generate Code in Local Terminal / Desktop
+                1. Get a code from Mimir
               </button>
               {health?.reachable && !health?.authRequired && (
                 <button
@@ -191,14 +191,14 @@ export function RuntimeConnectGate({
                   disabled={busy}
                   onClick={handleProbe}
                 >
-                  Connect Open Local Dev Daemon
+                  Connect now
                 </button>
               )}
             </div>
 
             {pairingReq && (
               <div className="runtime-gate-hint" data-testid="pairing-request-info">
-                Code issued for <strong>{pairingReq.clientName}</strong> (expires in {pairingReq.ttlSeconds}s). Copy the 6-character code from your local Mimir Desktop window or coordinator terminal log.
+                Code created for <strong>{pairingReq.clientName}</strong> (valid for {pairingReq.ttlSeconds}s). Copy the 6-character code shown in your Mimir desktop app.
               </div>
             )}
 
@@ -210,7 +210,7 @@ export function RuntimeConnectGate({
                 autoComplete="one-time-code"
                 value={pairingCode}
                 onChange={e => setPairingCode(e.target.value.toUpperCase())}
-                placeholder="2. Enter 6-char pairing code (e.g. K7M9P2)"
+                placeholder="2. Type the 6-character code (e.g. K7M9P2)"
                 maxLength={12}
               />
               <button
@@ -219,7 +219,7 @@ export function RuntimeConnectGate({
                 data-testid="pairing-exchange-btn"
                 disabled={busy || !pairingCode.trim()}
               >
-                Pair Runtime
+                Connect
               </button>
             </div>
           </form>
@@ -228,20 +228,20 @@ export function RuntimeConnectGate({
         {!isAuthState && (
           <div className="runtime-gate-steps" data-testid="runtime-install-guide">
             <div className="runtime-gate-step">
-              <strong>1. Start Desktop App or Local Daemon</strong>
-              <p>Open the Windows <code>Mimir</code> desktop app, or run from your local repo:</p>
+              <strong>1. Open the Mimir app on this computer</strong>
+              <p>Start the <code>Mimir</code> desktop app (or run from a terminal):</p>
               <code>ollama serve &amp;&amp; npm run dev:daemon</code>
             </div>
             <div className="runtime-gate-step">
-              <strong>2. Connect &amp; Verify</strong>
-              <p>Once listening on <code>127.0.0.1:4567</code>, click <strong>Check Connection</strong> above.</p>
+              <strong>2. Check again</strong>
+              <p>Once Mimir is open, click <strong>Check connection</strong> above.</p>
             </div>
           </div>
         )}
 
         <div className="runtime-gate-footer">
-          <a href="/landing/index.html#download" className="btn btn-sm">Download &amp; SHA-256 Guide</a>
-          <a href="/landing/index.html" className="btn btn-sm">Back to Mimir Overview</a>
+          <a href="/landing/index.html#download" className="btn btn-sm">Download Mimir</a>
+          <a href="/landing/index.html" className="btn btn-sm">About Mimir</a>
         </div>
       </div>
     </div>

@@ -26,8 +26,8 @@ function PreflightCard() {
         <span>This computer</span>
         <button type="button" className="btn btn-sm" onClick={check}>Check again</button>
       </h3>
-      {error && <div role="alert">Check failed: {error}</div>}
-      {!report && !error && <div style={{ color: 'var(--ink-muted)' }}>Checking Ollama, Python, browser and Rust core…</div>}
+      {error && <div role="alert">Could not check: {error}</div>}
+      {!report && !error && <div style={{ color: 'var(--ink-muted)' }}>Checking what is installed on this computer…</div>}
       {report?.checks.map(c => (
         <div key={c.id} data-testid={`preflight-${c.id}`} data-ok={c.ok} style={{ fontSize: 12.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span>
@@ -74,7 +74,7 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
       const out = await apiFetch('/v1/voice/tts?format=json', {
         method: 'POST',
         body: JSON.stringify({
-          text: 'Well of Wisdom voice ready.',
+          text: 'Mimir voice is ready.',
           engine: effectiveEngine,
           voice: form.voiceName || form.voiceId || (effectiveEngine === 'sapi' ? 'david-sapi' : 'en-GB-RyanNeural'),
         }),
@@ -109,7 +109,7 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
         const choice = await promptEvt.userChoice;
         window.__mimirDeferredInstallPrompt = null;
         setCanInstallPwa(typeof navigator.install === 'function');
-        setInstallMsg(choice?.outcome === 'accepted' ? 'Mimir installed as web app.' : 'Install dismissed.');
+        setInstallMsg(choice?.outcome === 'accepted' ? 'Mimir installed as an app.' : 'Install cancelled.');
       }
     } catch (err) {
       setInstallMsg(err.message || 'Install unavailable.');
@@ -127,7 +127,7 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
       });
       onSaved(updated);
       await onProbeModels();
-      setSavedBanner('Saved & refreshed model probe.');
+      setSavedBanner('Saved. AI models checked.');
     } finally {
       setSaving(false);
     }
@@ -142,7 +142,7 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
             <span>Settings</span>
           </h2>
           <p style={{ margin: 0, color: 'var(--ink-muted)' }}>
-            Providers, voice engine, approval gates, browser mode, and theme.
+            Choose your AI model, voice, when Mimir asks for your OK, web browsing, and how the app looks.
           </p>
         </div>
 
@@ -151,34 +151,34 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
         <PreflightCard />
 
         <form className="card" onSubmit={handleSave}>
-          <h3 className="card-title">LLM Provider & Model Routing</h3>
+          <h3 className="card-title">AI model</h3>
 
           <div className="grid-2">
             <label className="field-label">
-              Primary Provider
+              Main AI model
               <select className="select" value={form.provider} onChange={e => setForm(f => ({ ...f, provider: e.target.value }))}>
-                <option value="ollama">Local Ollama (Default)</option>
-                <option value="openai-compat">OpenAI-Compatible Endpoint</option>
+                <option value="ollama">Ollama, the free app that runs AI on this computer (default)</option>
+                <option value="openai-compat">Online AI service (your own access key)</option>
               </select>
             </label>
             <label className="field-label">
-              Usage Review Approval Policy
+              When to ask for your OK
               <select className="select" value={form.approvalPolicy} onChange={e => setForm(f => ({ ...f, approvalPolicy: e.target.value }))}>
-                <option value="ask-writes">Ask on mutating writes / shell (Recommended)</option>
-                <option value="reversibility">Reversibility: drafts and research run alone, irreversible actions ask</option>
-                <option value="always-ask">Always ask before every tool</option>
-                <option value="auto-approve">Auto-approve all local tools</option>
+                <option value="ask-writes">Before changing files or running programs (recommended)</option>
+                <option value="reversibility">Only before things that cannot be undone</option>
+                <option value="always-ask">Before every action</option>
+                <option value="auto-approve">Never ask for actions on this computer</option>
               </select>
             </label>
           </div>
 
           <div className="grid-2">
             <label className="field-label">
-              Ollama Base URL
+              Ollama address
               <input className="input" value={form.ollamaUrl || ''} onChange={e => setForm(f => ({ ...f, ollamaUrl: e.target.value }))} />
             </label>
             <label className="field-label">
-              Ollama Model
+              Ollama model
               <input
                 className="input"
                 list="ollama-models-list"
@@ -196,15 +196,15 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <input type="checkbox" checked={Boolean(form.ollamaThink)} onChange={e => setForm(f => ({ ...f, ollamaThink: e.target.checked }))} />
-              Enable Ollama reasoning traces
+              Show the model's thinking steps
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <input type="checkbox" checked={form.enableFallback !== false} onChange={e => setForm(f => ({ ...f, enableFallback: e.target.checked }))} />
-              Fallback to OpenAI-compatible
+              Use the backup cloud model if Ollama fails
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <input type="checkbox" data-testid="local-only-checkbox" checked={Boolean(form.localOnly)} onChange={e => setForm(f => ({ ...f, localOnly: e.target.checked }))} />
-              Local-only mode
+              Keep everything on this computer (no cloud)
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <input
@@ -228,30 +228,30 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
                   }
                 }}
               />
-              Static Mimir Avatar (Reduced Motion)
+              Still Mimir picture (no animation)
             </label>
           </div>
 
           <hr style={{ border: 'none', borderTop: '1px solid var(--sand-border)', width: '100%' }} />
 
-          <h3 className="card-title">OpenAI-Compatible Fallback</h3>
+          <h3 className="card-title">Backup cloud model</h3>
           <div className="grid-2">
             <label className="field-label">
-              Base URL
+              Service address
               <input className="input" value={form.openaiBaseUrl || ''} onChange={e => setForm(f => ({ ...f, openaiBaseUrl: e.target.value }))} />
             </label>
             <label className="field-label">
-              Model ID
+              Model name
               <input className="input" value={form.openaiModel || ''} onChange={e => setForm(f => ({ ...f, openaiModel: e.target.value }))} />
             </label>
           </div>
           <label className="field-label">
-            API Key (stored in local vault)
+            Access key (kept locked on this computer)
             <input
               type="password"
               className="input"
               autoComplete="off"
-              placeholder={form.hasOpenaiApiKey ? 'Key saved. Enter new key to replace.' : ''}
+              placeholder={form.hasOpenaiApiKey ? 'Key saved. Type a new one to replace it.' : ''}
               value={form.openaiApiKey || ''}
               onChange={e => setForm(f => ({ ...f, openaiApiKey: e.target.value }))}
             />
@@ -260,36 +260,36 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
           <hr style={{ border: 'none', borderTop: '1px solid var(--sand-border)', width: '100%' }} />
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-            <h3 className="card-title" style={{ margin: 0 }}>Voice Engine &amp; Live Duplex Audio</h3>
+            <h3 className="card-title" style={{ margin: 0 }}>Voice</h3>
             <div className="chip-list">
               <span className="status-pill" data-testid="voice-status-sapi">
-                SAPI5: {voiceStatus ? (voiceStatus.sapiOffline ? 'Ready' : 'Unavailable') : '...'}
+                Offline voice: {voiceStatus ? (voiceStatus.sapiOffline ? 'Ready' : 'Not available') : '...'}
               </span>
               <span className="status-pill" data-testid="voice-status-stt">
-                Whisper STT: {voiceStatus ? (voiceStatus.fasterWhisper ? 'Ready' : 'Unavailable') : '...'}
+                Listening: {voiceStatus ? (voiceStatus.fasterWhisper ? 'Ready' : 'Not available') : '...'}
               </span>
               <span className="status-pill">
-                Neural: {voiceStatus ? (voiceStatus.edgeTts ? 'Available' : 'Auto/Fallback') : '...'}
+                Natural voice: {voiceStatus ? (voiceStatus.edgeTts ? 'Ready' : 'Not confirmed') : '...'}
               </span>
             </div>
           </div>
 
           <div className="grid-2">
             <label className="field-label">
-              Voice Engine
+              Voice type
               <select
                 className="select"
                 data-testid="settings-voice-engine"
                 value={form.voiceEngine || 'auto'}
                 onChange={e => setForm(f => ({ ...f, voiceEngine: e.target.value }))}
               >
-                <option value="auto">Auto (Neural Edge-TTS -&gt; Offline SAPI5)</option>
-                <option value="sapi">Offline Only (Windows SAPI5)</option>
-                <option value="neural">Neural (Edge-TTS)</option>
+                <option value="auto">Automatic (natural voice, offline voice if needed)</option>
+                <option value="sapi">Offline only (built into Windows)</option>
+                <option value="neural">Natural voice (needs internet)</option>
               </select>
             </label>
             <label className="field-label">
-              Voice Speaker
+              Speaker
               <select
                 className="select"
                 data-testid="settings-voice-id"
@@ -299,9 +299,9 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
                 {(voiceStatus?.voices?.length
                   ? voiceStatus.voices
                   : [
-                      { id: 'en-GB-RyanNeural', label: 'Mimir Neural (en-GB-RyanNeural)' },
-                      { id: 'david-sapi', label: 'Mimir Offline (SAPI5 David)' },
-                      { id: 'zira-sapi', label: 'Freya Offline (SAPI5 Zira)' },
+                      { id: 'en-GB-RyanNeural', label: 'Mimir (natural voice)' },
+                      { id: 'david-sapi', label: 'Mimir (offline voice)' },
+                      { id: 'zira-sapi', label: 'Freya (offline voice)' },
                     ]
                 ).map(v => (
                   <option key={v.id} value={v.id}>
@@ -314,40 +314,40 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <button type="button" className="btn btn-sm" onClick={handleTestVoice}>
-              Test Voice
+              Play test
             </button>
             <button type="button" className="btn btn-sm" onClick={loadVoiceStatus}>
-              Refresh Voice Status
+              Check voice again
             </button>
             {voiceTestState && <span style={{ fontSize: 12, color: 'var(--frost)' }}>{voiceTestState}</span>}
           </div>
 
           <hr style={{ border: 'none', borderTop: '1px solid var(--sand-border)', width: '100%' }} />
 
-          <h3 className="card-title">Slack / Teams Outbound Webhooks & Theme</h3>
+          <h3 className="card-title">Notifications &amp; appearance</h3>
           <div className="grid-2">
             <label className="field-label">
-              Slack Incoming Webhook URL
+              Slack message link
               <input className="input" placeholder="https://hooks.slack.com/services/..." value={form.slackWebhookUrl || ''} onChange={e => setForm(f => ({ ...f, slackWebhookUrl: e.target.value }))} />
             </label>
             <label className="field-label">
-              Microsoft Teams Webhook URL
+              Microsoft Teams message link
               <input className="input" placeholder="https://outlook.office.com/webhook/..." value={form.teamsWebhookUrl || ''} onChange={e => setForm(f => ({ ...f, teamsWebhookUrl: e.target.value }))} />
             </label>
           </div>
 
           <div className="grid-2">
             <label className="field-label">
-              Theme
+              Colors
               <select className="select" value={form.themePreference || 'dark'} onChange={e => setForm(f => ({ ...f, themePreference: e.target.value }))}>
-                <option value="dark">Charcoal Basalt Dark</option>
-                <option value="light">Warm Parchment Light</option>
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
               </select>
             </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 18 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <input type="checkbox" checked={form.soundEffects !== false} onChange={e => setForm(f => ({ ...f, soundEffects: e.target.checked }))} />
-                Play subtle audio chime on task completion / approval needed
+                Play a soft chime when a task finishes or needs your OK
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <input
@@ -356,7 +356,30 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
                   checked={Boolean(form.reducedMotion)}
                   onChange={e => setForm(f => ({ ...f, reducedMotion: e.target.checked }))}
                 />
-                Reduce motion &amp; pixel glitch animations (accessibility)
+                Reduce motion and flashing effects
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input
+                  type="checkbox"
+                  data-testid="developer-tools-checkbox"
+                  checked={Boolean(form.showDeveloperTools)}
+                  onChange={async e => {
+                    const next = e.target.checked;
+                    const optimistic = { ...form, showDeveloperTools: next };
+                    setForm(optimistic);
+                    onSaved?.(optimistic);
+                    try {
+                      const updated = await apiFetch('/v1/settings', {
+                        method: 'PATCH',
+                        body: JSON.stringify({ showDeveloperTools: next }),
+                      });
+                      onSaved?.(updated);
+                    } catch {
+                      // keep optimistic state on transient error
+                    }
+                  }}
+                />
+                Show developer tools (feature tour, model lab, system checks)
               </label>
             </div>
           </div>
@@ -365,30 +388,30 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
 
           <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <MimirAsset category="artifacts" name="bifrost-portal" size={18} />
-            <span>Browser Engine & Vertical/Horizontal Scaling</span>
+            <span>Web browsing &amp; speed</span>
           </h3>
           <div className="grid-3">
             <label className="field-label">
-              Agentic Browser Mode
+              Where Mimir browses the web
               <select className="select" value={form.browserMode || 'embedded'} onChange={e => setForm(f => ({ ...f, browserMode: e.target.value }))}>
-                <option value="embedded">Embedded Headless Chromium</option>
-                <option value="user-computer">Own Computer (Chrome/Edge Window or CDP)</option>
-                <option value="free-cloud">Free Zero-Payment Cloud / WS Relay</option>
+                <option value="embedded">Hidden built-in browser (default)</option>
+                <option value="user-computer">Your own Chrome or Edge window</option>
+                <option value="free-cloud">Free online browser</option>
               </select>
             </label>
             <label className="field-label">
-              Own Computer CDP Port URL
+              Your browser's control address (advanced, for Chrome or Edge)
               <input className="input" placeholder="http://127.0.0.1:9222" value={form.userCdpUrl || ''} onChange={e => setForm(f => ({ ...f, userCdpUrl: e.target.value }))} />
             </label>
             <label className="field-label">
-              Free Cloud / WS Endpoint URL
+              Online browser address (advanced)
               <input className="input" placeholder="ws://..." value={form.cloudBrowserWsUrl || ''} onChange={e => setForm(f => ({ ...f, cloudBrowserWsUrl: e.target.value }))} />
             </label>
           </div>
 
           <div className="grid-2">
             <label className="field-label">
-              Max Concurrent Worker Tasks (Vertical Scale)
+              Tasks at the same time
               <input
                 type="number"
                 min={1}
@@ -399,7 +422,7 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
               />
             </label>
             <label className="field-label">
-              Rate Limit Per Minute (Token Bucket)
+              Most AI requests per minute
               <input
                 type="number"
                 min={4}
@@ -413,14 +436,14 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? 'Saving...' : 'Save Settings'}
+              {saving ? 'Saving...' : 'Save'}
             </button>
             <button type="button" className="btn" onClick={onProbeModels}>
-              Probe Models
+              Check models
             </button>
             {canInstallPwa && (
               <button type="button" className="btn" data-testid="install-pwa-btn" onClick={handleInstallPwa}>
-                Install Web App
+                Install as app
               </button>
             )}
             {installMsg && <span style={{ color: 'var(--frost)', fontSize: 12.5 }}>{installMsg}</span>}
@@ -428,9 +451,9 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
           </div>
 
           <div className="code-block" style={{ fontSize: 12 }}>
-            Ollama: {modelStatus?.ollama?.ok ? `Connected (${modelStatus.ollama.models.join(', ') || 'no models'})` : `Offline (${modelStatus?.ollama?.error || 'not probed'})`}
+            Ollama: {modelStatus?.ollama?.ok ? `Connected (${modelStatus.ollama.models.join(', ') || 'no models'})` : `Not running (${modelStatus?.ollama?.error || 'not checked yet'})`}
             {'\n'}
-            OpenAI-Compat: {modelStatus?.openai?.ok ? `Connected (${modelStatus.openai.models.slice(0, 6).join(', ')})` : `Unavailable (${modelStatus?.openai?.error || 'not configured'})`}
+            Backup cloud model: {modelStatus?.openai?.ok ? `Connected (${modelStatus.openai.models.slice(0, 6).join(', ')})` : `Not available (${modelStatus?.openai?.error || 'not set up'})`}
           </div>
         </form>
       </div>

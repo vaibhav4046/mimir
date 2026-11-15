@@ -59,25 +59,37 @@ function MimriStackSvg({ size = 16 }) {
 }
 
 const CORE_TABS = [
-  { id: 'chat', label: 'Home', Icon: ChatRuneSvg },
+  { id: 'chat', label: 'Chat', Icon: ChatRuneSvg },
   { id: 'map', label: 'Projects', Icon: MidgardMapSvg },
-  { id: 'library', label: 'Library', Icon: LibraryScrollSvg },
+  { id: 'library', label: 'Files', Icon: LibraryScrollSvg },
   { id: 'routines', label: 'Automations', Icon: RoutineHornSvg },
-  { id: 'mcp', label: 'Connections', Icon: McpRuneBoxSvg },
+  { id: 'mcp', label: 'Connected apps', Icon: McpRuneBoxSvg },
   { id: 'settings', label: 'Settings', Icon: SettingsRuneSvg },
 ];
 
-const OS_TABS = [
-  { id: 'overview', label: 'Overview', Icon: OverviewRuneSvg },
-  { id: 'agents', label: 'Agents', Icon: AgentsSvg },
-  { id: 'forge', label: 'Studio', Icon: ForgeAnvilSvg },
-  { id: 'council', label: 'Boardroom', Icon: CouncilRuneSvg },
-  { id: 'rsi', label: 'Eval & RSI', Icon: RsiScaleSvg },
-  { id: 'mimri', label: 'Architecture', Icon: MimriStackSvg },
-  { id: 'vault', label: 'Vault', Icon: VaultChestSvg },
+// `dev` screens are test benches for people building Mimir; shown only with Developer tools on.
+const ALL_MORE_TABS = [
+  { id: 'agents', label: 'Your team', Icon: AgentsSvg },
+  { id: 'council', label: 'Team meeting', Icon: CouncilRuneSvg },
+  { id: 'forge', label: 'Import memory', Icon: ForgeAnvilSvg },
+  { id: 'vault', label: 'Passwords & keys', Icon: VaultChestSvg },
+  { id: 'overview', label: 'Feature tour', Icon: OverviewRuneSvg, dev: true },
+  { id: 'rsi', label: 'Model lab', Icon: RsiScaleSvg, dev: true },
+  { id: 'mimri', label: 'System checks', Icon: MimriStackSvg, dev: true },
 ];
 
-const PRIMARY_TABS = [...CORE_TABS, ...OS_TABS];
+const STATE_LABEL = {
+  IDLE: 'Ready',
+  THINKING: 'Thinking…',
+  WORKING: 'Working…',
+  SPEAKING: 'Speaking…',
+  LISTENING: 'Listening…',
+  COMPLETED: 'Done',
+  WAITING_APPROVAL: 'Needs your OK',
+  BLOCKED: 'Blocked',
+  FAILED: 'Something went wrong',
+  OFFLINE: 'AI not running',
+};
 
 export function Sidebar({
   bots,
@@ -106,7 +118,10 @@ export function Sidebar({
   onSelectSpace,
   onCreateSpace,
   onDeleteSpace,
+  showDeveloperTools = false,
 }) {
+  const OS_TABS = ALL_MORE_TABS.filter(t => !t.dev || showDeveloperTools);
+  const PRIMARY_TABS = [...CORE_TABS, ...OS_TABS];
   const [search, setSearch] = useState('');
   const [deployingTeam, setDeployingTeam] = useState(false);
   const [showAdvancedNav, setShowAdvancedNav] = useState(() => OS_TABS.some(t => t.id === activeTab));
@@ -137,10 +152,10 @@ export function Sidebar({
 
   const statusTone = modelStatus?.ollama?.ok ? 'ok' : modelStatus?.openai?.ok ? 'warn' : 'err';
   const statusLabel = modelStatus?.ollama?.ok
-    ? 'Ollama Live'
+    ? 'AI ready'
     : modelStatus?.openai?.ok
-      ? 'Fallback API'
-      : 'Offline';
+      ? 'Using cloud backup'
+      : 'AI not running';
 
   const statusMap = new Map((agentStatuses || []).map(s => [s.botId, s.state]));
 
@@ -170,12 +185,12 @@ export function Sidebar({
             <div>
               <span style={{ display: 'block', lineHeight: 1.1 }}>Mimir</span>
               <span style={{ fontSize: 10, fontWeight: 500, color: 'var(--ink-subtle)', letterSpacing: '0.04em' }} data-testid="sidebar-mimir-state">
-                {mimirAvatarState}
+                {STATE_LABEL[mimirAvatarState] || 'Ready'}
               </span>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span className="status-pill" title="LLM Backend Health">
+            <span className="status-pill" title="Is the AI model running?">
               <MimirAsset
                 category="ui"
                 name={statusTone === 'ok' ? 'online' : statusTone === 'warn' ? 'loading' : 'offline'}
@@ -212,10 +227,10 @@ export function Sidebar({
           </button>
           {window.desktop && (
             <>
-              <button type="button" className="btn btn-icon" aria-label="Spotlight Launcher" title="Spotlight Launcher" onClick={onOpenSpotlight}>
+              <button type="button" className="btn btn-icon" aria-label="Quick ask box" title="Quick ask box" onClick={onOpenSpotlight}>
                 <SpotlightRuneSvg size={15} />
               </button>
-              <button type="button" className="btn btn-icon" aria-label="Popout Bot Window" title="Popout Bot" onClick={() => onOpenPopout(activeBotId)}>
+              <button type="button" className="btn btn-icon" aria-label="Open this chat in its own window" title="Open in its own window" onClick={() => onOpenPopout(activeBotId)}>
                 <PopoutArrowSvg size={15} />
               </button>
             </>
@@ -225,8 +240,8 @@ export function Sidebar({
         <input
           type="search"
           className="input"
-          aria-label="Filter chats"
-          placeholder="Filter chats & specialists..."
+          aria-label="Search chats and teammates"
+          placeholder="Search chats and teammates"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -241,7 +256,7 @@ export function Sidebar({
             onCloseMobile?.();
           }}
         >
-          {chiefBot ? 'Chief & Specialists' : `Bots (${bots.length})`}
+          Your team ({bots.length})
         </button>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           {!hasFullChiefTeam && onDeployChiefTeam && (
@@ -250,11 +265,11 @@ export function Sidebar({
               className="btn btn-sm"
               style={{ minHeight: 24, padding: '2px 7px', fontSize: 10 }}
               data-testid="deploy-chief-team-btn"
-              title="Deploy 6-bot Chief of Staff topology (Klaus + 5 specialists)"
+              title="Add a ready-made team: a team lead and 5 helpers"
               disabled={deployingTeam}
               onClick={handleDeployClick}
             >
-              {deployingTeam ? '...' : '+ Chief Team'}
+              {deployingTeam ? 'Adding…' : '+ Ready-made team'}
             </button>
           )}
           <button
@@ -262,8 +277,8 @@ export function Sidebar({
             className="btn btn-icon btn-sm"
             style={{ width: 24, height: 24, minHeight: 24 }}
             data-testid="new-bot-btn"
-            aria-label="Create new bot"
-            title="New Bot"
+            aria-label="Add teammate"
+            title="Add teammate"
             onClick={() => {
               onNewBot();
               onCloseMobile?.();
@@ -278,7 +293,7 @@ export function Sidebar({
         {chiefBot && (
           <div className="sidebar-sublabel">
             <ChiefCrownPixelSvg size={12} />
-            <span>Chief of Staff</span>
+            <span>Team lead</span>
           </div>
         )}
         {(chiefBot ? [chiefBot] : []).map(bot => {
@@ -304,7 +319,7 @@ export function Sidebar({
                 />
                 <div className="bot-pill-meta">
                   <div className="bot-pill-name">{bot.name}</div>
-                  <div className="bot-pill-role">{isWorking ? 'Delegating...' : 'Chief of Staff'}</div>
+                  <div className="bot-pill-role">{isWorking ? 'Handing out work…' : 'Team lead · splits big jobs'}</div>
                 </div>
                 <span className={`presence-dot ${isWorking ? 'is-working' : 'is-online'}`} aria-hidden="true" />
               </button>
@@ -328,7 +343,7 @@ export function Sidebar({
 
         {chiefBot && specialistBots.length > 0 && (
           <div className="sidebar-sublabel" style={{ marginTop: 4 }}>
-            <span>Specialists ({specialistBots.length})</span>
+            <span>Helpers ({specialistBots.length})</span>
           </div>
         )}
 
@@ -381,14 +396,14 @@ export function Sidebar({
       {onSelectSpace && (
         <div className="spaces-strip" data-testid="spaces-list" style={{ padding: '4px 10px 6px' }}>
           <div className="sidebar-section-label" style={{ padding: '4px 0' }}>
-            <span>Spaces ({(spaces || []).length})</span>
+            <span>Pinned ({(spaces || []).length})</span>
             {onCreateSpace && (
               <button
                 type="button"
                 className="btn btn-icon btn-sm"
                 style={{ width: 22, height: 22, minHeight: 22 }}
-                aria-label="Create Workspace Space"
-                title="Pin Custom Workspace Space"
+                aria-label="Pin a new workspace"
+                title="Pin a new workspace"
                 data-testid="new-space-btn"
                 onClick={() => setNewSpaceOpen(v => !v)}
               >
@@ -409,7 +424,7 @@ export function Sidebar({
             >
               <input
                 className="input"
-                placeholder="Space name..."
+                placeholder="Name, e.g. Shop research"
                 value={newSpaceTitle}
                 onChange={e => setNewSpaceTitle(e.target.value)}
                 data-testid="new-space-title"
@@ -444,7 +459,7 @@ export function Sidebar({
                     onCloseMobile?.();
                   }}
                 >
-                  {sp.title} ({sp.surface})
+                  {sp.title}
                 </button>
                 {onDeleteSpace && (
                   <button
@@ -492,8 +507,8 @@ export function Sidebar({
               <button
                 type="button"
                 className="thread-del"
-                aria-label={`Delete thread ${t.title || 'New Chat'}`}
-                title="Delete thread"
+                aria-label={`Delete chat ${t.title || 'New Chat'}`}
+                title="Delete chat"
                 onClick={e => {
                   e.stopPropagation();
                   onDeleteThread(t.id);
@@ -541,7 +556,7 @@ export function Sidebar({
           aria-expanded={showAdvancedNav || OS_TABS.some(t => t.id === activeTab)}
           onClick={() => setShowAdvancedNav(v => !v)}
         >
-          <span>Advanced Tools</span>
+          <span>More</span>
           <span>{showAdvancedNav || OS_TABS.some(t => t.id === activeTab) ? '▾' : '▸'}</span>
         </button>
         <div

@@ -661,7 +661,7 @@ export function VoiceLiveModal({
   };
 
   const phaseMeta = PHASE_META[phase] || PHASE_META.idle;
-  const voiceModeLabel = settings?.localOnly ? 'Offline SAPI5' : 'Neural Edge + SAPI Fallback';
+  const voiceModeLabel = settings?.localOnly ? 'Offline Windows voice' : 'Natural voice (offline backup)';
   const latestBubble = transcript.length ? transcript[transcript.length - 1] : null;
   const orbReactiveScale = phase === 'listening' ? 1 + Math.min(0.14, micLevel * 0.14) : phase === 'speaking' ? 1.05 : 1;
 

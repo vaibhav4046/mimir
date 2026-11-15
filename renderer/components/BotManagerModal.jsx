@@ -92,7 +92,7 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <BotAvatar bot={form} shape={form.shape} color={form.color} size={44} />
-            <h3 id="bot-modal-title" style={{ margin: 0 }}>{isEdit ? `Configure ${initialBot.name}` : 'Create Personal or Team Bot'}</h3>
+            <h3 id="bot-modal-title" style={{ margin: 0 }}>{isEdit ? `Edit ${initialBot.name}` : 'Create assistant'}</h3>
           </div>
           <button type="button" className="btn btn-sm" onClick={onClose}>
             Close
@@ -101,7 +101,7 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
 
         {!isEdit && templates.length > 0 && (
           <div>
-            <div style={{ fontSize: 12, color: 'var(--sand-text-muted)', marginBottom: 6 }}>Quick Team Bot Templates:</div>
+            <div style={{ fontSize: 12, color: 'var(--sand-text-muted)', marginBottom: 6 }}>Quick starter templates:</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {templates.map(tpl => (
                 <button key={tpl.key} type="button" className="btn btn-sm" onClick={() => applyTemplate(tpl)}>
@@ -131,9 +131,9 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
 
           <div>
             <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginBottom: 6 }}>
-              Norse Pixel Archetype ({CHARACTER_ARCHETYPES.length})
+              Look &amp; style ({CHARACTER_ARCHETYPES.length})
             </div>
-            <div className="bot-gallery-grid" role="group" aria-label="Norse Pixel Archetypes">
+            <div className="bot-gallery-grid" role="group" aria-label="Assistant avatars">
               {CHARACTER_ARCHETYPES.map(arch => {
                 const active = form.shape === arch.id;
                 return (
@@ -158,9 +158,9 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
 
           <div>
             <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginBottom: 6 }}>
-              Modular Gear &amp; Socket Accessories ({(form.accessories || []).length} equipped)
+              Accessories ({(form.accessories || []).length} selected)
             </div>
-            <div className="accessory-grid" role="group" aria-label="Socket Accessories">
+            <div className="accessory-grid" role="group" aria-label="Accessories">
               {ACCESSORY_OPTIONS.map(acc => {
                 const equipped = (form.accessories || []).includes(acc.id);
                 return (
@@ -213,7 +213,7 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
 
           <div className="grid-2">
             <label className="field-label">
-              Model Override (optional)
+              Custom AI model (optional)
               <input
                 className="input"
                 placeholder="Default from Settings"
@@ -227,14 +227,14 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
                 checked={form.isTeamBot}
                 onChange={e => setForm(f => ({ ...f, isTeamBot: e.target.checked }))}
               />
-              Team Bot (shared routine & webhook channel target)
+              Shared team assistant (for schedules &amp; Slack/Teams)
             </label>
           </div>
 
           {form.isTeamBot && (
             <div className="grid-2">
               <label className="field-label">
-                Slack Channel Tag
+                Slack channel
                 <input
                   className="input"
                   placeholder="#engineering-ops"
@@ -243,7 +243,7 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
                 />
               </label>
               <label className="field-label">
-                Teams Channel Tag
+                Teams channel
                 <input
                   className="input"
                   placeholder="General"
@@ -257,20 +257,20 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 12.5, color: 'var(--sand-text-muted)', fontWeight: 700 }}>
-                Role Charter &amp; System Prompt
+                Instructions (what this assistant should do)
               </span>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {[
                   {
-                    label: '+ Chief Coordinator Charter',
+                    label: '+ Team coordinator',
                     text: 'You orchestrate specialist allies via subagent_loop and enforce Reversibility gates before external actions.',
                   },
                   {
-                    label: '+ Reversibility Boundary',
+                    label: '+ Ask before big actions',
                     text: 'BOUNDARY RULE: Local drafts and workspace research are REVERSIBLE. NEVER send external emails, spend funds, or mutate production systems without explicit human OK.',
                   },
                   {
-                    label: '+ Workspace Persistence',
+                    label: '+ Keep files organized',
                     text: 'Store scripts in bin/, configs in config/, reusable skills in skills/, and checkpoints in state/.',
                   },
                 ].map(preset => (
@@ -302,16 +302,22 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
           </div>
 
           <div>
-            <div style={{ fontSize: 12.5, color: 'var(--sand-text-muted)', marginBottom: 6 }}>Allowed Builtin Capabilities:</div>
+            <div style={{ fontSize: 12.5, color: 'var(--sand-text-muted)', marginBottom: 6 }}>What it can use:</div>
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-              {['shell', 'fs', 'browser', 'memory', 'vault'].map(k => (
-                <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              {[
+                { key: 'shell', label: 'Run commands' },
+                { key: 'fs', label: 'Files' },
+                { key: 'browser', label: 'Web browser' },
+                { key: 'memory', label: 'Memory' },
+                { key: 'vault', label: 'Saved passwords' },
+              ].map(({ key, label }) => (
+                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <input
                     type="checkbox"
-                    checked={form.tools[k] !== false}
-                    onChange={e => setForm(f => ({ ...f, tools: { ...f.tools, [k]: e.target.checked } }))}
+                    checked={form.tools[key] !== false}
+                    onChange={e => setForm(f => ({ ...f, tools: { ...f.tools, [key]: e.target.checked } }))}
                   />
-                  {k}
+                  {label}
                 </label>
               ))}
             </div>
@@ -320,7 +326,7 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
           {mcps?.length > 0 && (
             <div>
               <div style={{ fontSize: 12.5, color: 'var(--sand-text-muted)', marginBottom: 6 }}>
-                Allowed MCP Servers (leave empty = all enabled):
+                Connected apps it can use (leave unchecked for all):
               </div>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 {mcps.map(srv => {
@@ -349,14 +355,14 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
 
           {isEdit && initialBot.webhookToken && coordUrl && (
             <div className="code-block" style={{ fontSize: 11.5 }}>
-              Inbound Hook URL: POST {coordUrl}/v1/hooks/{initialBot.webhookToken}
+              Trigger link: POST {coordUrl}/v1/hooks/{initialBot.webhookToken}
             </div>
           )}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
             {isEdit ? (
               <button type="button" className="btn btn-danger" onClick={handleDelete}>
-                Delete Bot
+                Delete assistant
               </button>
             ) : (
               <span />
@@ -366,7 +372,7 @@ export function BotManagerModal({ initialBot, mcps, meta, onClose, onSaved, onDe
                 Cancel
               </button>
               <button type="submit" className="btn btn-primary">
-                Save Bot
+                Save assistant
               </button>
             </div>
           </div>

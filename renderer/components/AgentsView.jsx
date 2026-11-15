@@ -51,20 +51,20 @@ export function AgentsView({
           <div>
             <h2 style={{ margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
               <AgentsSvg size={18} />
-              <span>Agents ({bots.length})</span>
+              <span>Your team ({bots.length})</span>
             </h2>
             <p style={{ margin: 0, color: 'var(--ink-muted)' }}>
-              Start fresh sessions, resume prior threads, or inspect autonomously spawned specialists.
+              Your AI teammates. Start a new chat with one, pick up where you left off, or change how they work.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button type="button" className="btn btn-primary" onClick={onOpenForge} data-testid="agents-forge-btn">
               <ForgeAnvilSvg size={14} />
-              <span>Forge New Ally</span>
+              <span>Add teammate</span>
             </button>
             <button type="button" className="btn" onClick={onNewBot} data-testid="agents-new-btn">
               <PlusPixelSvg size={14} />
-              <span>New Bot</span>
+              <span>Add blank teammate</span>
             </button>
           </div>
         </div>
@@ -73,10 +73,10 @@ export function AgentsView({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
             <div>
               <h3 className="card-title" style={{ margin: '0 0 2px' }}>
-                Norse Agent Role Registry ({norseRoles.length || 11} Specialists)
+                Built-in specialists ({norseRoles.length || 11})
               </h3>
               <div style={{ fontSize: 12, color: 'var(--ink-muted)' }}>
-                Capability-scoped functional specialists · Sentinel evaluations: {sentinelStats?.total || 0} ({sentinelStats?.denied || 0} blocked)
+                Ready-made teammates, each good at one job · Safety checks so far: {sentinelStats?.total || 0} ({sentinelStats?.denied || 0} blocked)
               </div>
             </div>
             <button
@@ -86,7 +86,7 @@ export function AgentsView({
               onClick={handleSeedNorse}
               data-testid="seed-norse-roster-btn"
             >
-              {seeding ? 'Syncing...' : 'Sync Norse Roster'}
+              {seeding ? 'Adding...' : 'Add built-in specialists'}
             </button>
           </div>
           <div className="agents-grid" style={{ marginTop: 8 }}>
@@ -95,14 +95,14 @@ export function AgentsView({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
                   <strong style={{ fontSize: 13 }}>{role.name}</strong>
                   <span className="status-pill" style={{ fontSize: 10, color: role.priorityE2E ? 'var(--brass)' : 'var(--frost)' }}>
-                    {role.priorityE2E ? 'PRIORITY E2E' : role.liveState}
+                    {role.priorityE2E ? 'Priority' : role.liveState}
                   </span>
                 </div>
-                <div style={{ fontSize: 11.5, color: 'var(--ink-muted)' }}>{role.norseArchetype} · {role.roleTitle}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-muted)' }}>{role.roleTitle}</div>
                 <div className="chip-list" style={{ marginTop: 4 }}>
                   <span className="chip">{role.modelAssignment}</span>
-                  <span className="chip">Steps: {role.budgets?.maxSteps}</span>
-                  <span className="chip">Risk: {role.permissionBoundaries?.maxRiskTier}</span>
+                  <span className="chip">Max steps: {role.budgets?.maxSteps}</span>
+                  <span className="chip">Risk limit: {role.permissionBoundaries?.maxRiskTier}</span>
                 </div>
               </div>
             ))}
@@ -157,7 +157,7 @@ export function AgentsView({
                       )}
                       {bot.parentBotId && (
                         <span className="status-pill badge-lineage" data-testid={`agent-lineage-${bot.id}`}>
-                          Spawned by {parentBot?.name || bot.parentBotId}
+                          Created by {parentBot?.name || bot.parentBotId}
                         </span>
                       )}
                       <span
@@ -172,7 +172,7 @@ export function AgentsView({
                           name={isWorking ? 'loading' : 'online'}
                           size={12}
                         />
-                        {isWorking ? 'Working' : 'Waiting'}
+                        {isWorking ? 'Working' : 'Ready'}
                       </span>
                     </div>
                   </div>
@@ -188,11 +188,11 @@ export function AgentsView({
                       overflow: 'hidden',
                     }}
                   >
-                    {String(bot.systemPrompt || 'Ready for local desktop & browser automation.').replace(/^You are (a |an |the )?/i, '')}
+                    {String(bot.systemPrompt || 'Ready to help on this computer and the web.').replace(/^You are (a |an |the )?/i, '')}
                   </div>
 
                   <div className="chip-list">
-                    <span className="chip">Model: {bot.modelOverride || 'default'}</span>
+                    <span className="chip">AI model: {bot.modelOverride || 'default'}</span>
                     <span className="chip">Mode: {bot.executionMode || 'agent'}</span>
                     {enabledTools.map(t => (
                       <span key={t} className="chip">{t}</span>
@@ -208,7 +208,7 @@ export function AgentsView({
                     data-testid={`agent-new-session-${bot.id}`}
                     onClick={() => onStartNewSession(bot.id)}
                   >
-                    New Session
+                    New chat
                   </button>
                   <button
                     type="button"
@@ -216,7 +216,7 @@ export function AgentsView({
                     data-testid={`agent-resume-${bot.id}`}
                     onClick={() => onResumeBot(bot.id)}
                   >
-                    Resume Latest
+                    Continue last chat
                   </button>
                   <button
                     type="button"
@@ -224,7 +224,7 @@ export function AgentsView({
                     data-testid={`agent-configure-${bot.id}`}
                     onClick={() => onEditBot(bot)}
                   >
-                    Configure
+                    Edit
                   </button>
                 </div>
               </div>

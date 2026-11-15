@@ -72,7 +72,7 @@ function SharedMemoryList() {
 const PREVIEW_TABS = [
   { id: 'team', label: 'Team', icon: 'allies' },
   { id: 'screen', label: 'Screen', icon: 'screen' },
-  { id: 'files', label: 'Workspace', icon: 'workspace' },
+  { id: 'files', label: 'Files', icon: 'workspace' },
   { id: 'activity', label: 'Activity', icon: 'activity' },
   { id: 'memory', label: 'Memory', icon: 'memory' },
 ];
@@ -89,6 +89,7 @@ export function ComputerPane({
   onRefresh,
   onClose,
 }) {
+  const showDevTools = Boolean(settings?.showDeveloperTools);
   const [subTab, setSubTab] = useState('screen');
   const [expandedSkill, setExpandedSkill] = useState('');
   const [deploying, setDeploying] = useState(false);
@@ -517,11 +518,11 @@ export function ComputerPane({
   };
 
   return (
-    <aside className={`computer-pane ${enlarged ? 'is-enlarged' : ''}`} data-testid="computer-pane" aria-label="Realm Browser and Workspace Preview">
+    <aside className={`computer-pane ${enlarged ? 'is-enlarged' : ''}`} data-testid="computer-pane" aria-label="Work View and Browser">
       <div className="topbar" style={{ padding: '0 12px' }}>
         <strong style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--brass)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <MimirAsset category="artifacts" name="bifrost-portal" size={16} />
-          Realm Preview
+          Work view
           {b?.browserState && (
             <span className="pill" data-testid="browser-state-pill" style={{ fontSize: 10 }}>
               {b.browserState}
@@ -537,7 +538,7 @@ export function ComputerPane({
             <button
               type="button"
               className="btn btn-sm computer-close-btn"
-              aria-label="Close Realm Preview"
+              aria-label="Close Work view"
               onClick={onClose}
             >
               Close
@@ -595,19 +596,21 @@ export function ComputerPane({
                     </span>
                   </div>
                   <div style={{ fontSize: 11.5, color: 'var(--ink-muted)' }}>
-                    Orchestrates specialists, delegates subtasks via <code>@mention</code>, and keeps persistent artifacts in <code>/workspace</code>.
+                    Coordinates specialists via <code>@mention</code> and saves files in your work folder.
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm"
-                      data-testid="run-chief-playbook-btn"
-                      disabled={busy}
-                      onClick={handleRunChiefPlaybook}
-                    >
-                      Run Delegation Playbook (@Mara → @Cole)
-                    </button>
-                  </div>
+                  {showDevTools && (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        data-testid="run-chief-playbook-btn"
+                        disabled={busy}
+                        onClick={handleRunChiefPlaybook}
+                      >
+                        Run sample handoff (@Mara → @Cole)
+                      </button>
+                    </div>
+                  )}
                   {playbookNotice && (
                     <div style={{ fontSize: 11, color: '#5cf2b4', fontFamily: 'var(--sand-mono)' }} data-testid="playbook-notice">
                       {playbookNotice}
@@ -618,7 +621,7 @@ export function ComputerPane({
                 <div className="team-card-box">
                   <div className="team-box-title">
                     <TeamTopologySvg size={14} />
-                    <span>Team Topology</span>
+                    <span>How the team connects</span>
                   </div>
                   <svg
                     viewBox="0 0 260 112"
@@ -734,14 +737,14 @@ export function ComputerPane({
             <div className="team-card-box">
               <div className="team-box-title">
                 <ReversibleShieldSvg size={13} />
-                <span>Reversibility Gate Rule</span>
+                <span>When Mimir asks your OK</span>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', fontSize: 11 }}>
                 <span className="pill is-emerald">
-                  <ReversibleShieldSvg size={11} /> Research / Drafts / Local Files
+                  <ReversibleShieldSvg size={11} /> Safe: Research / Drafts / Local files
                 </span>
                 <span className="pill is-crimson">
-                  <IrreversibleGateSvg size={11} /> Sends / Spend / Prod Writes
+                  <IrreversibleGateSvg size={11} /> Asks first: Sending / Paying / Live changes
                 </span>
               </div>
             </div>
@@ -753,13 +756,13 @@ export function ComputerPane({
             {/* 3-Mode Browser Engine Bar */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 8, background: 'var(--bg-surface)', border: '1px solid var(--rule)' }}>
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ink-subtle)' }}>
-                Browser Engine Mode
+                Which browser Mimir uses
               </div>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                 {[
-                  { id: 'embedded', label: 'Embedded' },
-                  { id: 'user-computer', label: 'Own Computer' },
-                  { id: 'free-cloud', label: 'Free Cloud WS' },
+                  { id: 'embedded', label: 'Built-in' },
+                  { id: 'user-computer', label: 'Your Chrome/Edge' },
+                  { id: 'free-cloud', label: 'Online relay' },
                 ].map(m => (
                   <button
                     key={m.id}
@@ -776,7 +779,7 @@ export function ComputerPane({
               </div>
               {activeMode === 'user-computer' && (
                 <div style={{ fontSize: 11.5, color: 'var(--ink-muted)' }}>
-                  Attaches to Chrome/Edge debugging port ({settings?.userCdpUrl || '127.0.0.1:9222'}) or opens a visible Chrome/Edge window directly on your desktop.
+                  Connects to your Chrome/Edge ({settings?.userCdpUrl || '127.0.0.1:9222'}) or opens a browser window on your desktop.
                 </div>
               )}
               {activeMode === 'free-cloud' && (
@@ -784,7 +787,7 @@ export function ComputerPane({
                   <div style={{ display: 'flex', gap: 4 }}>
                     <input
                       className="input"
-                      placeholder="ws://free-remote-cdp or click Start Relay"
+                      placeholder="Relay link or click Start free browser relay"
                       value={cloudWsDraft}
                       onChange={e => setCloudWsDraft(e.target.value)}
                     />
@@ -799,17 +802,17 @@ export function ComputerPane({
                         onSettingsChange?.(updated);
                       }}
                     >
-                      Save WS
+                      Save link
                     </button>
                   </div>
                   <button type="button" className="btn btn-sm" onClick={handleStartFreeRelay} disabled={busy}>
-                    Start Free Zero-Payment Relay
+                    Start free browser relay
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Compact Toolbar + Collapsible Realms */}
+            {/* Compact Toolbar + Collapsible Realms (dev) */}
             <div className="browser-control-bar">
               <button
                 type="button"
@@ -818,7 +821,7 @@ export function ComputerPane({
                 disabled={busy || suiteRunning}
                 onClick={toggleControlMode}
               >
-                {userControl ? 'Hand Back to Agent' : 'Take Control'}
+                {userControl ? 'Let Mimir continue' : 'Take control'}
               </button>
               <button
                 type="button"
@@ -826,28 +829,32 @@ export function ComputerPane({
                 data-testid="browser-enlarge-btn"
                 onClick={() => setEnlarged(v => !v)}
               >
-                {enlarged ? 'Compact' : 'Enlarge'}
+                {enlarged ? 'Smaller' : 'Larger'}
               </button>
-              <button
-                type="button"
-                className="btn btn-sm"
-                data-testid="run-browser-suite-btn"
-                disabled={busy || suiteRunning || userControl}
-                onClick={runSuiteHarness}
-              >
-                {suiteRunning ? 'Running 5-Tier Suite...' : 'Run 5-Tier Suite'}
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm"
-                data-testid="toggle-realm-navigator"
-                onClick={() => setShowRealms(v => !v)}
-              >
-                {showRealms ? 'Hide Realms' : 'Realms'}
-              </button>
+              {showDevTools && (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    data-testid="run-browser-suite-btn"
+                    disabled={busy || suiteRunning || userControl}
+                    onClick={runSuiteHarness}
+                  >
+                    {suiteRunning ? 'Running checks...' : 'Run browser checks'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    data-testid="toggle-realm-navigator"
+                    onClick={() => setShowRealms(v => !v)}
+                  >
+                    {showRealms ? 'Hide sample sites' : 'Sample sites'}
+                  </button>
+                </>
+              )}
             </div>
 
-            {showRealms && (
+            {showDevTools && showRealms && (
               <RealmNavigator
                 activeRealm={activeRealm}
                 warping={warping}
@@ -900,10 +907,10 @@ export function ComputerPane({
               <div className="challenge-banner" data-testid="challenge-banner" role="alert">
                 <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--warn)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <SessionHandoffSvg size={15} />
-                  <span>Secure Session Handoff — Login / 2FA Gate</span>
+                  <span>Please sign in to continue</span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink)' }}>
-                  Automation paused at <code>{b.challengeUrl || b.url || 'challenge page'}</code>. Zero passwords or 2FA codes enter chat — sign in inside the browser view, then click below to resume with session cookies intact.
+                  Paused at <code>{b.challengeUrl || b.url || 'sign-in page'}</code>. Your password never goes into chat — sign in inside this browser window, then click Resume.
                 </div>
                 <div>
                   <button
@@ -913,7 +920,7 @@ export function ComputerPane({
                     disabled={busy}
                     onClick={resumeChallenge}
                   >
-                    Resume Automation
+                    Resume
                   </button>
                 </div>
               </div>
@@ -924,7 +931,7 @@ export function ComputerPane({
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <SessionHandoffSvg size={14} />
                   <span>
-                    <strong>Zero-Password Session Handoff</strong> (<code>/workspace/state/sessions/</code>)
+                    <strong>Saved logins</strong>
                   </span>
                 </span>
                 <button
@@ -935,7 +942,7 @@ export function ComputerPane({
                   disabled={busy}
                   onClick={handleSaveSessionHandoff}
                 >
-                  Save Session Cookie
+                  Save this login
                 </button>
               </div>
               {handoffNotice && (
@@ -1023,7 +1030,7 @@ export function ComputerPane({
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: 18, textAlign: 'center' }}>
                   <YggdrasilCrestSvg size={44} />
                   <span style={{ color: 'var(--ink-subtle)', fontSize: 12 }}>
-                    Viewport ready ({activeMode}). Enter a URL/query above or run the 5-Tier Suite.
+                    Browser ready. Type a website address or search above.
                   </span>
                 </div>
               )}
@@ -1116,7 +1123,7 @@ export function ComputerPane({
             {(b?.interactiveElements || []).length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ink-subtle)' }}>
-                  Grounded DOM Elements ({b.interactiveElements.length})
+                  Clickable items on page ({b.interactiveElements.length})
                 </div>
                 <div className="chip-list" style={{ maxHeight: 110, overflowY: 'auto' }}>
                   {b.interactiveElements.slice(0, 10).map(el => (
@@ -1156,9 +1163,9 @@ export function ComputerPane({
                 <div className="team-box-title" style={{ justifyContent: 'space-between' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     <WorkspaceVaultCrateSvg size={14} />
-                    <span>/workspace Persistence</span>
+                    <span>Saved work folder</span>
                   </span>
-                  <span className="pill is-emerald" style={{ fontSize: 10 }}>PERSISTENT</span>
+                  <span className="pill is-emerald" style={{ fontSize: 10 }}>KEPT SAFE</span>
                 </div>
                 <div className="workspace-crate-grid">
                   {(computerState.workspaceLayout.persistentSubdirs || []).map(dir => (
@@ -1169,21 +1176,23 @@ export function ComputerPane({
                   ))}
                 </div>
                 <div className="volatile-warn-row">
-                  <span style={{ color: 'var(--warn)', fontWeight: 700 }}>VOLATILE:</span>
+                  <span style={{ color: 'var(--warn)', fontWeight: 700 }}>TEMPORARY:</span>
                   <span>
-                    {(computerState.workspaceLayout.volatilePaths || []).map(v => v.path).join(', ')} clear on reset. Save tools/skills/state in <code>/workspace</code>.
+                    {(computerState.workspaceLayout.volatilePaths || []).map(v => v.path).join(', ')} clear on restart. Save important files in your work folder.
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
-                  <button
-                    type="button"
-                    className="btn btn-sm"
-                    data-testid="verify-workspace-btn"
-                    disabled={busy}
-                    onClick={handleVerifyWorkspace}
-                  >
-                    Verify &amp; Snapshot /workspace
-                  </button>
+                  {showDevTools && (
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      data-testid="verify-workspace-btn"
+                      disabled={busy}
+                      onClick={handleVerifyWorkspace}
+                    >
+                      Check &amp; Snapshot folder
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn btn-sm btn-primary"
@@ -1191,7 +1200,7 @@ export function ComputerPane({
                     disabled={busy}
                     onClick={handleSeedPresetSkills}
                   >
-                    Seed Grok Bot Skills
+                    Add starter skills
                   </button>
                 </div>
                 {snapshotNotice && (
@@ -1206,7 +1215,7 @@ export function ComputerPane({
               <div className="team-card-box">
                 <div className="team-box-title">
                   <SkillMarkdownSvg size={14} />
-                  <span>Teach-a-Task Skill Cards ({computerState.workspaceLayout.skillFiles.length})</span>
+                  <span>Saved repeatable tasks ({computerState.workspaceLayout.skillFiles.length})</span>
                 </div>
                 {skillNotice && (
                   <div style={{ fontSize: 10.5, color: '#5cf2b4', fontFamily: 'var(--sand-mono)' }} data-testid="skill-run-notice">
@@ -1276,90 +1285,92 @@ export function ComputerPane({
 
         {subTab === 'activity' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div className="card" style={{ padding: 10, gap: 6 }} data-testid="computer-receipts-ledger">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--brass)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Trust Receipts &amp; Run Ledger
-                </span>
-                <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                  {receiptsLedger?.chain && (
-                    <span className={`pill ${receiptsLedger.chain.valid ? 'is-emerald' : 'is-crimson'}`} style={{ fontSize: 10 }}>
-                      {receiptsLedger.chain.valid
-                        ? `Chain Valid (${receiptsLedger.chain.count})`
-                        : `Tamper @ #${receiptsLedger.chain.brokenIndex}`}
-                    </span>
-                  )}
-                  <button type="button" className="btn btn-sm" style={{ minHeight: 22, fontSize: 10.5 }} onClick={loadReceipts}>
-                    Verify
-                  </button>
-                  {receiptsLedger?.receipts?.length > 0 && (
-                    <button
-                      type="button"
-                      className="btn btn-sm"
-                      style={{ minHeight: 22, fontSize: 10.5 }}
-                      onClick={() => {
-                        navigator.clipboard?.writeText(JSON.stringify(receiptsLedger, null, 2));
-                        setCopiedLedger(true);
-                        setTimeout(() => setCopiedLedger(false), 1500);
-                      }}
-                    >
-                      {copiedLedger ? 'Copied' : 'Export JSON'}
-                    </button>
-                  )}
-                </div>
-              </div>
-              {runsLedger.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, borderTop: '1px solid var(--rule)', paddingTop: 6 }} data-testid="computer-runs-ledger">
-                  {runsLedger.slice(0, 4).map(r => (
-                    <div
-                      key={r.id}
-                      data-testid={`run-row-${r.id}`}
-                      style={{ fontSize: 11, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}
-                    >
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 210 }}>
-                        <code>{r.id.slice(0, 10)}</code> · {r.goal}
+            {showDevTools && (
+              <div className="card" style={{ padding: 10, gap: 6 }} data-testid="computer-receipts-ledger">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--brass)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Run log &amp; verification
+                  </span>
+                  <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                    {receiptsLedger?.chain && (
+                      <span className={`pill ${receiptsLedger.chain.valid ? 'is-emerald' : 'is-crimson'}`} style={{ fontSize: 10 }}>
+                        {receiptsLedger.chain.valid
+                          ? `Verified (${receiptsLedger.chain.count})`
+                          : `Mismatch @ #${receiptsLedger.chain.brokenIndex}`}
                       </span>
-                      <div style={{ display: 'inline-flex', gap: 4, alignItems: 'center', flex: 'none' }}>
-                        <span className={`pill ${r.status === 'COMPLETED' ? 'is-emerald' : r.status === 'WAITING_FOR_APPROVAL' ? 'is-gold' : r.status === 'FAILED' || r.status === 'CANCELLED' ? 'is-crimson' : ''}`} style={{ fontSize: 9.5 }}>
-                          {r.status}
-                        </span>
-                        {r.status === 'WAITING_FOR_APPROVAL' && (
-                          <>
-                            <button type="button" className="btn btn-sm btn-primary" style={{ minHeight: 20, fontSize: 10 }} disabled={busy} onClick={() => handleRunAction(r.id, 'approve')}>
-                              Approve
-                            </button>
-                            <button type="button" className="btn btn-sm" style={{ minHeight: 20, fontSize: 10 }} disabled={busy} onClick={() => handleRunAction(r.id, 'deny')}>
-                              Deny
-                            </button>
-                          </>
-                        )}
-                        {(r.status === 'RUNNING' || r.status === 'WAITING_FOR_APPROVAL' || r.status === 'CLAIMED') && (
-                          <button type="button" className="btn btn-sm" style={{ minHeight: 20, fontSize: 10 }} disabled={busy} onClick={() => handleRunAction(r.id, 'cancel')}>
-                            Cancel
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {!(receiptsLedger?.receipts?.length) ? (
-                <div style={{ fontSize: 11.5, color: 'var(--ink-muted)' }}>
-                  No tamper-evident receipts recorded yet.
-                </div>
-              ) : (
-                receiptsLedger.receipts.slice(0, 6).map(rc => (
-                  <div key={rc.id} style={{ fontSize: 11, borderTop: '1px solid var(--rule)', paddingTop: 5, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      <code>{String(rc.eventHash || '').slice(0, 10)}</code> · {rc.summary || rc.verdict}
-                    </span>
-                    <span className={`pill ${rc.verdict === 'verified' ? 'is-emerald' : 'is-crimson'}`} style={{ fontSize: 9.5, flex: 'none' }}>
-                      {rc.verdict}
-                    </span>
+                    )}
+                    <button type="button" className="btn btn-sm" style={{ minHeight: 22, fontSize: 10.5 }} onClick={loadReceipts}>
+                      Check
+                    </button>
+                    {receiptsLedger?.receipts?.length > 0 && (
+                      <button
+                        type="button"
+                        className="btn btn-sm"
+                        style={{ minHeight: 22, fontSize: 10.5 }}
+                        onClick={() => {
+                          navigator.clipboard?.writeText(JSON.stringify(receiptsLedger, null, 2));
+                          setCopiedLedger(true);
+                          setTimeout(() => setCopiedLedger(false), 1500);
+                        }}
+                      >
+                        {copiedLedger ? 'Copied' : 'Copy JSON'}
+                      </button>
+                    )}
                   </div>
-                ))
-              )}
-            </div>
+                </div>
+                {runsLedger.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, borderTop: '1px solid var(--rule)', paddingTop: 6 }} data-testid="computer-runs-ledger">
+                    {runsLedger.slice(0, 4).map(r => (
+                      <div
+                        key={r.id}
+                        data-testid={`run-row-${r.id}`}
+                        style={{ fontSize: 11, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}
+                      >
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 210 }}>
+                          <code>{r.id.slice(0, 10)}</code> · {r.goal}
+                        </span>
+                        <div style={{ display: 'inline-flex', gap: 4, alignItems: 'center', flex: 'none' }}>
+                          <span className={`pill ${r.status === 'COMPLETED' ? 'is-emerald' : r.status === 'WAITING_FOR_APPROVAL' ? 'is-gold' : r.status === 'FAILED' || r.status === 'CANCELLED' ? 'is-crimson' : ''}`} style={{ fontSize: 9.5 }}>
+                            {r.status}
+                          </span>
+                          {r.status === 'WAITING_FOR_APPROVAL' && (
+                            <>
+                              <button type="button" className="btn btn-sm btn-primary" style={{ minHeight: 20, fontSize: 10 }} disabled={busy} onClick={() => handleRunAction(r.id, 'approve')}>
+                                Approve
+                              </button>
+                              <button type="button" className="btn btn-sm" style={{ minHeight: 20, fontSize: 10 }} disabled={busy} onClick={() => handleRunAction(r.id, 'deny')}>
+                                Deny
+                              </button>
+                            </>
+                          )}
+                          {(r.status === 'RUNNING' || r.status === 'WAITING_FOR_APPROVAL' || r.status === 'CLAIMED') && (
+                            <button type="button" className="btn btn-sm" style={{ minHeight: 20, fontSize: 10 }} disabled={busy} onClick={() => handleRunAction(r.id, 'cancel')}>
+                              Cancel
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!(receiptsLedger?.receipts?.length) ? (
+                  <div style={{ fontSize: 11.5, color: 'var(--ink-muted)' }}>
+                    No logged runs yet.
+                  </div>
+                ) : (
+                  receiptsLedger.receipts.slice(0, 6).map(rc => (
+                    <div key={rc.id} style={{ fontSize: 11, borderTop: '1px solid var(--rule)', paddingTop: 5, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <code>{String(rc.eventHash || '').slice(0, 10)}</code> · {rc.summary || rc.verdict}
+                      </span>
+                      <span className={`pill ${rc.verdict === 'verified' ? 'is-emerald' : 'is-crimson'}`} style={{ fontSize: 9.5, flex: 'none' }}>
+                        {rc.verdict}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
             {((b?.uploads?.length || 0) > 0 || (b?.downloads?.length || 0) > 0) && (
               <div className="card" style={{ padding: 10, gap: 6 }} data-testid="browser-transfers-ledger">
                 <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--brass)' }}>
@@ -1411,14 +1422,14 @@ export function ComputerPane({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <MimirAsset category="artifacts" name="well-of-wisdom" size={22} />
               <span style={{ fontSize: 11.5, color: 'var(--brass)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Well of Wisdom Memory
+                Notes for this helper
               </span>
             </div>
             <form onSubmit={saveMem} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <input className="input" placeholder="Key (e.g. preferred_repo)" value={memKey} onChange={e => setMemKey(e.target.value)} />
-              <input className="input" placeholder="Value..." value={memVal} onChange={e => setMemVal(e.target.value)} />
+              <input className="input" placeholder="Topic (e.g. preferred_repo)" value={memKey} onChange={e => setMemKey(e.target.value)} />
+              <input className="input" placeholder="Note..." value={memVal} onChange={e => setMemVal(e.target.value)} />
               <button type="submit" className="btn btn-primary btn-sm">
-                Save Memory
+                Save note
               </button>
             </form>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

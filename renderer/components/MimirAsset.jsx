@@ -2,19 +2,19 @@ import React from 'react';
 import { MimirAvatarSvg, MIMIR_AVATAR_STATES } from './MimirAvatarSvg.jsx';
 
 export const CHARACTER_ARCHETYPES = [
-  { id: 'mimir-head', label: 'Mimir', role: 'Central Sage & Orchestrator', withStates: true },
-  { id: 'all-father-warrior', label: 'All-Father Warrior', role: 'Execution, Action & Ops', withStates: true },
-  { id: 'young-archer', label: 'Young Archer', role: 'Scout, Browse & Research', withStates: true },
-  { id: 'forge-bot-brok', label: 'Forge Bot Brok', role: 'Builder, Infra & Tools', withStates: true },
-  { id: 'forge-bot-sindri', label: 'Forge Bot Sindri', role: 'Artificer, Polish & QA', withStates: true },
-  { id: 'freya-valkyrie', label: 'Freya Valkyrie', role: 'Diagnostics & Recovery', withStates: false },
-  { id: 'odin-archivist', label: 'Odin Archivist', role: 'Memory & Lore Index', withStates: false },
-  { id: 'thor-thunderer', label: 'Thor Enforcer', role: 'Heavy Parallel Compute', withStates: false },
-  { id: 'tyr-diplomat', label: 'Tyr Strategist', role: 'Coordination & Comms', withStates: false },
-  { id: 'angrboda-mystic', label: 'Angrboda Mystic', role: 'Creative Synthesis', withStates: false },
-  { id: 'heimdall-sentinel', label: 'Heimdall Sentinel', role: 'Guardrails & Watch', withStates: false },
-  { id: 'durlin-crafter', label: 'Durlin Scribe', role: 'Schema & Audit Trail', withStates: false },
-  { id: 'lunda-smith', label: 'Lunda Armorer', role: 'Gear & Runtime Tuning', withStates: false },
+  { id: 'mimir-head', label: 'Mimir', role: 'Main assistant & planner', withStates: true },
+  { id: 'all-father-warrior', label: 'Guardian', role: 'Actions & operations', withStates: true },
+  { id: 'young-archer', label: 'Scout', role: 'Search, browse & research', withStates: true },
+  { id: 'forge-bot-brok', label: 'Builder', role: 'Building, setup & tools', withStates: true },
+  { id: 'forge-bot-sindri', label: 'Polisher', role: 'Details, review & checks', withStates: true },
+  { id: 'freya-valkyrie', label: 'Fixer', role: 'Troubleshooting & recovery', withStates: false },
+  { id: 'odin-archivist', label: 'Archivist', role: 'Notes & saved memory', withStates: false },
+  { id: 'thor-thunderer', label: 'Heavy Lifter', role: 'Fast batch tasks', withStates: false },
+  { id: 'tyr-diplomat', label: 'Planner', role: 'Coordination & messages', withStates: false },
+  { id: 'angrboda-mystic', label: 'Creator', role: 'Writing & creative ideas', withStates: false },
+  { id: 'heimdall-sentinel', label: 'Safety Guard', role: 'Safety checks & review', withStates: false },
+  { id: 'durlin-crafter', label: 'Auditor', role: 'Records & checking logs', withStates: false },
+  { id: 'lunda-smith', label: 'Tuner', role: 'Settings & tuning', withStates: false },
 ];
 
 export const LEGACY_SHAPE_TO_CHARACTER = {
@@ -35,20 +35,20 @@ export const LEGACY_SHAPE_TO_CHARACTER = {
 };
 
 export const ACCESSORY_OPTIONS = [
-  { id: 'helmets-valkyrie-crest', slot: 'helmets', label: 'Valkyrie Brass Wing Crest' },
-  { id: 'headwear-scout-hood', slot: 'headwear', label: 'Norse Ranger Hood' },
-  { id: 'hair-braided-crown', slot: 'hair', label: 'Braided Silver Crown' },
-  { id: 'beards-braided-sage', slot: 'beards', label: 'Twin-Clasp Sage Beard' },
-  { id: 'masks-artificer-visor', slot: 'masks', label: 'Sindri Gold Visor' },
-  { id: 'armor-wolf-pauldron', slot: 'armor', label: 'Wolf-Pelt Mantle' },
-  { id: 'eye-effects-bifrost-flare', slot: 'eye-effects', label: 'Bifrost Eye Flare' },
-  { id: 'crystals-shoulder-shard', slot: 'crystals', label: 'Bifrost Crystal Shard' },
-  { id: 'runes-brow-raido', slot: 'runes', label: 'Elder Futhark Halo' },
-  { id: 'weapons-frost-axe', slot: 'weapons', label: 'Shoulder Frost Axe' },
-  { id: 'books-lore-codex', slot: 'books', label: 'Chained Edda Codex' },
-  { id: 'scrolls-prophecy', slot: 'scrolls', label: 'Prophecy Scroll' },
-  { id: 'tools-smith-hammer', slot: 'tools', label: 'Dwarven Forging Mallet' },
-  { id: 'shields-guardian-round', slot: 'shields', label: 'Brass Guardian Shield' },
+  { id: 'helmets-valkyrie-crest', slot: 'helmets', label: 'Winged crest' },
+  { id: 'headwear-scout-hood', slot: 'headwear', label: 'Ranger hood' },
+  { id: 'hair-braided-crown', slot: 'hair', label: 'Braided crown' },
+  { id: 'beards-braided-sage', slot: 'beards', label: 'Braided beard' },
+  { id: 'masks-artificer-visor', slot: 'masks', label: 'Gold visor' },
+  { id: 'armor-wolf-pauldron', slot: 'armor', label: 'Shoulder cape' },
+  { id: 'eye-effects-bifrost-flare', slot: 'eye-effects', label: 'Glowing eyes' },
+  { id: 'crystals-shoulder-shard', slot: 'crystals', label: 'Shoulder crystal' },
+  { id: 'runes-brow-raido', slot: 'runes', label: 'Brow symbol' },
+  { id: 'weapons-frost-axe', slot: 'weapons', label: 'Back axe' },
+  { id: 'books-lore-codex', slot: 'books', label: 'Spellbook' },
+  { id: 'scrolls-prophecy', slot: 'scrolls', label: 'Scroll' },
+  { id: 'tools-smith-hammer', slot: 'tools', label: 'Hammer' },
+  { id: 'shields-guardian-round', slot: 'shields', label: 'Round shield' },
 ];
 
 export const REALMS_DATA = [

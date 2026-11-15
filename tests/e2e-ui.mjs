@@ -110,6 +110,10 @@ async function main() {
     await page.waitForSelector('[data-testid="routines-view"]');
     await page.click('[data-testid="nav-settings"]');
     await page.waitForSelector('[data-testid="settings-view"]');
+    assert.equal(await page.$('[data-testid="nav-overview"]'), null, 'Developer views must be hidden until enabled in Settings');
+    await page.waitForSelector('[data-testid="developer-tools-checkbox"]');
+    await page.check('[data-testid="developer-tools-checkbox"]');
+    await page.waitForSelector('[data-testid="nav-overview"]');
 
     // 2. Return to Chat and run a live Ollama qwen3:1.7b turn with Usage Review Gate approval
     await page.click('[data-testid="nav-chat"]');
@@ -251,7 +255,7 @@ async function main() {
 
     await page.click('[data-testid="computer-pane"] button[role="tab"]:has-text("Team")');
     await page.waitForSelector('[data-testid="team-topology-pane"]');
-    await page.click('[data-testid="computer-pane"] button[role="tab"]:has-text("Workspace")');
+    await page.click('[data-testid="computer-pane"] button[role="tab"]:has-text("Files")');
     await page.waitForSelector('[data-testid="workspace-persistence-pane"]');
 
     await page.click('[data-testid="nav-overview"]');
@@ -278,7 +282,7 @@ async function main() {
     await page.fill('[data-testid="new-space-title"]', 'Rust Forge');
     await page.selectOption('[data-testid="new-space-surface"]', 'code');
     await page.click('[data-testid="save-space-btn"]');
-    await page.waitForSelector('[data-testid="spaces-list"] button:has-text("Rust Forge (code)")');
+    await page.waitForSelector('[data-testid="spaces-list"] button:has-text("Rust Forge")');
 
     await page.click('[data-testid="nav-chat"]');
     await page.screenshot({ path: path.join(shotsDir, 'viewport-1280x800.png'), fullPage: false });
@@ -465,7 +469,7 @@ async function main() {
       await offPage.waitForFunction(
         () => {
           const txt = document.querySelector('[data-testid="sidebar"]')?.textContent || '';
-          return txt.includes('Offline') && !txt.includes('Ollama Live');
+          return txt.includes('AI not running') && !txt.includes('AI ready');
         },
         { timeout: 10000 }
       );

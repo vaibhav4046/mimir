@@ -5,10 +5,10 @@ import { CreativeStudioPlayer } from './CreativeStudioPlayer.jsx';
 
 const LIB_TABS = [
   { id: 'all', label: 'All' },
-  { id: '3d', label: '3D Models' },
-  { id: 'images', label: 'HD Images' },
-  { id: 'videos', label: 'Motion Videos' },
-  { id: 'webapps', label: 'Web Apps' },
+  { id: '3d', label: '3D models' },
+  { id: 'images', label: 'Pictures' },
+  { id: 'videos', label: 'Videos' },
+  { id: 'webapps', label: 'Apps' },
   { id: 'games', label: 'Games' },
   { id: 'favorites', label: 'Favorites' },
   { id: 'folders', label: 'Folders' },
@@ -19,7 +19,7 @@ const STUDIO_PRESETS = [
   {
     id: '3d',
     testId: 'preset-forge-3d',
-    label: '3D Starfighter (.GLB)',
+    label: '3D spaceship',
     title: 'Valkyrie Starfighter MK-IV',
     format: 'glb',
     prompt: 'Create a metallic cyber starfighter 3D mesh with twin delta wings, thrusters, and cockpit canopy',
@@ -28,7 +28,7 @@ const STUDIO_PRESETS = [
   {
     id: 'image',
     testId: 'preset-forge-image',
-    label: 'HD Image (.PNG)',
+    label: 'Picture',
     title: 'Cosmic Odin Observatory',
     format: 'png',
     prompt: 'Render a luminous Norse cosmic observatory illustration with orbital rings and nebula glow',
@@ -37,7 +37,7 @@ const STUDIO_PRESETS = [
   {
     id: 'video',
     testId: 'preset-forge-video',
-    label: 'Motion Video (.WEBM)',
+    label: 'Short video',
     title: 'Hyperdrive Reactor Loop',
     format: 'webm',
     prompt: 'Animate a smooth orbital octahedron reactor pulse motion video loop with cyber neon rings',
@@ -46,7 +46,7 @@ const STUDIO_PRESETS = [
   {
     id: 'webapp',
     testId: 'preset-forge-webapp',
-    label: 'Full-Stack WebApp',
+    label: 'Web app',
     title: 'Valhalla Ops Command Center',
     format: 'webapp',
     prompt: 'Build an interactive FastAPI and JS operational command web app with live item tracking and Docker config',
@@ -55,7 +55,7 @@ const STUDIO_PRESETS = [
   {
     id: 'game',
     testId: 'preset-forge-game',
-    label: 'Playable Game',
+    label: 'Game',
     title: 'Galactic Star Defender',
     format: 'game',
     prompt: 'Create a playable 60fps HTML5 canvas space shooter arcade game with enemy waves and laser cannons',
@@ -140,7 +140,7 @@ export function LibraryView({ activeBotId }) {
       const data = await apiFetch('/v1/library/artifacts');
       setArtifacts(data?.artifacts || []);
     } catch (e) {
-      setErr(e.message || 'Failed to load Library artifacts');
+      setErr(e.message || 'Could not load your files');
     } finally {
       setLoading(false);
     }
@@ -195,7 +195,7 @@ export function LibraryView({ activeBotId }) {
       if (created?.id) setActiveStudioArtifact(created);
       if (presetId === 'custom') setStudioPrompt('');
     } catch (e2) {
-      setErr(e2.message || 'Studio forge failed');
+      setErr(e2.message || 'Could not make that. Please try again.');
     } finally {
       setForgingPreset('');
     }
@@ -235,7 +235,7 @@ export function LibraryView({ activeBotId }) {
       await load();
       if (created?.id) setActiveStudioArtifact(created);
     } catch (e2) {
-      setErr(e2.message || 'Failed to create deliverable');
+      setErr(e2.message || 'Could not make that file. Please try again.');
     } finally {
       setCreating(false);
     }
@@ -261,10 +261,10 @@ export function LibraryView({ activeBotId }) {
           <div>
             <h2 style={{ margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
               <MimirAsset category="artifacts" name="codex" size={22} />
-              <span>Library &amp; Creative Studio</span>
+              <span>Your files</span>
             </h2>
             <p style={{ margin: 0, color: 'var(--ink-muted)', fontSize: 13 }}>
-              Forge 3D models, HD images, motion videos, full-stack web apps, playable games &amp; documents verified in Rust WAL.
+              Everything Mimir has made for you: documents, pictures, videos, 3D models, apps and games.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -272,8 +272,8 @@ export function LibraryView({ activeBotId }) {
               type="search"
               className="input"
               data-testid="library-search"
-              placeholder="Search library..."
-              aria-label="Search library deliverables"
+              placeholder="Search your files..."
+              aria-label="Search your files"
               style={{ width: 200 }}
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -300,7 +300,7 @@ export function LibraryView({ activeBotId }) {
               data-testid="library-new-btn"
               onClick={() => dialogRef.current?.showModal()}
             >
-              + New Deliverable
+              + Make something
             </button>
           </div>
         </div>
@@ -337,12 +337,12 @@ export function LibraryView({ activeBotId }) {
         <section className="harness-studio-bar" data-testid="harness-creative-studio">
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
             <div>
-              <strong>Mimir Harness Creative &amp; Dev Studio</strong>
+              <strong>Quick make</strong>
               <span className="muted" style={{ fontSize: 12, marginLeft: 8 }}>
-                Generate interactive 3D meshes, HD visuals, motion loops, web apps &amp; playable games
+                Pick an example or describe what you want: a 3D model, picture, video, app or game
               </span>
             </div>
-            {forgingPreset && <span className="pill">Synthesizing {forgingPreset}...</span>}
+            {forgingPreset && <span className="pill">Making it now...</span>}
           </div>
 
           <div className="harness-studio-presets">
@@ -363,7 +363,7 @@ export function LibraryView({ activeBotId }) {
                   })
                 }
               >
-                {forgingPreset === p.id ? 'Forging...' : p.label}
+                {forgingPreset === p.id ? 'Making...' : p.label}
               </button>
             ))}
           </div>
@@ -384,7 +384,8 @@ export function LibraryView({ activeBotId }) {
               type="text"
               className="input"
               data-testid="studio-prompt-input"
-              placeholder="Describe a 3D model, artwork, motion video, full-stack web app, or playable game..."
+              placeholder="Describe what you want, e.g. a picture of a red tractor at sunrise"
+              aria-label="Describe what you want Mimir to make"
               value={studioPrompt}
               onChange={e => setStudioPrompt(e.target.value)}
               style={{ flex: 1, minWidth: 240 }}
@@ -392,23 +393,24 @@ export function LibraryView({ activeBotId }) {
             <select
               className="select"
               data-testid="studio-format-select"
+              aria-label="What kind of file to make"
               value={studioFormat}
               onChange={e => setStudioFormat(e.target.value)}
             >
-              <option value="glb">3D Model (.GLB)</option>
-              <option value="obj">3D Mesh (.OBJ)</option>
-              <option value="stl">3D Print (.STL)</option>
-              <option value="png">HD Image (.PNG)</option>
-              <option value="svg">Vector Graphic (.SVG)</option>
-              <option value="webm">Motion Video (.WEBM)</option>
-              <option value="mp4">Video Clip (.MP4)</option>
-              <option value="gif">Animated GIF (.GIF)</option>
-              <option value="webapp">Full-Stack WebApp (.ZIP)</option>
-              <option value="game">Playable Game (.ZIP)</option>
-              <option value="pdf">PDF Document</option>
-              <option value="docx">DOCX Report</option>
-              <option value="pptx">PPTX Deck</option>
-              <option value="xlsx">XLSX Workbook</option>
+              <option value="glb">3D model</option>
+              <option value="obj">3D model (simple, .obj)</option>
+              <option value="stl">3D model for printing</option>
+              <option value="png">Picture</option>
+              <option value="svg">Drawing (logo or icon)</option>
+              <option value="webm">Video</option>
+              <option value="mp4">Video (.mp4)</option>
+              <option value="gif">Moving picture (GIF)</option>
+              <option value="webapp">App</option>
+              <option value="game">Game</option>
+              <option value="pdf">Document (PDF)</option>
+              <option value="docx">Word document</option>
+              <option value="pptx">Slides</option>
+              <option value="xlsx">Spreadsheet</option>
             </select>
             <button
               type="submit"
@@ -416,7 +418,7 @@ export function LibraryView({ activeBotId }) {
               data-testid="studio-forge-submit"
               disabled={Boolean(forgingPreset) || !studioPrompt.trim()}
             >
-              {forgingPreset === 'custom' ? 'Forging...' : 'Forge with Harness'}
+              {forgingPreset === 'custom' ? 'Making...' : 'Make'}
             </button>
           </form>
         </section>
@@ -429,16 +431,16 @@ export function LibraryView({ activeBotId }) {
         )}
 
         {loading ? (
-          <div className="card">Loading Foundry ledger...</div>
+          <div className="card">Loading your files...</div>
         ) : filtered.length === 0 ? (
           <div className="card" style={{ alignItems: 'center', textAlign: 'center', padding: 28 }}>
             <MimirAsset category="ui" name="empty-realm" size={32} />
-            <div style={{ fontWeight: 700 }}>No matching deliverables yet</div>
+            <div style={{ fontWeight: 700 }}>No files here yet</div>
             <div style={{ color: 'var(--ink-muted)', fontSize: 13 }}>
-              Create a real PDF, DOCX, PPTX, XLSX, PNG or SVG deliverable directly via Foundry.
+              Ask Mimir to make a document, spreadsheet, slides or picture. It will show up here.
             </div>
             <button type="button" className="btn btn-primary btn-sm" onClick={() => dialogRef.current?.showModal()}>
-              Create First Deliverable
+              Make your first file
             </button>
           </div>
         ) : (
@@ -457,7 +459,7 @@ export function LibraryView({ activeBotId }) {
                   {viewMode === 'grid' && (
                     <div className="library-thumb">
                       {isImg && coordUrl ? (
-                        <AuthArtifactImg url={`${dlUrl}?inline=1`} token={coordToken} alt={art.title || 'Deliverable graphic'} />
+                        <AuthArtifactImg url={`${dlUrl}?inline=1`} token={coordToken} alt={art.title || 'Picture preview'} />
                       ) : (
                         <MimirAsset category="artifacts" name={FORMAT_ASSET[fmt] || 'scroll'} size={44} />
                       )}
@@ -483,7 +485,7 @@ export function LibraryView({ activeBotId }) {
                       data-testid={`open-studio-${art.id}`}
                       onClick={() => setActiveStudioArtifact(art)}
                     >
-                      Open in Studio
+                      Open
                     </button>
                     <button
                       type="button"
@@ -535,7 +537,7 @@ export function LibraryView({ activeBotId }) {
 
       <dialog ref={dialogRef} className="mimir-dialog" aria-labelledby="new-deliverable-title">
         <div className="mimir-dialog-head">
-          <strong id="new-deliverable-title">New Foundry Deliverable</strong>
+          <strong id="new-deliverable-title">Make something</strong>
           <button type="button" className="btn btn-sm" onClick={() => dialogRef.current?.close()}>
             Close
           </button>
@@ -547,36 +549,36 @@ export function LibraryView({ activeBotId }) {
               className="input"
               required
               data-testid="library-create-title"
-              placeholder="Q4 System Release Brief"
+              placeholder="e.g. Harvest plan for spring"
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
             />
           </label>
           <div className="grid-2">
             <label className="field-label">
-              Format
+              Kind of file
               <select
                 className="select"
                 data-testid="library-create-format"
                 value={form.format}
                 onChange={e => setForm(f => ({ ...f, format: e.target.value }))}
               >
-                <option value="pdf">PDF Document</option>
-                <option value="docx">DOCX Report</option>
-                <option value="pptx">PPTX Deck</option>
-                <option value="xlsx">XLSX Workbook</option>
-                <option value="glb">3D Model (.GLB)</option>
-                <option value="obj">3D Mesh (.OBJ)</option>
-                <option value="stl">3D Print (.STL)</option>
-                <option value="png">HD Image (.PNG)</option>
-                <option value="svg">Vector Graphic (.SVG)</option>
-                <option value="webm">Motion Video (.WEBM)</option>
-                <option value="mp4">Video Clip (.MP4)</option>
-                <option value="gif">Animated GIF (.GIF)</option>
-                <option value="webapp">Full-Stack WebApp (.ZIP)</option>
-                <option value="game">Playable Game (.ZIP)</option>
-                <option value="zip">ZIP Starter Bundle</option>
-                <option value="csv">CSV Data Export</option>
+                <option value="pdf">Document (PDF)</option>
+                <option value="docx">Word document</option>
+                <option value="pptx">Slides</option>
+                <option value="xlsx">Spreadsheet</option>
+                <option value="glb">3D model</option>
+                <option value="obj">3D model (simple, .obj)</option>
+                <option value="stl">3D model for printing</option>
+                <option value="png">Picture</option>
+                <option value="svg">Drawing (logo or icon)</option>
+                <option value="webm">Video</option>
+                <option value="mp4">Video (.mp4)</option>
+                <option value="gif">Moving picture (GIF)</option>
+                <option value="webapp">App</option>
+                <option value="game">Game</option>
+                <option value="zip">Starter folder (zip)</option>
+                <option value="csv">Table (CSV)</option>
               </select>
             </label>
             <label className="field-label">
@@ -589,16 +591,16 @@ export function LibraryView({ activeBotId }) {
             </label>
           </div>
           <label className="field-label">
-            Subtitle
+            Short description
             <input
               className="input"
-              placeholder="Grounded release checklist"
+              placeholder="e.g. What to plant and when"
               value={form.subtitle}
               onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))}
             />
           </label>
           <label className="field-label">
-            Key Bullet Sections (one per line)
+            Main points (one per line)
             <textarea
               className="textarea"
               rows={3}
@@ -607,7 +609,7 @@ export function LibraryView({ activeBotId }) {
             />
           </label>
           <label className="field-label">
-            Spreadsheet / Table Rows (CSV lines, for XLSX/CSV)
+            Table rows (for spreadsheets: one row per line, commas between columns)
             <textarea
               className="textarea"
               rows={2}
@@ -618,7 +620,7 @@ export function LibraryView({ activeBotId }) {
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
             <button type="button" className="btn" onClick={() => dialogRef.current?.close()}>Cancel</button>
             <button type="submit" className="btn btn-primary" data-testid="library-create-submit" disabled={creating}>
-              {creating ? 'Building...' : 'Build Deliverable'}
+              {creating ? 'Making...' : 'Make'}
             </button>
           </div>
         </form>

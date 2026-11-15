@@ -179,17 +179,17 @@ function PluginsHubSection() {
     <section className="plugins-hub card" data-testid="plugins-hub">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <h3 className="card-title" style={{ margin: 0 }}>Plugins &amp; Account Connectors</h3>
+          <h3 className="card-title" style={{ margin: 0 }}>Apps &amp; accounts</h3>
           <div style={{ fontSize: 12.5, color: 'var(--ink-muted)' }}>
-            Read actions run automatically once connected; Send / write actions pause behind Runic OK gates unless explicitly unlocked.
+            Reading happens automatically once connected. Sending messages or making changes always asks for your OK first unless you allow it.
           </div>
         </div>
         <input
           type="search"
           className="input"
           data-testid="connector-search-input"
-          placeholder="Search plugins..."
-          aria-label="Search plugins and connectors"
+          placeholder="Search apps..."
+          aria-label="Search apps and accounts"
           style={{ width: 220 }}
           value={query}
           onChange={e => setQuery(e.target.value)}
@@ -199,7 +199,7 @@ function PluginsHubSection() {
       {/* Installed quick strip */}
       <div>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--brass)', marginBottom: 6 }}>
-          Installed ({installedList.length})
+          Connected ({installedList.length})
         </div>
         <div className="installed-strip" data-testid="installed-strip">
           {installedList.map(c => (
@@ -254,7 +254,7 @@ function PluginsHubSection() {
             </div>
             <p style={{ margin: 0, fontSize: 12.5, color: 'var(--ink-muted)', flex: 1 }}>{c.description}</p>
             <div style={{ fontSize: 11.5, color: 'var(--ink-subtle)' }}>
-              Scopes: Read (auto) · {c.scopes?.send ? (c.sendApproved ? 'Send (unlocked)' : 'Send (asks OK)') : 'Read-only'}
+              Access: Can read · {c.scopes?.send ? (c.sendApproved ? 'Can send automatically' : 'Asks OK before sending') : 'Read-only'}
             </div>
             <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between', alignItems: 'center' }}>
               <button
@@ -263,7 +263,7 @@ function PluginsHubSection() {
                 data-testid={`connector-configure-${c.id}`}
                 onClick={() => openModal(c)}
               >
-                {c.installed ? 'Configure' : 'Connect'}
+                {c.installed ? 'Settings' : 'Connect'}
               </button>
               <button
                 type="button"
@@ -288,7 +288,7 @@ function PluginsHubSection() {
         <div className="mimir-dialog-head">
           <strong id="connector-dialog-title" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             {editing && <ConnectorLogoSvg id={editing.id} color={editing.brandColor} size={20} />}
-            <span>{editing?.name || 'Configure Connector'}</span>
+            <span>{editing?.name || 'App settings'}</span>
           </strong>
           <button type="button" className="btn btn-sm" onClick={() => dialogRef.current?.close()}>
             Close
@@ -298,7 +298,7 @@ function PluginsHubSection() {
           <form className="mimir-dialog-body" onSubmit={handleSaveConnector}>
             <div style={{ fontSize: 12.5, color: 'var(--ink-muted)' }}>{editing.description}</div>
             <label className="field-label">
-              Account / Connection Label
+              Account name
               <input
                 className="input"
                 value={accountDraft}
@@ -308,13 +308,13 @@ function PluginsHubSection() {
             </label>
             {editing.secretKey && (
               <label className="field-label">
-                {editing.authType === 'connection-uri' ? 'Connection URI' : 'Encrypted Token / API Key'} (stored in vault as <code>{editing.secretKey}</code>)
+                {editing.authType === 'connection-uri' ? 'Connection address' : 'Access key or token'} (saved locked on this computer)
                 <input
                   type="password"
                   className="input"
                   value={tokenDraft}
                   onChange={e => setTokenDraft(e.target.value)}
-                  placeholder={editing.hasSecret ? 'Saved in encrypted vault (enter new value to replace)' : 'Paste token or key...'}
+                  placeholder={editing.hasSecret ? 'Saved locked on this computer (type a new one to replace)' : 'Paste key or token...'}
                 />
               </label>
             )}
@@ -325,7 +325,7 @@ function PluginsHubSection() {
                   checked={sendApproved}
                   onChange={e => setSendApproved(e.target.checked)}
                 />
-                Unlock outbound Send / write actions (unchecked = always require Needs your OK approval)
+                Let Mimir send or post without asking first (leave unchecked to ask for your OK every time)
               </label>
             )}
             {testResult && (
@@ -334,7 +334,7 @@ function PluginsHubSection() {
                 data-testid="connector-test-result"
                 style={{ fontSize: 12 }}
               >
-                <strong>{testResult.ok ? 'Probe OK' : 'Probe Failed'}:</strong> {testResult.detail || testResult.error || JSON.stringify(testResult)}
+                <strong>{testResult.ok ? 'Working' : 'Not working'}:</strong> {testResult.detail || testResult.error || JSON.stringify(testResult)}
               </div>
             )}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', flexWrap: 'wrap' }}>
@@ -346,7 +346,7 @@ function PluginsHubSection() {
                     disabled={busy}
                     onClick={() => handleUninstall(editing.id)}
                   >
-                    Uninstall &amp; Wipe Key
+                    Disconnect &amp; remove key
                   </button>
                 )}
               </div>
@@ -357,10 +357,10 @@ function PluginsHubSection() {
                   disabled={busy}
                   onClick={() => handleTest(editing.id)}
                 >
-                  Test Connection
+                  Test connection
                 </button>
                 <button type="submit" className="btn btn-primary btn-sm" disabled={busy}>
-                  Save &amp; Connect
+                  Save &amp; connect
                 </button>
               </div>
             </div>
@@ -476,10 +476,10 @@ export function McpView({ mcps, onRefresh }) {
         <div>
           <h2 style={{ margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <MimirAsset category="ui" name="mcp-box" size={22} />
-            <span>MCP Box</span>
+            <span>Connected apps</span>
           </h2>
           <p style={{ margin: 0, color: 'var(--ink-muted)' }}>
-            Connect local stdio servers or remote MCP servers over HTTP. Remote servers that need an account open a sign-in page in your browser; tokens stay in Mimir's encrypted vault.
+            Connect other apps and tools here. Apps that need a login open a sign-in page in your browser, and your keys stay locked on this computer.
           </p>
         </div>
 
@@ -490,18 +490,18 @@ export function McpView({ mcps, onRefresh }) {
         <form className="card" onSubmit={handleSave}>
           <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <MimirAsset category="artifacts" name="dwarven-tongs" size={18} />
-            <span>Add MCP Server</span>
+            <span>Add custom tool connection</span>
           </h3>
           <div className="grid-2">
             <label className="field-label">
-              Server Name
-              <input className="input" required placeholder="Filesystem / Memory / Custom" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+              Name
+              <input className="input" required placeholder="e.g. Company Wiki / Notes" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
             </label>
             <label className="field-label">
-              Transport
+              How it connects
               <select className="select" value={form.transport} onChange={e => setForm(f => ({ ...f, transport: e.target.value }))}>
-                <option value="stdio">stdio (local process)</option>
-                <option value="http">Remote (Streamable HTTP, sign-in supported)</option>
+                <option value="stdio">Program on this computer</option>
+                <option value="http">Online tool link (sign-in supported)</option>
               </select>
             </label>
           </div>
@@ -509,29 +509,29 @@ export function McpView({ mcps, onRefresh }) {
           {form.transport === 'stdio' ? (
             <div className="grid-2">
               <label className="field-label">
-                Command
+                Program to run
                 <input className="input" required placeholder="npx or D:\node.exe" value={form.command} onChange={e => setForm(f => ({ ...f, command: e.target.value }))} />
               </label>
               <label className="field-label">
-                Arguments (space-separated)
+                Extra options
                 <input className="input" placeholder="-y @modelcontextprotocol/server-filesystem C:\work" value={form.args} onChange={e => setForm(f => ({ ...f, args: e.target.value }))} />
               </label>
             </div>
           ) : (
             <label className="field-label">
-              Endpoint URL
+              Web link (URL)
               <input className="input" required placeholder="http://127.0.0.1:8787/mcp" value={form.url} onChange={e => setForm(f => ({ ...f, url: e.target.value }))} />
             </label>
           )}
 
           <label className="field-label">
-            Custom Server Instructions (injected into system prompt)
+            Notes for Mimir on how to use this tool (optional)
             <textarea className="textarea" rows={2} value={form.customInstructions} onChange={e => setForm(f => ({ ...f, customInstructions: e.target.value }))} />
           </label>
 
           <div>
             <button type="submit" className="btn btn-primary">
-              Add Server
+              Add connection
             </button>
           </div>
         </form>
@@ -553,19 +553,19 @@ export function McpView({ mcps, onRefresh }) {
                   </button>
                 ) : (
                   <button type="button" className="btn btn-sm" onClick={() => discover(srv.id)} disabled={busyId === srv.id}>
-                    {busyId === srv.id ? 'Connecting...' : 'Discover Tools'}
+                    {busyId === srv.id ? 'Checking...' : 'Check actions'}
                   </button>
                 )}
                 {srv.auth && (
                   <button type="button" className="btn btn-sm" data-testid={`mcp-revoke-${srv.id}`} onClick={() => revoke(srv)}>
-                    Revoke access
+                    Disconnect
                   </button>
                 )}
                 <button type="button" className="btn btn-sm" onClick={() => toggleServer(srv)}>
-                  {srv.enabled === false ? 'Enable' : 'Disable'}
+                  {srv.enabled === false ? 'Turn on' : 'Turn off'}
                 </button>
                 <button type="button" className="btn btn-danger btn-sm" onClick={() => removeServer(srv.id)}>
-                  Delete
+                  Remove
                 </button>
               </div>
             </div>
@@ -585,7 +585,7 @@ export function McpView({ mcps, onRefresh }) {
 
             {srv.tools?.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ fontSize: 12, color: 'var(--sand-text-muted)' }}>Discovered Tools ({srv.tools.length}):</div>
+                <div style={{ fontSize: 12, color: 'var(--sand-text-muted)' }}>Available actions ({srv.tools.length}):</div>
                 {srv.tools.map(t => {
                   const isDisabled = (srv.disabledTools || []).includes(t.name);
                   return (
