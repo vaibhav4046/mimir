@@ -4157,3 +4157,22 @@ dialog.mimir-dialog::backdrop {
   padding-top: 14px;
   border-top: 1px solid var(--rule);
 }
+
+/* Usage bar: live resource use + response mode above the chat box */
+.usage-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 6px 10px; margin-bottom: 6px; border: 1px solid var(--rule, #1d2b3b); background: var(--bg, #081019); font-size: 11px; }
+.usage-error { color: var(--err, #ff6b6b); }
+.usage-modes { display: inline-flex; border: 1px solid var(--rule, #1d2b3b); }
+.usage-mode { background: none; border: none; color: var(--ink-muted, #91a8bd); padding: 3px 9px; font: inherit; cursor: pointer; }
+.usage-mode + .usage-mode { border-left: 1px solid var(--rule, #1d2b3b); }
+.usage-mode:hover:not(:disabled) { color: var(--frost-hi, #a9eeff); }
+.usage-mode:focus-visible { outline: 2px solid var(--frost, #3ac9ff); outline-offset: -2px; }
+.usage-mode.is-on { background: var(--gold, #e6ab42); color: #081019; font-weight: 700; }
+.usage-meter, .usage-stat { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; cursor: default; }
+.usage-label { color: var(--ink-muted, #91a8bd); }
+.usage-value { color: var(--ink, #e8f1f8); font-variant-numeric: tabular-nums; }
+.usage-track { width: 56px; height: 6px; background: var(--rule, #1d2b3b); display: inline-block; }
+.usage-fill { display: block; height: 100%; transition: width 300ms steps(6); }
+.usage-low { background: var(--frost, #3ac9ff); }
+.usage-mid { background: var(--gold, #e6ab42); }
+.usage-high { background: var(--err, #ff6b6b); }
+@media (max-width: 640px) { .usage-track { width: 36px; } }

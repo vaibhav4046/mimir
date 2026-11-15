@@ -135,6 +135,25 @@ export function resolveNumCtx(settings = {}) {
   return Number.isInteger(n) && n >= 2048 && n <= 262144 ? n : DEFAULT_NUM_CTX;
 }
 
+export const RESPONSE_MODES = ['fast', 'standard', 'reasoning'];
+
+/** fast = smallest installed model, no thinking; standard = default model; reasoning = default
+ *  model, thinks before answering. Null until chosen, so the older ollamaThink setting still applies. */
+export function resolveResponseMode(settings = {}) {
+  return RESPONSE_MODES.includes(settings.responseMode) ? settings.responseMode : null;
+}
+
+function ollamaUsage(obj, numCtx) {
+  const outputTokens = obj.eval_count || 0;
+  const secs = (obj.eval_duration || 0) / 1e9;
+  return { promptTokens: obj.prompt_eval_count || 0, outputTokens, numCtx, tokPerSec: secs > 0 ? +(outputTokens / secs).toFixed(1) : null };
+}
+
+function openaiUsage(u) {
+  if (!u) return null;
+  return { promptTokens: u.prompt_tokens || 0, outputTokens: u.completion_tokens || 0, numCtx: null, tokPerSec: null };
+}
+
 async function callOllama({ baseUrl, model, think, messages, tools, onToken, onThinking, signal, numCtx = DEFAULT_NUM_CTX }) {
   const body = {
     model,
@@ -163,8 +182,10 @@ async function callOllama({ baseUrl, model, think, messages, tools, onToken, onT
   let content = '';
   let thinking = '';
   const toolCalls = [];
+  let usage = null;
 
   const handleObj = obj => {
+    if (obj.done) usage = ollamaUsage(obj, numCtx);
     const msg = obj.message || {};
     if (msg.thinking) {
       thinking += msg.thinking;
@@ -199,7 +220,7 @@ async function callOllama({ baseUrl, model, think, messages, tools, onToken, onT
     }
   }
   if (buf.trim()) handleObj(JSON.parse(buf.trim()));
-  return { provider: 'ollama', model, content, thinking, toolCalls };
+  return { provider: 'ollama', model, content, thinking, toolCalls, usage };
 }
 
 async function callOpenAICompat({ baseUrl, apiKey, model, messages, tools, onToken, onThinking, signal }) {
@@ -244,6 +265,7 @@ async function callOpenAICompat({ baseUrl, apiKey, model, messages, tools, onTok
       content: choice.content || '',
       thinking: choice.reasoning_content || '',
       toolCalls,
+      usage: openaiUsage(json.usage),
     };
   }
 
@@ -253,6 +275,7 @@ async function callOpenAICompat({ baseUrl, apiKey, model, messages, tools, onTok
   let content = '';
   let thinking = '';
   const pendingTools = new Map();
+  let usage = null;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -266,6 +289,7 @@ async function callOpenAICompat({ baseUrl, apiKey, model, messages, tools, onTok
       const payload = line.slice(5).trim();
       if (!payload || payload === '[DONE]') continue;
       const evt = JSON.parse(payload);
+      if (evt.usage) usage = openaiUsage(evt.usage);
       const delta = evt.choices?.[0]?.delta || {};
       if (delta.reasoning_content) {
         thinking += delta.reasoning_content;
@@ -292,7 +316,7 @@ async function callOpenAICompat({ baseUrl, apiKey, model, messages, tools, onTok
     .sort((a, b) => a[0] - b[0])
     .map(([, tc]) => ({ id: tc.id, name: tc.name, arguments: safeJson(tc.argText) }));
 
-  return { provider: 'openai-compat', model, content, thinking, toolCalls };
+  return { provider: 'openai-compat', model, content, thinking, toolCalls, usage };
 }
 
 export async function runChatTurn({ settings, modelOverride, messages, tools, onToken, onThinking, signal }) {
@@ -302,13 +326,14 @@ export async function runChatTurn({ settings, modelOverride, messages, tools, on
   const assertAllowed = baseUrl => {
     if (settings.localOnly && !isLoopbackUrl(baseUrl)) throw new LocalOnlyBlockedError(baseUrl);
   };
+  const mode = resolveResponseMode(settings);
   const invoke = async target => {
     assertAllowed(target === 'ollama' ? settings.ollamaUrl : settings.openaiBaseUrl);
     if (target === 'ollama') {
       return callOllama({
         baseUrl: settings.ollamaUrl,
-        model: modelOverride || settings.ollamaModel || 'qwen3:1.7b',
-        think: settings.ollamaThink,
+        model: (mode === 'fast' && settings.autoTierModels?.fast_local) || modelOverride || settings.ollamaModel || 'qwen3:1.7b',
+        think: mode ? mode === 'reasoning' : settings.ollamaThink,
         numCtx: resolveNumCtx(settings),
         messages,
         tools,

@@ -4,6 +4,7 @@ import { BotAvatar } from './BotAvatar.jsx';
 import { CreativeStudioPlayer } from './CreativeStudioPlayer.jsx';
 import { HairlineCanvas } from './HairlineCanvas.jsx';
 import { IntelligentUiRenderer } from './IntelligentUiRenderer.jsx';
+import { UsageBar } from './UsageBar.jsx';
 import {
   MimirAsset,
   MimirSagePortrait,
@@ -1637,6 +1638,8 @@ export function ChatView({
               );
             })()}
           </div>
+
+          <UsageBar threadId={thread?.id} isRunning={isRunning} />
 
           <div className="composer-box">
             <input

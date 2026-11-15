@@ -1828,7 +1828,8 @@ export class AgentRunner {
 
         const settings = this.store.getSettings();
         const routeInfo =
-          !bot.modelOverride && settings.autoTierRouting
+          // Reasoning mode always uses the main model: routing would hand short questions to the smallest one.
+          !bot.modelOverride && settings.autoTierRouting && settings.responseMode !== 'reasoning'
             ? this.agiHarness?.selectModelRoute?.({ userText, settings })
             : null;
         const targetModel =
@@ -1968,6 +1969,7 @@ export class AgentRunner {
           content: cleanContent,
           thinking: cleanThinking || undefined,
           toolCalls: res.toolCalls?.length ? res.toolCalls : undefined,
+          usage: res.usage || undefined,
           // On the final answer only, so tool-step messages do not each repeat the chip.
           delegation:
             delegated.length && !res.toolCalls?.length ? { fromBotId: bot.id, fromBotName: bot.name, targets: [...delegated] } : undefined,

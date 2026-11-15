@@ -38,8 +38,8 @@
     },
     {
       "path": "daemon/coordinator.mjs",
-      "bytes": 104890,
-      "sha256": "2d1ebabc451d9f9a8c2a339e165261f4aa44cfd54a15e610a67de4a3b82baf79"
+      "bytes": 105627,
+      "sha256": "f9aad78ed791fa561090c371b4b981ea60c3f176b13efc7d4344eab0e55a1053"
     },
     {
       "path": "daemon/receipt.mjs",

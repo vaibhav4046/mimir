@@ -26,8 +26,9 @@ import { envVar } from './env.mjs';
 import { CLOUD_PROVIDERS, discoverLocalServers, isLoopbackUrl, testModelCapabilities } from './model-setup.mjs';
 import { McpOAuthManager } from './mcp-http.mjs';
 import { ModelLibrary, OpenRouterAuth } from './model-library.mjs';
+import { systemUsage } from './system-usage.mjs';
 import { SHARED_MEMORY_SCOPE } from './context-recall.mjs';
-import { probeModels } from './llm-provider.mjs';
+import { probeModels, RESPONSE_MODES } from './llm-provider.mjs';
 import { RustCoreBridge } from './rust-bridge.mjs';
 import { ArtifactFoundry } from './foundry.mjs';
 import { hardenBrowserManager } from './browser-guard.mjs';
@@ -663,6 +664,10 @@ export async function startCoordinator(options = {}) {
       }
       // Model library: hardware fit, one-click install, automatic tiers, OpenRouter sign-in
       if (req.method === 'GET' && p === '/v1/models/library') return json(res, 200, await modelLibrary.overview());
+      if (req.method === 'GET' && p === '/v1/system/usage') {
+        const threadId = urlObj.searchParams.get('threadId');
+        return json(res, 200, await systemUsage({ settings: store.getSettings(), thread: threadId ? store.getThread(threadId) : null }));
+      }
       if (req.method === 'POST' && p === '/v1/models/pull') {
         const body = await readBody(req);
         return json(res, 202, modelLibrary.startPull(body.name));
@@ -707,6 +712,11 @@ export async function startCoordinator(options = {}) {
       }
       if (req.method === 'PATCH' && p === '/v1/settings') {
         const body = await readBody(req);
+        if (body.responseMode !== undefined && !RESPONSE_MODES.includes(body.responseMode)) {
+          return json(res, 400, { error: `responseMode must be one of ${RESPONSE_MODES.join(', ')}` });
+        }
+        // Fast mode needs to know the smallest installed model.
+        if (body.responseMode === 'fast' && !store.getSettings().autoTierModels?.fast_local) await modelLibrary.refreshTiers();
         const updated = store.updateSettings(body);
         scaleQueue.configure({
           maxConcurrent: updated.maxConcurrentTasks,
