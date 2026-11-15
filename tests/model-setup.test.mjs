@@ -88,7 +88,7 @@ test('local-only blocks non-loopback model calls before any request, including f
       settings: { provider: 'ollama', ollamaUrl: 'http://127.0.0.1:9', enableFallback: true, openaiBaseUrl: 'http://203.0.113.9/v1', localOnly: true },
       messages,
     }),
-    err => err.code !== 'LOCAL_ONLY_BLOCKED' && /fetch failed|ECONNREFUSED/i.test(String(err.message + (err.cause?.code || ''))),
+    err => err.code === 'MODEL_UNREACHABLE' && /Can't reach Ollama/.test(err.message) && /fetch failed|ECONNREFUSED/i.test(String(err.cause?.message + (err.cause?.cause?.code || ''))),
   );
 
   // A loopback OpenAI-compatible server (LM Studio, llama.cpp) is allowed in local-only mode.

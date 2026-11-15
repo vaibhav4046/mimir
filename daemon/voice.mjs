@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { resolvePythonExe } from './foundry.mjs';
+import { explainPythonError, resolvePythonExe } from './foundry.mjs';
 
 const execFileAsync = promisify(execFile);
 const __filename = fileURLToPath(import.meta.url);
@@ -426,7 +426,7 @@ export class VoiceEngine {
     } catch (err) {
       return {
         ok: false,
-        error: err.message,
+        error: explainPythonError(err, 'Voice').message,
         sapiOffline: false,
         fasterWhisper: false,
         daemonWarm: false,

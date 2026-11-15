@@ -19,7 +19,7 @@ A certificate must come from a CA (OV or EV code-signing; EV builds SmartScreen 
 ## Runtimes not bundled
 Ollama, Python and a browser are detected at runtime. Settings → "This computer" (`GET /v1/preflight`) shows what is missing with the exact install command. Browser tools fall back to installed Chrome or Edge. Python packages: `scripts/requirements.txt`.
 
-## Verified on this machine (1.0.4, 2026-11-15)
+## Verified on this machine (1.0.5, 2026-11-15)
 
 Release asset name on GitHub is `Mimir-Setup-<version>.exe` (the local file has spaces; rename before upload so the landing-page link stays valid). Bump `package.json` and `daemon/version.mjs` together, then `npm run manifest`.
 | Check | Result |
@@ -30,10 +30,25 @@ Release asset name on GitHub is `Mimir-Setup-<version>.exe` (the local file has 
 | Installed copy, normal mode | coordinator `/health` ok, main window shown, second launch exits (single instance) |
 | Silent uninstall | exe, registry entry, both shortcuts removed; user data kept; empty install folder left behind |
 
+## Clean-PC check (simulated, 1.0.5)
+No clean machine or Windows Sandbox was available (Windows Home). The installed app was run with a search path of only `C:\Windows\System32;C:\Windows`, an empty `LOCALAPPDATA` and a fresh data folder, so Node, Python and the Ollama program were not findable; Ollama's address was pointed at a closed port.
+
+| Check | Result |
+|---|---|
+| Service starts with no system Node | ok (uses the bundled runtime) |
+| First screen | setup screen; smoke check ok |
+| Rust core | running |
+| Chat with no Ollama | plain message with the Ollama download link |
+| Markdown / HTML / text / JSON file with no Python | created by the built-in writer |
+| PDF with no Python | plain message with the install command |
+| Voice with no Python | plain message with the install command |
+
+Not covered by this: a PC missing the Visual C++ runtime, a PC with no Chrome or Edge, and the Microsoft Store `python` stub that fresh Windows puts on the search path.
+
 ## Not verified
 - Tray icon (not readable from scripts; tray code path ran without error).
 - `scripts/mimir-autostart.ps1 -Install` (registering the task was not permitted in the test session; script parse-checked only), `-WakeAt` wake from sleep.
-- A clean machine without Node, Python, Ollama or Chrome.
+- A physically clean machine (see the simulated check above).
 - Signed build.
 
 ## Naming

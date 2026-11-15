@@ -45,7 +45,7 @@ Live checks with `qwen3:1.7b` on this machine:
 - `memory_save` asks for approval under the default policy, which interrupts unattended runs.
 - Delegations run one after another (one local model). No parallel workers.
 - Shared-profile capture is pattern-based ("remember that …", "my name is …"); it will miss facts stated other ways.
-- Installer 1.0.4 (2026-11-15) matches the code except the landing page inside it, which was edited after the build; the public site has the current one.
+- Installer 1.0.5 (2026-11-15) matches the code. The landing page is no longer packed into it.
 
 ## Blocked on things only the owner can provide
 

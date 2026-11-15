@@ -26,6 +26,29 @@ export function resolvePythonExe() {
   return 'python';
 }
 
+export const PYTHON_INSTALL_HINT = 'Install it with: winget install Python.Python.3.13 — then restart Mimir. Settings > "This computer" lists any add-ons still missing.';
+
+/** A missing Python shows up as "spawn python ENOENT". Say what that means and how to fix it. */
+export function explainPythonError(err, what) {
+  if (err?.code !== 'ENOENT') return err;
+  return Object.assign(new Error(`${what} needs Python, which is not installed on this computer. ${PYTHON_INSTALL_HINT}`), { code: 'PYTHON_MISSING', status: 424 });
+}
+
+const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+/** Formats that are plain text can be written without Python. Returns the file content, or null. */
+export function buildTextArtifact(fmt, { title, subtitle, sections, reportMarkdown, rows }) {
+  const md = reportMarkdown?.trim() || [`# ${title}`, subtitle, ...sections.map(s => `## ${s.heading}\n\n${s.body}`)].filter(Boolean).join('\n\n');
+  if (fmt === 'md') return `${md}\n`;
+  if (fmt === 'txt') return `${[title, subtitle, ...sections.map(s => `${s.heading}\n${s.body}`)].filter(Boolean).join('\n\n')}\n`;
+  if (fmt === 'json') return `${JSON.stringify({ title, subtitle, sections, rows }, null, 2)}\n`;
+  if (fmt === 'html') {
+    const body = sections.map(s => `<h2>${escapeHtml(s.heading)}</h2>\n<p>${escapeHtml(s.body).replace(/\n/g, '<br>')}</p>`).join('\n');
+    return `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>${escapeHtml(title)}</title>\n<style>body{font:16px/1.6 system-ui,sans-serif;max-width:720px;margin:40px auto;padding:0 16px}</style>\n</head>\n<body>\n<h1>${escapeHtml(title)}</h1>\n${subtitle ? `<p>${escapeHtml(subtitle)}</p>\n` : ''}${body}\n</body>\n</html>\n`;
+  }
+  return null;
+}
+
 const FORMAT_META = {
   pdf: { kind: 'document', ext: 'pdf', defaultFolder: 'Reports' },
   docx: { kind: 'document', ext: 'docx', defaultFolder: 'Documents' },
@@ -260,12 +283,26 @@ export class ArtifactFoundry {
       'utf8'
     );
 
-    const { stdout } = await execFileAsync(this.pythonExe, [BUILDER_SCRIPT, '--spec', specPath], {
-      cwd: outDir,
-      windowsHide: true,
-      timeout: 45000,
-    });
-    const pyResult = JSON.parse(String(stdout || '{}').trim().split(/\r?\n/).pop() || '{}');
+    let pyResult;
+    try {
+      // Looked up at use time so a Python installed after Mimir started is found.
+      const { stdout } = await execFileAsync(resolvePythonExe(), [BUILDER_SCRIPT, '--spec', specPath], {
+        cwd: outDir,
+        windowsHide: true,
+        timeout: 45000,
+      });
+      pyResult = JSON.parse(String(stdout || '{}').trim().split(/\r?\n/).pop() || '{}');
+    } catch (err) {
+      if (err?.code !== 'ENOENT') throw err;
+      // No Python on this computer: plain-text formats are still written here.
+      const text = buildTextArtifact(fmt, { title: effTitle, subtitle: effSubtitle, sections: normalizedSections, reportMarkdown, rows });
+      if (text === null) {
+        fs.rmSync(outDir, { recursive: true, force: true });
+        throw explainPythonError(err, `Making a ${fmt.toUpperCase()} file`);
+      }
+      fs.writeFileSync(outPath, text, 'utf8');
+      pyResult = { ok: true, meta: { builder: 'built-in', note: 'Written without Python' } };
+    }
     if (!pyResult.ok || !fs.existsSync(outPath)) {
       throw new Error(`Foundry builder failed for ${fmt}`);
     }

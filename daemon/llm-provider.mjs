@@ -229,6 +229,20 @@ function openaiUsage(u) {
   return { promptTokens: u.prompt_tokens || 0, outputTokens: u.completion_tokens || 0, numCtx: null, tokPerSec: null };
 }
 
+const hostOf = url => {
+  try {
+    return new URL(url).host;
+  } catch {
+    return String(url);
+  }
+};
+
+/** A refused or dropped connection arrives as "fetch failed". Stops and timeouts pass through. */
+function unreachable(err, message) {
+  if (err?.name === 'AbortError' || err?.name === 'TimeoutError') return err;
+  return Object.assign(new Error(message, { cause: err }), { code: 'MODEL_UNREACHABLE' });
+}
+
 async function callOllama({ baseUrl, model, think, messages, tools, onToken, onThinking, signal, numCtx = DEFAULT_NUM_CTX }) {
   const body = {
     model,
@@ -245,6 +259,10 @@ async function callOllama({ baseUrl, model, think, messages, tools, onToken, onT
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
     signal,
+  }).catch(err => {
+    throw unreachable(err, isLoopbackUrl(baseUrl)
+      ? "Can't reach Ollama, the free app that runs AI models on this computer. Open Ollama, or install it from https://ollama.com/download"
+      : `Can't reach the AI model server at ${hostOf(baseUrl)}. Check that it is running and reachable.`);
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
@@ -331,6 +349,10 @@ async function callOpenAICompat({ baseUrl, apiKey, model, messages, tools, onTok
     headers,
     body: JSON.stringify(body),
     signal,
+  }).catch(err => {
+    throw unreachable(err, isLoopbackUrl(baseUrl)
+      ? `Can't reach the AI model server on this computer (${hostOf(baseUrl)}). Check that it is running.`
+      : `Can't reach the AI service at ${hostOf(baseUrl)}. Check your internet connection.`);
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
@@ -506,7 +528,16 @@ export async function runChatTurn({ settings, modelOverride, messages, tools, on
     if (secondary === 'openai-compat' && !settings.openaiBaseUrl) throw primaryErr;
     // A blocked fallback must not hide why the primary failed.
     if (settings.localOnly && !isLoopbackUrl(secondary === 'ollama' ? settings.ollamaUrl : settings.openaiBaseUrl)) throw primaryErr;
-    const res = await invoke(secondary);
+    let res;
+    try {
+      res = await invoke(secondary);
+    } catch (secondaryErr) {
+      // The backup failed too. What the person needs to know is why their chosen model
+      // did not answer, not why a backup they may never have set up is missing.
+      if (secondaryErr?.name === 'AbortError') throw secondaryErr;
+      primaryErr.fallbackError = secondaryErr.message;
+      throw primaryErr;
+    }
     res.fallbackFrom = `${primary} (${primaryErr.message})`;
     return res;
   }

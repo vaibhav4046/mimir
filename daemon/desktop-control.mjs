@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { resolvePythonExe } from './foundry.mjs';
+import { explainPythonError, resolvePythonExe } from './foundry.mjs';
 
 const execFileAsync = promisify(execFile);
 const __filename = fileURLToPath(import.meta.url);
@@ -64,6 +64,8 @@ export async function runDesktopAction(args = {}) {
     windowsHide: true,
     timeout: 12000,
     maxBuffer: 8 * 1024 * 1024,
+  }).catch(err => {
+    throw explainPythonError(err, 'Controlling other apps on this computer');
   });
   const line = String(stdout || '{}').trim().split(/\r?\n/).pop() || '{}';
   return JSON.parse(line);
