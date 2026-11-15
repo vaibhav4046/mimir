@@ -1,3 +1,4 @@
+import { VERSION } from './version.mjs';
 import { spawn } from 'node:child_process';
 import readline from 'node:readline';
 import { McpAuthRequiredError, StreamableHttpSession } from './mcp-http.mjs';
@@ -221,7 +222,7 @@ export class McpManager {
     await rpc('initialize', {
       protocolVersion: '2024-11-05',
       capabilities: {},
-      clientInfo: { name: 'mimir', version: '1.0.3' },
+      clientInfo: { name: 'mimir', version: VERSION },
     });
     proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
     const listRes = await rpc('tools/list', {});

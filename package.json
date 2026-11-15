@@ -1,7 +1,7 @@
 {
   "name": "mimir",
   "productName": "Mimir",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Mimir: local-first desktop agent workspace powered by Ollama, with optional OpenAI-compatible providers.",
   "type": "module",
   "main": "electron/main.cjs",

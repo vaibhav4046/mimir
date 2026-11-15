@@ -42,3 +42,9 @@ test('system usage works with no GPU and no Ollama', async () => {
   assert.deepEqual(u.mimir.loaded, []);
   assert.equal(u.mode, 'fast');
 });
+
+test('daemon version matches package.json', async () => {
+  const fs = await import('node:fs');
+  const { VERSION } = await import('../daemon/version.mjs');
+  assert.equal(VERSION, JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version);
+});

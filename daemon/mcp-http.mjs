@@ -1,3 +1,4 @@
+import { VERSION } from './version.mjs';
 import crypto from 'node:crypto';
 import { isPrivateIp } from './llm-provider.mjs';
 
@@ -364,7 +365,7 @@ export class StreamableHttpSession {
     const result = await this.request('initialize', {
       protocolVersion: MCP_PROTOCOL_VERSION,
       capabilities: {},
-      clientInfo: { name: 'mimir', version: '1.0.3' },
+      clientInfo: { name: 'mimir', version: VERSION },
     });
     this.protocolVersion = result?.protocolVersion || MCP_PROTOCOL_VERSION;
     await this.notify('notifications/initialized');

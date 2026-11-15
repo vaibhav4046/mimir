@@ -10,6 +10,12 @@ const manifestPath = path.join(root, 'public/release-manifest.json');
 const raw = fs.readFileSync(manifestPath, 'utf8');
 const manifest = JSON.parse(raw);
 let changed = 0;
+const { version } = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+if (manifest.version !== version) {
+  manifest.version = version;
+  changed += 1;
+  console.log(`version -> ${version}`);
+}
 for (const art of manifest.artifacts) {
   const buf = fs.readFileSync(path.join(root, art.path));
   const sha256 = crypto.createHash('sha256').update(buf).digest('hex');

@@ -441,6 +441,7 @@ app.whenReady().then(async () => {
     for (let i = 0; i < 30; i += 1) {
       const ready = await win.webContents.executeJavaScript(`Boolean(
         document.querySelector('[data-testid="sidebar"]') ||
+        document.querySelector('[data-testid="first-run"]') ||
         document.querySelector('[data-testid="runtime-gate-error"]')
       )`);
       if (ready) break;
@@ -451,13 +452,14 @@ app.whenReady().then(async () => {
       hasDesktopBridge: Boolean(window.desktop && typeof window.desktop.getCoordinator === 'function'),
       rootTextLen: document.getElementById('root')?.innerText?.trim()?.length || 0,
       hasSidebar: Boolean(document.querySelector('[data-testid="sidebar"]')),
+      hasFirstRun: Boolean(document.querySelector('[data-testid="first-run"]')),
       hasComputerPane: Boolean(document.querySelector('[data-testid="computer-pane"]')),
       botNameVisible: document.body?.innerText?.includes('Mimir') || false,
       runtimeGateVisible: Boolean(document.querySelector('[data-testid="runtime-connect-gate"]')),
       gateError: document.querySelector('[data-testid="runtime-gate-error"]')?.innerText || null,
     })`);
     const out = JSON.stringify({
-      ok: Boolean(snapshot.hasDesktopBridge && snapshot.hasSidebar && snapshot.rootTextLen > 20),
+      ok: Boolean(snapshot.hasDesktopBridge && (snapshot.hasSidebar || snapshot.hasFirstRun) && snapshot.rootTextLen > 20),
       coordinator: { port: coordinatorInfo.port, url: coordinatorInfo.url, hasToken: Boolean(coordinatorInfo.token) },
       snapshot,
     });

@@ -27,6 +27,7 @@ import { CLOUD_PROVIDERS, discoverLocalServers, isLoopbackUrl, testModelCapabili
 import { McpOAuthManager } from './mcp-http.mjs';
 import { ModelLibrary, OpenRouterAuth } from './model-library.mjs';
 import { systemUsage } from './system-usage.mjs';
+import { VERSION } from './version.mjs';
 import { SHARED_MEMORY_SCOPE } from './context-recall.mjs';
 import { assertSafeUrl, probeModels, RESPONSE_MODES } from './llm-provider.mjs';
 import { RustCoreBridge } from './rust-bridge.mjs';
@@ -656,7 +657,7 @@ export async function startCoordinator(options = {}) {
       return json(res, 200, {
         ok: true,
         service: 'mimir-coordinator',
-        version: '1.0.3',
+        version: VERSION,
         authRequired: Boolean(token || options.requirePairingSession),
         pairingSupported: true,
         provider: store.getSettings().provider,

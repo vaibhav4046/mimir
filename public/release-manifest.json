@@ -1,6 +1,6 @@
 {
   "product": "Mimir OS",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "branch": "fix/mimir-trustworthy-golden-path",
   "commit": "1506bdd",
   "license": "MIT",
@@ -34,12 +34,12 @@
     {
       "path": "package.json",
       "bytes": 2032,
-      "sha256": "dad52885e9a0a9a4e68654173d21f795a36e84656e2ce42cef5d2c4bffa42488"
+      "sha256": "e05ffa7ba68c55180402a04094039809679fed93c314aaa2eeb9db0e47895926"
     },
     {
       "path": "daemon/coordinator.mjs",
-      "bytes": 132929,
-      "sha256": "45e7678d01a43dcfbe5171b2badf37aeffe287d57dc37525f3ab5892e455ebbc"
+      "bytes": 132970,
+      "sha256": "c4ca4103fdd9a43e174b5ff3931de26d592729759fc5c0b56ab65a9a7f537f5e"
     },
     {
       "path": "daemon/receipt.mjs",
