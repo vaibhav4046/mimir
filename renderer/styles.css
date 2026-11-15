@@ -1644,6 +1644,13 @@ input[type="file"]::file-selector-button:hover {
 .first-run-model { font-size: 18px; }
 .first-run-ok { color: var(--frost, #3ac9ff); font-weight: 700; }
 .first-run-wait { animation: sigil-blink 1.2s steps(2) infinite; }
+.first-run { justify-content: center; padding-top: 40px; }
+.first-run-checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--rule, #1d2b3b); background: var(--bg, #081019); }
+.first-run-checks li { display: flex; gap: 12px; padding: 12px 14px; font-size: 13px; }
+.first-run-checks li + li { border-top: 1px solid var(--rule, #1d2b3b); }
+.first-run-checks li > span { width: 16px; flex: none; font-weight: 700; }
+.first-run-checks li > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; align-items: flex-start; }
+.first-run-go { padding: 12px; font-size: 15px; }
 .link-btn { background: none; border: none; padding: 0; color: var(--ink-muted, #91a8bd); cursor: pointer; font-size: 12px; text-decoration: underline; }
 .link-btn:disabled { opacity: 0.4; cursor: default; }
 .link-btn:hover:not(:disabled) { color: var(--frost-hi, #a9eeff); }
