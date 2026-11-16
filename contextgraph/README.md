@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/img/hydradb-logo.jpg" height="72" alt="HydraDB logo"> &nbsp;&nbsp; <img src="docs/img/mimir-head.svg" height="72" alt="Mimir logo"></p>
+
 # Context Graph: an agent context layer on HydraDB
 
 **Your agent shouldn't read 264 tool manuals before it reads your request.**

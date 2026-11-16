@@ -7,6 +7,12 @@ const out = new URL('docs/img/', dir);
 fs.mkdirSync(out, { recursive: true });
 const R = JSON.parse(fs.readFileSync(new URL('results/results.json', dir), 'utf8'));
 
+const b64 = (f, mime) => `data:${mime};base64,${fs.readFileSync(new URL(f, out)).toString('base64')}`;
+const LOGO_H = b64('hydradb-logo.jpg', 'image/jpeg'); // HydraDB's official mark (its GitHub organization avatar)
+const LOGO_M = b64('mimir-head.svg', 'image/svg+xml'); // Mimir's own brand sprite
+const logo = (x, y, size, uri, label, round = 8) =>
+  `<clipPath id="c${x}_${y}"><rect x="${x}" y="${y}" width="${size}" height="${size}" rx="${round}"/></clipPath><image x="${x}" y="${y}" width="${size}" height="${size}" href="${uri}" clip-path="url(#c${x}_${y})" preserveAspectRatio="xMidYMid slice"><title>${label}</title></image>`;
+const logos = W => logo(W - 100, 14, 36, LOGO_M, 'Mimir', 6) + logo(W - 56, 14, 36, LOGO_H, 'HydraDB', 6);
 const BG = '#0b0b0d';
 const PANEL = '#15151a';
 const INK = '#ececf1';
@@ -47,6 +53,7 @@ const n = x => Number(x).toLocaleString('en-US');
     g += text(x(i), H - B + 22, i === 0 ? 'before learning' : `after ${i} pass${i > 1 ? 'es' : ''}`, { size: 11.5, fill: MUTED, anchor: 'middle' });
   });
   g += text(L, H - 18, 'Coverage = every tool the task needs was pulled. Peaks after one pass, then drifts: more passes over the same examples do not help.', { size: 11.5, fill: MUTED });
+  g += logos(W);
   fs.writeFileSync(new URL('learning-curve.svg', out), svg(W, H, 'Held-out coverage over training passes', g));
 }
 
@@ -72,6 +79,7 @@ const n = x => Number(x).toLocaleString('en-US');
     });
     g += text(24, H - 36, `The honest part: first tool call was right ${m['Graph, after learning'].firstCallHitPct}% of the time with the graph and ${m['All tools preloaded'].firstCallHitPct}% with everything loaded.`, { size: 12.5, fill: MUTED });
     g += text(24, H - 16, 'The measured win is cost and speed, not accuracy.', { size: 12.5, fill: MUTED });
+    g += logos(W);
     fs.writeFileSync(new URL('tokens.svg', out), svg(W, H, 'Prompt tokens with and without Context Graph', g));
   }
 }
@@ -98,6 +106,7 @@ const n = x => Number(x).toLocaleString('en-US');
   g += arrow(194, 125, 272, 150) + arrow(606, 190, 196, 250);
   g += text(398, 340, 'Learning: when a tool really worked, its links get stronger. No AI model is called to retrieve or to learn.', { size: 12, fill: MUTED, anchor: 'middle' });
   g += text(730, 214, 'a few bounded reads', { size: 11, fill: MUTED, anchor: 'start' });
+  g += logo(32, 238, 34, LOGO_M, 'Mimir', 6) + logo(W - 66, 76, 34, LOGO_H, 'HydraDB', 6);
   fs.writeFileSync(new URL('architecture.svg', out), svg(W, H, 'Request flow through the HydraDB graph', g));
 }
 console.log('wrote', fs.readdirSync(out).join(', '));
