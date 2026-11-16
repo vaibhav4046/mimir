@@ -60,7 +60,7 @@ test('intent classification is deterministic and bounded', () => {
   assert.deepEqual(capabilityForTask('search web'), ['research']);
   assert.deepEqual(capabilityForTask('hello'), ['general']);
   assert.ok(capabilitiesForTool(tools[0]).includes('research'));
-  assert.ok(capabilitiesForTool(tools[2]).includes('files'));
+  assert.ok(capabilitiesForTool(tools.find(t => t.function.name === 'fs_read')).includes('files'));
 });
 
 test('route uses real HydraDB-shaped write and graph traversal queries', async () => {
