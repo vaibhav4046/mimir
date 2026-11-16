@@ -46,6 +46,7 @@ function tool(name, description) {
 }
 const tools = [
   tool('browser_search', 'Search the web for reliable source material'),
+  tool('knowledge_search', 'Search research evidence in a knowledge base'),
   tool('browser_open', 'Open a browser page for analysis'),
   tool('fs_read', 'Read workspace file contents'),
   tool('fs_write', 'Write and edit workspace files'),
