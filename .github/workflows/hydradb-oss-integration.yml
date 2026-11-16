@@ -7,6 +7,7 @@ on:
       - '.github/workflows/hydradb-oss-integration.yml'
       - 'daemon/hydradb-context.mjs'
       - 'scripts/hydradb-benchmark.mjs'
+      - 'scripts/hydradb-learning-curve.mjs'
   workflow_dispatch: {}
 jobs:
   self-hosted-hydradb-benchmark:
@@ -63,6 +64,7 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           node -e "const r=require('/tmp/hydra-read.json'); if(r.rows?.[0]?.[0]?.value !== 90000002) process.exit(1)"
           node scripts/hydradb-benchmark.mjs
+          node scripts/hydradb-learning-curve.mjs
           mkdir -p artifacts/hydradb
           cp /tmp/hydra-write.json /tmp/hydra-read.json /tmp/hydradb.log artifacts/hydradb/
       - name: Preserve evidence from real server
