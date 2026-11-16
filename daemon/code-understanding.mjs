@@ -221,9 +221,10 @@ export function findGraphNeighborhood(graph, query, depth = 1, limit = 150) {
   let found = graph.nodes.filter(n => [n.label, n.path, n.summary, n.type].some(v => String(v || '').toLowerCase().includes(q))).map(n => n.id);
   const seen = new Set(found);
   for (let hop = 0; hop < Math.min(3, Math.max(0, depth)); hop++) {
+    const frontier = new Set(seen);
     for (const edge of graph.edges) {
-      if (seen.has(edge.from)) seen.add(edge.to);
-      if (seen.has(edge.to)) seen.add(edge.from);
+      if (frontier.has(edge.from)) seen.add(edge.to);
+      if (frontier.has(edge.to)) seen.add(edge.from);
       if (seen.size > 1000) break;
     }
   }
