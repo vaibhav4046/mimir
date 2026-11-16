@@ -25,7 +25,7 @@ test('it offers a handful of tools instead of all of them, and the right ones', 
   const cg = make(new MemoryStore());
   const pulled = await cg.select('Send an email to my supplier asking for a quote', schemas);
   assert.ok(pulled, 'graph was confident');
-  assert.ok(pulled.length <= 6 && pulled.length >= 1, `offered ${pulled.length}`);
+  assert.ok(pulled.length <= 12 && pulled.length >= 1, `offered ${pulled.length}`);
   assert.ok(names(pulled).includes('gmail__send_email'), names(pulled).join(','));
   assert.equal(cg.status().lastPull.of, 120);
 });

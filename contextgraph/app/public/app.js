@@ -71,8 +71,14 @@ async function lab(root) {
 
     <form class="ask" id="askForm" autocomplete="off">
       <label for="q" class="eyebrow" style="margin:0">What should your agent do?</label>
-      <div class="askrow"><input id="q" maxlength="300" placeholder="e.g. Block two hours on Friday for planning" aria-describedby="hint"><button class="btn" id="go">Find the tools</button></div>
+      <div class="askrow"><input id="q" maxlength="300" placeholder="e.g. Run a SQL query to find duplicate customer emails" aria-describedby="hint"><button class="btn" id="go">Find the tools</button></div>
       <div class="chips" id="chips" aria-label="Example tasks"></div>
+      <div class="guidedrow"><button type="button" class="btn ghost" id="guided" disabled>Show me in 30 seconds</button><span class="muted">Runs one job, shows what it misses, teaches it, then tries a reworded job. It teaches this shared demo.</span></div>
+      <details class="byo" id="byo"><summary>Try it on your own tools</summary>
+        <p class="muted">Paste a JSON list of your tools, <code>{"name": "...", "description": "..."}</code> each, or an MCP <code>tools/list</code> answer. Up to 150 tools. This builds a private graph in HydraDB just for you, and you can teach it too.</p>
+        <textarea id="byoText" rows="6" spellcheck="false" aria-label="Your tools as JSON" placeholder='[{"name": "github__create_issue", "description": "Open an issue in a repository"}, {"name": "slack__post_message", "description": "Post a message to a channel"}, ...]'></textarea>
+        <div class="guidedrow"><button type="button" class="btn ghost" id="byoBuild" disabled>Build my graph</button><button type="button" class="btn ghost" id="byoSample" disabled>Fill in a sample list</button><span class="muted" id="byoMsg" role="status"></span></div>
+      </details>
       <div class="muted" id="hint" style="font-size:13.5px">These examples were never used to train the graph. Ones marked ↻ are cases the untrained graph misses, so you can teach it. Try your own wording too.</div>
     </form>
 
@@ -82,6 +88,8 @@ async function lab(root) {
   const q = $('#q');
   let info;
   let last = null;
+  let customId = null; // set when the visitor built a private graph from their own tools
+  let customTools = null;
   const waitReady = async () => {
     while (!ready) {
       $('#out').innerHTML = `<div class="loading"><div class="spinner"></div>Loading 264 tools, 30 skills and their links into HydraDB…</div>`;
@@ -109,6 +117,95 @@ async function lab(root) {
     run(q.value, ex?.tools);
   };
 
+  $('#guided').onclick = async () => {
+    const btn = $('#guided');
+    btn.disabled = true;
+    customId = null;
+    customTools = null;
+    $('#byoMsg').textContent = '';
+    q.placeholder = 'e.g. Run a SQL query to find duplicate customer emails';
+    const lines = [];
+    const draw = () => { $('#out').innerHTML = `<div class="card guided" role="status" aria-live="polite"><h3>Guided demo</h3><ol>${lines.map(l => `<li>${l}</li>`).join('')}</ol></div>`; $('#out').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    const pause = ms => new Promise(r => setTimeout(r, ms));
+    const found = (r, need) => need.filter(n => r.tools.some(t => t.id === n));
+    const names = list => list.map(n => `<code>${esc(n)}</code>`).join(', ');
+    try {
+      info = await api('/api/info');
+      const ex = info.examples.find(e => !e.hit && !e.taught);
+      if (!ex) {
+        $('#out').innerHTML = '<div class="card" role="status">Every example this demo misses has already been taught by earlier visitors, so there is nothing left to show. Type your own job below, or ask the host to reset the demo.</div>';
+        return;
+      }
+      const need = ex.tools;
+      const reworded = (ex.reworded || []).slice(0, 2);
+      lines.push(`The job: “${esc(ex.text)}”. It really needs ${names(need)}.`); draw();
+      const r1 = await api('/api/retrieve', { text: ex.text });
+      const w1 = [];
+      for (const text of reworded) w1.push(await api('/api/retrieve', { text }));
+      const miss1 = need.filter(n => !found(r1, need).includes(n));
+      lines.push(`Before it has learned anything, it pulls <b>${found(r1, need).length} of ${need.length}</b>${miss1.length ? ` and misses ${names(miss1)}` : ''}.`); draw();
+      await pause(1400);
+      lines.push('You tell it which tools the job really needed. That is a few edge updates in HydraDB: no model call, no retraining.'); draw();
+      await api('/api/feedback', { text: ex.text, used: need });
+      const r2 = await api('/api/retrieve', { text: ex.text });
+      lines.push(`The same job again: it now pulls <b>${found(r2, need).length} of ${need.length}</b>.`); draw();
+      await pause(1400);
+      for (const [i, text] of reworded.entries()) {
+        const w2 = await api('/api/retrieve', { text });
+        lines.push(`A reworded job it was never taught: “${esc(text)}”. Before teaching it pulled ${found(w1[i], need).length} of ${need.length}; now <b>${found(w2, need).length} of ${need.length}</b>.`);
+      }
+      if (reworded.length) lines.push('Rewordings carry over only sometimes. The Benchmark page shows how often.');
+      info = await api('/api/info');
+      drawStats(info);
+      last = { text: ex.text, key: need, r: r2 };
+      q.value = ex.text;
+      show(r2, need, ex.text, `<div class="learned" role="status"><h3>Guided demo</h3><ol>${lines.map(l => `<li>${l}</li>`).join('')}</ol></div>`);
+      pollStatus();
+    } catch (err) {
+      $('#out').innerHTML = `<div class="card" role="alert">${esc(err.message)}</div>`;
+    } finally {
+      btn.disabled = false;
+    }
+  };
+
+  const SAMPLE_TOOLS = [
+    ['home_assistant__turn_on_light', 'Turn a light on or off in a room'],
+    ['home_assistant__set_thermostat', 'Set the temperature of the heating'],
+    ['proxmox__list_vms', 'List the virtual machines and whether they are running'],
+    ['proxmox__backup_status', 'Show whether last night backups of the virtual machines succeeded'],
+    ['obsidian__search_notes', 'Search my notes vault for a phrase'],
+    ['obsidian__append_note', 'Add text to a note in my vault'],
+    ['docker__list_containers', 'List running containers on the server'],
+    ['docker__restart_container', 'Restart a container by name'],
+    ['jellyfin__search_media', 'Find a film or episode in the media library'],
+    ['adguard__toggle_protection', 'Turn network ad blocking on or off'],
+    ['ntfy__send_notification', 'Send a push notification to my phone'],
+  ].map(([name, description]) => ({ name, description }));
+  $('#byoSample').onclick = () => { $('#byoText').value = JSON.stringify(SAMPLE_TOOLS, null, 1); };
+  $('#byoBuild').onclick = async () => {
+    const btn = $('#byoBuild');
+    const msg = $('#byoMsg');
+    btn.disabled = true;
+    msg.textContent = 'Building your graph in HydraDB…';
+    try {
+      const res = await api('/api/custom', { tools: $('#byoText').value });
+      customId = res.id;
+      customTools = res.tools;
+      $('#out').innerHTML = '';
+      msg.textContent = `Built a private graph of ${res.tools.length} tools (about ${fmt(res.preloadTokens)} tokens if you loaded them all). Ask for something below.`;
+      q.placeholder = 'Ask for something your tools can do';
+      q.value = '';
+      q.focus();
+    } catch (err) {
+      msg.textContent = err.message;
+    } finally {
+      btn.disabled = false;
+    }
+  };
+  $('#guided').disabled = false;
+  $('#byoBuild').disabled = false;
+  $('#byoSample').disabled = false;
+
   async function run(text, key) {
     if (String(text).trim().length < 3) {
       $('#out').innerHTML = `<div class="card" role="alert">Type a task first, for example “Block two hours on Friday for planning”.</div>`;
@@ -116,7 +213,7 @@ async function lab(root) {
     }
     $('#go').disabled = true;
     try {
-      const r = await api('/api/retrieve', { text });
+      const r = await api('/api/retrieve', { text, graph: customId || undefined });
       last = { text, key, r };
       show(r, key, text);
     } catch (err) {
@@ -129,6 +226,7 @@ async function lab(root) {
   function counters(r) {
     const c = r.compare;
     $('#n2').textContent = r.tools.length;
+    $('#n1').textContent = c.catalogTools;
     $('#preTok').textContent = `~${fmt(c.preloadTokens)} tokens per call`;
     $('#pullTok').textContent = `~${fmt(c.pulledTokens)} tokens`;
     $('#pullBar').style.width = `${Math.max(1.5, (c.pulledTokens / c.preloadTokens) * 100)}%`;
@@ -149,7 +247,15 @@ async function lab(root) {
     const answer = key
       ? `<div class="answerkey">Tools this task really needs: <b>${key.map(esc).join(', ')}</b> · ${hit ? `<b style="color:var(--green)">all pulled ✓${banner ? ' (the same wording you taught it)' : ''}</b>` : '<b style="color:var(--red)">missed some</b>'}. Keyword search would have picked: ${r.compare.keywordSearchPicks.slice(0, 4).map(esc).join(', ') || 'nothing'}${key.every(k => r.compare.keywordSearchPicks.includes(k)) ? ' (also correct)' : ''}.</div>`
       : `<div class="answerkey">Keyword search on the same catalog would have picked: ${r.compare.keywordSearchPicks.slice(0, 4).map(esc).join(', ') || 'nothing'}.</div>`;
-    $('#out').innerHTML = `${banner}<div class="grid2">
+    const foundBy = ids => (key ? `${key.filter(k => ids.includes(k)).length} of ${key.length} needed tools found` : 'no answer key for this wording');
+    const kwIds = r.compare.keywordSearchPicks;
+    const cost = tok => `about $${(tok * 3 / 1000).toFixed(2)} per 1,000 requests`;
+    const side = `<section class="card side" aria-labelledby="sbs"><h3 id="sbs">Side by side, same job</h3><div class="sbs">
+      <div class="col"><b>Load every tool</b><span class="big">${fmt(r.compare.catalogTools)} tools</span><span>about ${fmt(r.compare.preloadTokens)} tokens every call</span><span class="price">${cost(r.compare.preloadTokens)}</span><span class="muted">${key ? `${key.length} of ${key.length} needed tools found, by construction` : 'always has the right tool, at full cost'}</span></div>
+      <div class="col"><b>Keyword search</b><span class="big">${kwIds.length} tools</span><span>${r.compare.keywordSearchTokens ? `about ${fmt(r.compare.keywordSearchTokens)} tokens` : 'tokens: not measured'}</span>${r.compare.keywordSearchTokens ? `<span class="price">${cost(r.compare.keywordSearchTokens)}</span>` : ''}<span class="muted">${foundBy(kwIds)}</span></div>
+      <div class="col win"><b>Context Graph</b><span class="big">${r.tools.length} tools</span><span>about ${fmt(r.compare.pulledTokens)} tokens</span><span class="price">${cost(r.compare.pulledTokens)}</span><span class="muted">${foundBy(r.tools.map(t => t.id))}</span></div>
+    </div><p class="note">Tokens are characters divided by 4, a rough estimate. Cost uses an example price of $3 per million input tokens; your rate will differ, and prompt caching lowers it.</p></section>`;
+    $('#out').innerHTML = `${banner}${side}<div class="grid2">
       <section class="card" aria-labelledby="tl"><h3 id="tl">Pulled for this task <span class="sub">${r.confident ? (weak ? 'Low confidence: the words matched these tools only weakly. On the benchmark, matches this weak were right far less often, so check them.' : '') : 'The graph is unsure here, so a real agent would fall back to its default tools.'}</span></h3>${toolHtml || '<p class="muted">Nothing matched. Use “Let me fix it” below to teach it which tools this needs.</p>'}${answer}
         <div class="feedback" id="fb"><span class="muted">Was this right?</span>${r.tools.length ? '<button class="btn good sm" id="yes">Yes, these are right</button>' : ''}<button class="btn ghost sm" id="no">${r.tools.length ? 'Not quite, let me fix it' : 'Let me fix it'}</button></div>
         <div id="pickerBox"></div>
@@ -166,14 +272,14 @@ async function lab(root) {
 
   let allTools = null;
   async function openPicker(r) {
-    allTools = allTools || (await api('/api/tools'));
+    const toolList = customId ? customTools : (allTools = allTools || (await api('/api/tools')));
     const chosen = new Set();
     const box = $('#pickerBox');
     box.innerHTML = `<div class="picker"><label class="muted" for="ps">Tick the tools this task really needs</label><input id="ps" placeholder="Search 264 tools, e.g. calendar, invoice, logs"><div class="picklist" id="pl"></div><div><button class="btn sm" id="teach" disabled>Teach the graph</button></div></div>`;
     const draw = () => {
       const term = $('#ps').value.toLowerCase();
-      const pool = [...new Set([...r.tools.map(t => t.id), ...allTools.map(t => t.id)])];
-      const rows = pool.map(id => allTools.find(t => t.id === id)).filter(t => t && (!term || `${t.id} ${t.description}`.toLowerCase().includes(term))).slice(0, 40);
+      const pool = [...new Set([...r.tools.map(t => t.id), ...toolList.map(t => t.id)])];
+      const rows = pool.map(id => toolList.find(t => t.id === id)).filter(t => t && (!term || `${t.id} ${t.description}`.toLowerCase().includes(term))).slice(0, 40);
       $('#pl').innerHTML = rows.map(t => `<button type="button" class="pick ${chosen.has(t.id) ? 'on' : ''}" data-id="${esc(t.id)}"><span class="name">${esc(t.id)}</span><small>${esc(t.description)}</small></button>`).join('');
       $('#teach').disabled = !chosen.size;
     };
@@ -193,7 +299,7 @@ async function lab(root) {
   async function teach(used) {
     if (!last) return;
     try {
-      const res = await api('/api/feedback', { text: last.text, used });
+      const res = await api('/api/feedback', { text: last.text, used, graph: customId || undefined });
       info = await api('/api/info');
       drawStats(info);
       const b = new Set(res.before.tools.map(t => t.id));

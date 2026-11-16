@@ -49,7 +49,17 @@ const L = {
 
 function tts(name, content) {
   const file = path.join(WORK, 'audio', `${name}.mp3`);
-  execFileSync('python', ['-m', 'edge_tts', '--voice', VOICE, '--rate=-2%', '--text', content, '--write-media', file], { stdio: ['ignore', 'ignore', 'pipe'] });
+  for (let attempt = 1; ; attempt++) {
+    try {
+      execFileSync('python', ['-m', 'edge_tts', '--voice', VOICE, '--rate=-2%', '--text', content, '--write-media', file], { stdio: ['ignore', 'ignore', 'pipe'] });
+      break;
+    } catch (err) {
+      const msg = String(err.stderr || err.message).split(/\r?\n/).filter(Boolean).slice(-2).join(' | ');
+      console.error(`voice clip ${name} failed (attempt ${attempt}): ${msg}`);
+      if (attempt >= 4) throw new Error(`voice clip ${name} failed: ${msg}`);
+      execFileSync('python', ['-c', 'import time; time.sleep(3)']);
+    }
+  }
   const dur = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString().trim());
   return { file, dur };
 }

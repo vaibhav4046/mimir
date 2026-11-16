@@ -1,7 +1,9 @@
 // Context Graph Lab: the live demo. A small zero-dependency server in front of a HydraDB node.
 //   HYDRA_URL=http://127.0.0.1:18443 PORT=7860 node app/server.mjs
 import http from 'node:http';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { Bm25 } from '../src/bm25.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { HydraStore, cell } from '../src/store-hydradb.mjs';
@@ -61,7 +63,7 @@ async function buildGraph() {
   for (const t of TASKS.filter(x => x.split === 'test').filter((_, i) => i % 5 === 0)) {
     const r = await g.retrieve(t.text, { k: 6 });
     const ids = r.tools.map(x => x.id);
-    state.examples.push({ text: t.text, kind: t.kind, tools: t.tools, hit: t.tools.every(x => ids.includes(x)), score: r.tools[0]?.score ?? 0 });
+    state.examples.push({ text: t.text, kind: t.kind, tools: t.tools, hit: t.tools.every(x => ids.includes(x)), score: r.tools[0]?.score ?? 0, taught: false, reworded: TASKS.filter(o => o.capability === t.capability && o.split === 'train').map(o => o.text) });
   }
   state.examples.sort((x, y) => Number(y.hit) - Number(x.hit) || y.score - x.score);
   state.graph = g;
@@ -136,6 +138,90 @@ const SECURITY_HEADERS = {
 };
 
 const toolMeta = new Map(TOOLS.map(t => [t.id, t]));
+
+// ---------- private graphs: a visitor pastes their own MCP tool list ----------
+let chain = Promise.resolve();
+const serial = fn => {
+  const run = chain.then(fn, fn);
+  chain = run.catch(() => {});
+  return run;
+};
+const customs = new Map(); // id -> { id, ns, graph, tools, meta, bm25, chars, preloadChars, learned }
+const MAX_CUSTOM_GRAPHS = 30;
+const MAX_CUSTOM_TOOLS = 150;
+const customHits = new Map();
+const customLimited = ip => {
+  const now = Date.now();
+  const list = (customHits.get(ip) || []).filter(t => now - t < 600_000);
+  list.push(now);
+  customHits.set(ip, list);
+  if (customHits.size > 2000) customHits.clear();
+  return list.length > 3;
+};
+
+/** Accept an MCP tools/list answer ({tools: [...]}) or a bare array. Returns a clean list, or an error string. */
+function parseCustomTools(input) {
+  let list = input;
+  if (typeof list === 'string') {
+    try {
+      list = JSON.parse(list);
+    } catch {
+      return 'That is not valid JSON.';
+    }
+  }
+  if (list && !Array.isArray(list) && Array.isArray(list.tools)) list = list.tools;
+  if (!Array.isArray(list)) return 'Paste a JSON list of tools: [{"name": "...", "description": "..."}, ...] or an MCP tools/list answer.';
+  const seen = new Set();
+  const out = [];
+  for (const raw of list) {
+    const name = typeof raw?.name === 'string' ? raw.name.trim().slice(0, 80) : '';
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    const description = typeof raw.description === 'string' ? raw.description.replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 300) : '';
+    const size = JSON.stringify({ name, description, inputSchema: raw.inputSchema ?? raw.input_schema ?? raw.parameters ?? null }).length;
+    out.push({ id: name, description, server: name.split(/__|\.|:|\//)[0] || 'custom', size: Math.min(size, 4000) });
+  }
+  if (out.length < 3) return 'Add at least three tools, each with a name and a description.';
+  if (out.length > MAX_CUSTOM_TOOLS) return `This demo builds graphs of up to ${MAX_CUSTOM_TOOLS} tools; you pasted ${out.length}.`;
+  return out;
+}
+
+async function buildCustom(list) {
+  const id = crypto.randomBytes(6).toString('hex');
+  const ns = `byo-${id}`;
+  setNamespace(ns);
+  const graph = new ContextGraph(store, { k: 6 });
+  await graph.seed({ tools: list, skills: [], servers: [...new Set(list.map(t => t.server))] });
+  const entry = {
+    id, ns, graph, tools: list, learned: 0,
+    meta: new Map(list.map(t => [t.id, t])),
+    chars: new Map(list.map(t => [t.id, t.size])),
+    preloadChars: list.reduce((s, t) => s + t.size, 0),
+    bm25: new Bm25(list.map(t => ({ id: t.id, text: `${t.id.replace(/__/g, ' ').replace(/_/g, ' ')} ${t.description}` }))),
+  };
+  customs.set(id, entry);
+  while (customs.size > MAX_CUSTOM_GRAPHS) customs.delete(customs.keys().next().value);
+  return entry;
+}
+
+function viewCustom(c, r, text) {
+  const ids = r.tools.map(t => t.id);
+  const bm = c.bm25.search(text, 6).map(x => x.id);
+  const chars = list => list.reduce((s, id) => s + (c.chars.get(id) || 290), 0);
+  return {
+    ...r,
+    tools: r.tools.map(t => ({ ...t, server: c.meta.get(t.id)?.server, description: c.meta.get(t.id)?.description })),
+    compare: {
+      catalogTools: c.tools.length,
+      preloadChars: c.preloadChars,
+      preloadTokens: Math.round(c.preloadChars / 4),
+      pulledChars: chars(ids),
+      pulledTokens: Math.round(chars(ids) / 4),
+      keywordSearchPicks: bm,
+      keywordSearchTokens: Math.round(chars(bm) / 4),
+    },
+  };
+}
 const bodyOf = b => (b && typeof b === 'object' && !Array.isArray(b) ? b : {});
 const clean = s => (typeof s === 'string' ? s : '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 300);
 
@@ -152,6 +238,7 @@ function view(r, text) {
       pulledChars: schemaChars(ids),
       pulledTokens: Math.round(schemaChars(ids) / 4),
       keywordSearchPicks: bm,
+      keywordSearchTokens: Math.round(schemaChars(bm) / 4),
     },
   };
 }
@@ -183,6 +270,10 @@ const server = http.createServer(async (req, res) => {
       if (limited(ip)) return json(res, 429, { error: 'Slow down a little.' });
       if (url.pathname === '/api/status') return json(res, 200, { ready: state.ready, stage: state.stage, learned: state.learned, seededAt: state.seededAt });
       if (!state.ready) return json(res, 503, { error: 'The graph is still loading into HydraDB.', stage: state.stage });
+      const body = req.method === 'POST' ? await readBody(req) : {};
+      // One request at a time touches the graph: the node-id salt is a module-level setting, so interleaved
+      // requests for different graphs could otherwise hash ids with the wrong one.
+      return serial(async () => {
       setNamespace(state.ns);
 
       if (req.method === 'GET' && url.pathname === '/api/info') {
@@ -201,24 +292,43 @@ const server = http.createServer(async (req, res) => {
         const f = path.resolve(ROOT, '..', 'results', 'results.json');
         return fs.existsSync(f) ? json(res, 200, JSON.parse(fs.readFileSync(f, 'utf8'))) : json(res, 404, { error: 'No benchmark results yet' });
       }
+      if (req.method === 'POST' && url.pathname === '/api/custom') {
+        if (customLimited(ip)) return json(res, 429, { error: 'You can build a few private graphs per ten minutes. Try again shortly.' });
+        const list = parseCustomTools(body.tools ?? body);
+        if (typeof list === 'string') return json(res, 400, { error: list });
+        const entry = await buildCustom(list);
+        return json(res, 200, { id: entry.id, tools: entry.tools.map(t => ({ id: t.id, server: t.server, description: t.description })), preloadTokens: Math.round(entry.preloadChars / 4) });
+      }
       if (req.method === 'POST' && url.pathname === '/api/retrieve') {
-        const { text, k } = bodyOf(await readBody(req));
+        const { text, k, graph } = bodyOf(body);
         const t = clean(text);
         if (t.length < 3) return json(res, 400, { error: 'Type a task first.' });
-        const r = await state.graph.retrieve(t, { k: Math.min(12, Math.max(1, Number(k) || 6)) });
-        return json(res, 200, view(r, t));
+        const c = graph ? customs.get(String(graph)) : null;
+        if (graph && !c) return json(res, 404, { error: 'That private graph has expired. Build it again.' });
+        if (c) setNamespace(c.ns);
+        const r = await (c ? c.graph : state.graph).retrieve(t, { k: Math.min(12, Math.max(1, Number(k) || 6)) });
+        return json(res, 200, c ? viewCustom(c, r, t) : view(r, t));
       }
       if (req.method === 'POST' && url.pathname === '/api/feedback') {
         if (feedbackLimited(ip)) return json(res, 429, { error: 'That is a lot of lessons at once. Try again in a minute.' });
-        const { text, used } = bodyOf(await readBody(req));
+        const { text, used, graph } = bodyOf(body);
         const t = clean(text).split(/\s+/).filter(w => !STOPWORDS.has(w.toLowerCase())).join(' ');
-        const ids = (Array.isArray(used) ? used : []).filter(u => toolMeta.has(u)).slice(0, 6);
+        const c = graph ? customs.get(String(graph)) : null;
+        if (graph && !c) return json(res, 404, { error: 'That private graph has expired. Build it again.' });
+        const meta = c ? c.meta : toolMeta;
+        const g = c ? c.graph : state.graph;
+        const ids = (Array.isArray(used) ? used : []).filter(u => meta.has(u)).slice(0, 6);
         if (t.length < 3 || !ids.length) return json(res, 400, { error: 'Pick at least one tool that the task really needed.' });
-        const before = await state.graph.retrieve(t);
-        const stats = await state.graph.learn({ text: t, used: ids, retrieved: before.tools.map(x => x.id) });
-        state.learned += 1;
-        const after = await state.graph.retrieve(t);
-        return json(res, 200, { learned: stats, before: view(before, t), after: view(after, t), examples: state.learned });
+        if (c) setNamespace(c.ns);
+        const before = await g.retrieve(t);
+        const stats = await g.learn({ text: t, used: ids, retrieved: before.tools.map(x => x.id) });
+        if (c) c.learned += 1;
+        else {
+          state.learned += 1;
+          for (const e of state.examples) if (e.text.toLowerCase() === clean(text).toLowerCase()) e.taught = true;
+        }
+        const after = await g.retrieve(t);
+        return json(res, 200, { learned: stats, before: c ? viewCustom(c, before, t) : view(before, t), after: c ? viewCustom(c, after, t) : view(after, t), examples: c ? c.learned : state.learned });
       }
       if (req.method === 'POST' && url.pathname === '/api/reset') {
         if (!RESET_TOKEN || req.headers['x-reset-token'] !== RESET_TOKEN) return json(res, 403, { error: 'Reset is disabled on this demo.' });
@@ -229,6 +339,7 @@ const server = http.createServer(async (req, res) => {
         return json(res, 202, { started: true });
       }
       return json(res, 404, { error: 'Unknown route' });
+      });
     }
     return serveStatic(req, res, url.pathname);
   } catch (err) {

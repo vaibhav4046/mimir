@@ -13,7 +13,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const PAGE = 4096; // HydraDB's largest page
 
 export class HydraStore {
-  constructor({ url = 'http://127.0.0.1:18443', token = 'local-dev-auth-token-32-characters-long', graph = 'default', cell = 'cell-0', namespace = 'local', concurrency = 12 } = {}) {
+  constructor({ url = 'http://127.0.0.1:18443', token = 'local-dev-auth-token-32-characters-long', graph = 'default', cell = 'cell-0', namespace = 'local', concurrency = 12, timeoutMs = 15000 } = {}) {
     this.kind = 'hydradb';
     this.url = url.replace(/\/+$/, '');
     this.token = token;
@@ -23,6 +23,7 @@ export class HydraStore {
     this.concurrency = concurrency;
     this.requests = 0;
     this.latencies = [];
+    this.timeoutMs = timeoutMs; // a hung HydraDB must fail fast so a caller can fall back
     this.edgeCount = {}; // edges this process created, by type (a count query over a shared database would mix graphs)
   }
 
@@ -33,6 +34,7 @@ export class HydraStore {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const res = await fetch(`${this.url}/v1/graphs/${this.graph}/query`, {
+          signal: AbortSignal.timeout(this.timeoutMs),
           method: 'POST',
           headers: { Authorization: `Bearer ${this.token}`, 'X-Graph-Namespace': this.namespace, 'Content-Type': 'application/json' },
           body: JSON.stringify({ cell_id: this.cell, query, ...(parameters ? { parameters } : {}), page_size: PAGE }),
@@ -53,6 +55,7 @@ export class HydraStore {
         while (body.next_cursor !== null && body.next_cursor !== undefined && pages++ < 50) {
           this.requests++;
           const more = await (await fetch(`${this.url}/v1/graphs/${this.graph}/query`, {
+            signal: AbortSignal.timeout(this.timeoutMs),
             method: 'POST',
             headers: { Authorization: `Bearer ${this.token}`, 'X-Graph-Namespace': this.namespace, 'Content-Type': 'application/json' },
             body: JSON.stringify({ cell_id: this.cell, query, ...(parameters ? { parameters } : {}), page_size: PAGE, cursor: body.next_cursor, query_id: body.query_id }),
@@ -73,7 +76,7 @@ export class HydraStore {
   }
 
   async init() {
-    const res = await fetch(`${this.url}/healthz`);
+    const res = await fetch(`${this.url}/healthz`, { signal: AbortSignal.timeout(this.timeoutMs) });
     if (!res.ok) throw new Error(`HydraDB not healthy at ${this.url}`);
   }
 

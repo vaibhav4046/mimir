@@ -20,6 +20,7 @@ export const DEFAULTS = {
   minTools: 3,
   relCutoff: 0.3, // keep tools scoring at least this fraction of the best
   minScore: 0.05, // below this no word pointed at a tool: `confident` is false and the caller should fall back
+  kWeak: 12, // when the match is weak (top score below strongScore) offer up to this many tools instead of k: coverage rises for about 100 more tokens
   strongScore: 1, // top score at or above this is `strong`; held-out, 84% of tasks reach it and 72% of those are complete (the rest: 67.5%)
   skillBoost: 0.9, // how much of a skill's score flows to the tools it requires
   entityBoost: 2, // multiplier slope for tools on a system the entity lives in
@@ -323,7 +324,7 @@ export class ContextGraph {
 
     const ranked = [...toolScore.entries()].filter(([id]) => this.tools.has(id)).sort(this.byScore);
     const best = ranked[0]?.[1] || 0;
-    const chosen = ranked.filter(([, s], i) => i < this.o.minTools || s >= this.o.relCutoff * best).slice(0, k).filter(([, s]) => s > 0);
+    const chosen = ranked.filter(([, s], i) => i < this.o.minTools || s >= this.o.relCutoff * best).slice(0, best >= this.o.strongScore ? k : Math.max(k, this.o.kWeak)).filter(([, s]) => s > 0);
     // Keep only the edges that lead to a chosen tool (walk back from the tools).
     const keep = new Set(chosen.map(([id]) => this.tools.get(id).name));
     let grew = true;
