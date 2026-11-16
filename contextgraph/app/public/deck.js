@@ -114,7 +114,7 @@ export async function renderDeck(root) {
      <p class="src" data-r="4">Token counts: Anthropic Engineering. Prices are an example rate, not a quote; cached-read discount is an assumption.</p>`,
     // 4 who
     `<div class="tag" data-r="0">Who it is for</div>
-     <h2 data-r="0">People running agents on local or small models with dozens of tools.</h2>
+     <h2 data-r="0">People running agents on local or small models with dozens of tools (illustrative profiles, not customers; Mimir is the first real user).</h2>
      <div class="row" style="margin-top:14px">
        <div class="card2 persona" data-r="1"><div class="av" style="background:#ffc247">M</div><h3>Mira, builds a local-first agent app</h3><p>Small models by default, a hundred-plus tools across servers, no tool search on those models.</p><p class="pain">Pain: the tool list eats the context window before the request arrives.</p><p class="gain">With the graph: a handful of tools per task, and it remembers which app a client lives in.</p></div>
        <div class="card2 persona" data-r="2"><div class="av" style="background:#5ac8ff">D</div><h3>Dev, leads a small agency</h3><p>Builds agents for five clients with 60+ tools across servers.</p><p class="pain">Pain: token bills and “too many tools” errors.</p><p class="gain">With the graph: each task pulls five tools, not sixty.</p></div>

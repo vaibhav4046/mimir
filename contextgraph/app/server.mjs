@@ -59,9 +59,11 @@ async function buildGraph() {
   // Which example prompts does the untrained graph already get right? The page leads with those.
   state.examples = [];
   for (const t of TASKS.filter(x => x.split === 'test').filter((_, i) => i % 5 === 0)) {
-    const ids = (await g.retrieve(t.text, { k: 6 })).tools.map(x => x.id);
-    state.examples.push({ text: t.text, kind: t.kind, tools: t.tools, hit: t.tools.every(x => ids.includes(x)) });
+    const r = await g.retrieve(t.text, { k: 6 });
+    const ids = r.tools.map(x => x.id);
+    state.examples.push({ text: t.text, kind: t.kind, tools: t.tools, hit: t.tools.every(x => ids.includes(x)), score: r.tools[0]?.score ?? 0 });
   }
+  state.examples.sort((x, y) => Number(y.hit) - Number(x.hit) || y.score - x.score);
   state.graph = g;
   state.learned = 0;
   state.seededAt = new Date().toISOString();

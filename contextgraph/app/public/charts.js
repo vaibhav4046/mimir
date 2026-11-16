@@ -4,7 +4,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 
 /** Line chart. series: [{name, color, values:[y], band:[sd]?, dashed?, label?}] */
 export function lineChart({ width = 760, height = 360, xs, series, yMin = 0, yMax = 100, yLabel = '%', xLabel = '', refs = [], title = '' }) {
-  const m = { l: 52, r: 24, t: 20, b: 46 };
+  const m = { l: 56, r: 56, t: 30, b: 52 };
   const w = width - m.l - m.r;
   const h = height - m.t - m.b;
   const x = i => m.l + (xs.length === 1 ? 0 : (i / (xs.length - 1)) * w);

@@ -57,9 +57,11 @@ if (R.llm) {
   md.push(row('Tools offered by', 'First call is a needed tool', 'Needed tool offered', 'Tools', 'Prompt tokens', 'Time per call'));
   md.push(row('---', '---:', '---:', '---:', '---:', '---:'));
   for (const [k, v] of Object.entries(R.llm.methods)) md.push(row(k, `${v.firstCallHitPct}%`, `${v.toolOfferedPct}%`, String(v.avgToolsOffered), v.avgPromptTokens.toLocaleString(), `${v.avgMs.toLocaleString()} ms`));
+  md.push('');
+  md.push('The preload row was given a 40,960-token context window so that 264 tools fit; every other row used 8,192. With 40 tasks, one task is 2.5 points.');
 }
 md.push('');
-md.push('### When it is not sure');
+md.push('### When it is not sure (first trial)');
 md.push(row('Confidence needed (top score)', 'Tasks answered', 'Complete when answered'));
 md.push(row('---', '---:', '---:'));
 for (const s of R.confidence.sweep) md.push(row(`>= ${s.threshold}`, `${s.coveragePct}%`, s.completeWhenConfident === null ? '-' : `${s.completeWhenConfident}%`));
@@ -71,7 +73,7 @@ md.push(`${R.drift.newTools} tools added at run time with no rebuild, tested on 
 if (R.scale?.length) {
   md.push('');
   md.push('### Catalog size and load (cold graph, one HydraDB node)');
-  md.push(row('Catalog', 'Graph', 'Keyword search', 'HydraDB requests per pull', '1 client', '8 clients', '32 clients'));
+  md.push(row('Catalog', 'Graph', 'Keyword search (tools only)', 'HydraDB requests per pull', '1 client', '8 clients', '32 clients'));
   md.push(row('---', '---:', '---:', '---:', '---:', '---:', '---:'));
   for (const s of R.scale) md.push(row(`${s.catalogTools.toLocaleString()} tools`, `${s.graphCompleteCold}%`, `${s.bm25Complete}%`, String(s.graphAvgRequests), ...s.load.map(l => `${l.perSec}/s, p95 ${l.p95ms} ms`)));
   md.push('');
@@ -84,6 +86,12 @@ const out = tpl
   .replaceAll('{{MODELLED}}', String(c.catalogTools - c.realMimirTools))
   .replaceAll('{{PRELOAD_TOKENS}}', (R.llm?.methods?.['All tools preloaded']?.avgPromptTokens ?? Math.round(c.allToolsSchemaChars / 4)).toLocaleString())
   .replaceAll('{{BM25S}}', String(bl.bm25ToolsAndSkills.complete))
+  .replaceAll('{{AFTER}}', String(lc.testCompleteMean[last]))
+  .replaceAll('{{SKILLAFTER}}', String(lc.byKindMean.S[last]))
+  .replaceAll('{{ENTITYAFTER}}', String(lc.byKindMean.E[last]))
+  .replaceAll('{{LLM_GRAPH}}', String(R.llm?.methods?.['Graph, after learning']?.firstCallHitPct ?? '?'))
+  .replaceAll('{{LLM_ALL}}', String(R.llm?.methods?.['All tools preloaded']?.firstCallHitPct ?? '?'))
+  .replaceAll('{{LLM_MISS}}', String(100 - (R.llm?.methods?.['Graph, after learning']?.toolOfferedPct ?? 0)))
   .replaceAll('{{FLAT}}', String(R.flatLearner ? Math.max(...R.flatLearner.rows.slice(1).map(x => x.complete)) : '?'))
   .replaceAll('{{UNSEEN}}', String(R.unseenJobs?.rows.find(x => x.label === 'Graph, after learning')?.complete ?? '?') + '%')
   .replaceAll('{{LIVE}}', LIVE)

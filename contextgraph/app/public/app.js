@@ -21,7 +21,7 @@ async function pollStatus() {
     const s = await api('/api/status');
     ready = s.ready;
     pill.className = `pill ${s.ready ? 'ok' : ''}`;
-    $('span', pill).textContent = s.ready ? `HydraDB live · ${s.learned} ${s.learned === 1 ? 'task' : 'tasks'} learned` : `Loading graph into HydraDB: ${s.stage}`;
+    $('span', pill).textContent = s.ready ? `HydraDB live · ${s.learned} learned` : `Loading graph into HydraDB: ${s.stage}`;
   } catch {
     pill.className = 'pill bad';
     $('span', pill).textContent = 'Server unreachable';
@@ -42,11 +42,11 @@ addEventListener('hashchange', route);
 
 // ---------- Lab ----------
 const WHY = {
-  word: w => `word “${w.word}”`,
-  similar: w => `“${w.word}” means “${w.meansWord}”`,
-  skill: w => `skill: ${w.skill}`,
-  entity: w => `${w.entity} lives in this system`,
-  'used-with': w => `used with ${w.tool}`,
+  word: w => `matched “${w.word}”`,
+  similar: w => `“${w.word}” is close to “${w.meansWord}”`,
+  skill: w => `part of the “${w.skill}” routine`,
+  entity: w => `${w.entity} lives in this app`,
+  'used-with': w => `often used with ${w.tool}`,
 };
 const cls = k => (k === 'skill' ? 'skill' : k === 'entity' ? 'entity' : k === 'similar' ? 'similar' : k === 'used-with' ? 'used' : '');
 
@@ -141,20 +141,20 @@ async function lab(root) {
     const toolHtml = r.tools
       .map(t => {
         const state = key ? (need.has(t.id) ? 'ok' : '') : '';
-        return `<div class="tool ${state}"><div><span class="name">${esc(t.id)}</span><span class="srv">${esc(t.server)}</span></div><div class="score" title="score ${t.score}"><i style="width:${Math.min(100, (t.score / (r.tools[0].score || 1)) * 100)}%"></i></div><div class="desc">${esc(t.description)}</div><div class="why">${t.why.map(w => `<span class="${cls(w.kind)}">${esc(WHY[w.kind]?.(w) || w.kind)}</span>`).join('')}</div></div>`;
+        return `<div class="tool ${state}"><div><span class="name">${esc(t.id)}</span><span class="srv">${esc(t.server)}</span></div><div class="score" title="score ${t.score}"><i style="width:${Math.min(100, (t.score / (r.tools[0].score || 1)) * 100)}%"></i></div><div class="desc">${esc(t.description)}</div><div class="why">${t.why.slice(0, 3).map(w => `<span class="${cls(w.kind)}">${esc(WHY[w.kind]?.(w) || w.kind)}</span>`).join('')}</div></div>`;
       })
       .join('');
     const hit = key ? key.every(k => r.tools.some(t => t.id === k)) : null;
-    const weak = r.confident && r.tools.length && r.tools[0].score < 0.3;
+    const weak = r.confident && r.tools.length && !r.strong;
     const answer = key
       ? `<div class="answerkey">Tools this task really needs: <b>${key.map(esc).join(', ')}</b> · ${hit ? `<b style="color:var(--green)">all pulled ✓${banner ? ' (the same wording you taught it)' : ''}</b>` : '<b style="color:var(--red)">missed some</b>'}. Keyword search would have picked: ${r.compare.keywordSearchPicks.slice(0, 4).map(esc).join(', ') || 'nothing'}${key.every(k => r.compare.keywordSearchPicks.includes(k)) ? ' (also correct)' : ''}.</div>`
       : `<div class="answerkey">Keyword search on the same catalog would have picked: ${r.compare.keywordSearchPicks.slice(0, 4).map(esc).join(', ') || 'nothing'}.</div>`;
     $('#out').innerHTML = `${banner}<div class="grid2">
-      <section class="card" aria-labelledby="tl"><h3 id="tl">Pulled for this task <span class="sub">${r.confident ? (weak ? 'Low confidence: the words matched these tools only weakly, so check them.' : '') : 'The graph is unsure here, so a real agent would fall back to its default tools.'}</span></h3>${toolHtml || '<p class="muted">Nothing matched. Use “Let me fix it” below to teach it which tools this needs.</p>'}${answer}
+      <section class="card" aria-labelledby="tl"><h3 id="tl">Pulled for this task <span class="sub">${r.confident ? (weak ? 'Low confidence: the words matched these tools only weakly. On the benchmark, matches this weak were right far less often, so check them.' : '') : 'The graph is unsure here, so a real agent would fall back to its default tools.'}</span></h3>${toolHtml || '<p class="muted">Nothing matched. Use “Let me fix it” below to teach it which tools this needs.</p>'}${answer}
         <div class="feedback" id="fb"><span class="muted">Was this right?</span>${r.tools.length ? '<button class="btn good sm" id="yes">Yes, these are right</button>' : ''}<button class="btn ghost sm" id="no">${r.tools.length ? 'Not quite, let me fix it' : 'Let me fix it'}</button></div>
         <div id="pickerBox"></div>
       </section>
-      <section class="card" aria-labelledby="gl"><h3 id="gl">What the graph walked through <span class="sub">words → skills / systems → tools</span></h3>${graphSvg(r.trace)}<div class="legend"><span><i style="border-color:#4b4b57"></i>word</span><span><i style="border-color:var(--gold)"></i>skill</span><span><i style="border-color:var(--green)"></i>thing it knows</span><span><i style="border-color:var(--blue)"></i>system</span><span><i style="border-color:var(--orange)"></i>tool</span></div></section>
+      <section class="card" aria-labelledby="gl"><h3 id="gl">How it found them <span class="sub">your words, then routines and apps, then tools</span></h3>${graphSvg(r.trace)}<div class="legend"><span><i style="border-color:#4b4b57"></i>word</span><span><i style="border-color:var(--gold)"></i>skill</span><span><i style="border-color:var(--green)"></i>known name</span><span><i style="border-color:var(--blue)"></i>app</span><span><i style="border-color:var(--orange)"></i>tool</span></div></section>
     </div>`;
     if ($('#yes')) $('#yes').onclick = () => teach(r.tools.map(t => t.id));
     $('#no').onclick = () => openPicker(r);
@@ -213,50 +213,58 @@ function drawStats(info) {
   const e = info.edges;
   $('#stats').innerHTML = [
     [fmt(info.catalog.tools), 'tools in the catalog'],
-    [fmt(Object.values(e).reduce((a, b) => a + b, 0)), 'edges in HydraDB'],
-    [fmt(e.MENTIONS), 'word → tool links (learned weights)'],
-    [fmt(info.learned), 'tasks learned this session'],
-    [info.hydra.p50ms ? `${info.hydra.p50ms} ms` : '…', 'HydraDB request, median'],
+    [fmt(Object.values(e).reduce((a, b) => a + b, 0)), 'connections stored in HydraDB'],
+    [fmt(e.MENTIONS), 'links from words to tools'],
+    [fmt(info.learned), info.learned === 1 ? 'task learned this session' : 'tasks learned this session'],
+    [info.hydra.p50ms ? `${info.hydra.p50ms} ms` : '…', 'typical HydraDB lookup'],
   ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
 }
 
-function graphSvg(trace) {
-  if (!trace?.length) return '<p class="muted">No edges to show yet.</p>';
+function graphSvg(allTrace) {
+  const trace = (allTrace || []).filter(e => e.rel !== 'SIMILAR');
+  if (!trace.length) return '<p class="muted">No edges to show yet.</p>';
   const nodes = new Map();
   const key = (n, k) => `${k}:${n}`;
   for (const e of trace) {
     for (const [n, k] of [[e.from, e.fromKind], [e.to, e.toKind]]) if (!nodes.has(key(n, k))) nodes.set(key(n, k), { name: n, kind: k, depth: 0 });
   }
-  for (let pass = 0; pass < 6; pass++) for (const e of trace) {
-    const a = nodes.get(key(e.from, e.fromKind));
-    const b = nodes.get(key(e.to, e.toKind));
-    b.depth = Math.max(b.depth, a.depth + 1);
-  }
-  const maxD = Math.max(...[...nodes.values()].map(n => n.depth));
-  for (const n of nodes.values()) if (n.kind === 'tool') n.depth = maxD;
+  // Columns by kind, not by following edges: similar-word links run both ways and would loop.
+  const DEPTH = { word: 0, skill: 1, entity: 1, server: 1, tool: 2 };
+  for (const n of nodes.values()) n.depth = DEPTH[n.kind] ?? 1;
+  const maxD = 2;
   const cols = [];
   for (const n of nodes.values()) (cols[n.depth] ||= []).push(n);
-  const W = 560;
-  const colW = (W - 150) / Math.max(1, maxD);
-  const rowH = 34;
+  const W = 700;
+  const colW = (W - 20) / (Math.max(1, maxD) + 1);
+  const rowH = 46;
   const H = Math.max(1, ...cols.filter(Boolean).map(c => c.length)) * rowH + 20;
-  cols.forEach((c, ci) => c?.forEach((n, ri) => { n.x = 10 + ci * colW; n.y = 12 + ri * rowH + (H - 20 - c.length * rowH) / 2; n.w = 140; }));
+  cols.forEach((c, ci) => c?.forEach((n, ri) => { n.x = 10 + ci * colW; n.y = 12 + ri * rowH + (H - 20 - c.length * rowH) / 2; n.w = Math.max(96, colW - 22); }));
   const hot = new Set(trace.filter(e => e.toKind === 'tool').sort((a, b) => b.w - a.w).slice(0, 3).map(e => key(e.to, e.toKind)));
   const edges = trace.map(e => {
     const a = nodes.get(key(e.from, e.fromKind));
     const b = nodes.get(key(e.to, e.toKind));
     const x1 = a.x + a.w;
-    const y1 = a.y + 12;
+    const y1 = a.y + 16;
     const x2 = b.x;
-    const y2 = b.y + 12;
+    const y2 = b.y + 16;
     const mx = (x1 + x2) / 2;
     return `<path class="edge ${hot.has(key(e.to, e.toKind)) ? 'hot' : ''}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" stroke-width="${(0.8 + e.w * 2.4).toFixed(1)}" opacity="${(0.35 + e.w * 0.6).toFixed(2)}"><title>${esc(e.from)} → ${esc(e.to)} (${e.rel}, weight ${e.w})</title></path>`;
   }).join('');
-  const boxes = [...nodes.values()].map(n => `<g class="node ${n.kind}" transform="translate(${n.x},${n.y})"><rect width="${n.w}" height="24"/><text x="8" y="16">${esc(n.name.length > 19 ? `${n.name.slice(0, 18)}…` : n.name)}</text></g>`).join('');
+  const boxes = [...nodes.values()].map(n => `<g class="node ${n.kind}" transform="translate(${n.x},${n.y})"><rect width="${n.w}" height="32"/><text x="9" y="21">${esc(n.name.length > Math.floor(n.w / 9) ? `${n.name.slice(0, Math.floor(n.w / 9) - 1)}…` : n.name)}</text></g>`).join('');
   return `<svg class="graph" viewBox="0 0 ${W} ${H}" role="img" aria-label="Graph of the words, skills and systems that led to each tool">${edges}${boxes}</svg>`;
 }
 
 // ---------- Results ----------
+function collapseSweep(sweep) {
+  const out = [];
+  for (const s of sweep) {
+    const prev = out.at(-1);
+    if (prev && prev.coveragePct === s.coveragePct && prev.completeWhenConfident === s.completeWhenConfident) prev.label = `≥ ${prev.first} to ${s.threshold}`;
+    else out.push({ ...s, first: s.threshold, label: `≥ ${s.threshold}` });
+  }
+  return out;
+}
+
 async function results(root) {
   root.innerHTML = `<div class="wrap"><div class="eyebrow">Benchmark · measured on a running HydraDB node</div><h1>Does it work, and does it get better?</h1><p class="lede" id="rl">Loading results…</p><div id="rc"></div></div>`;
   let r;
@@ -280,6 +288,16 @@ async function results(root) {
   const bl = r.baselines;
   const last = lc.testCompleteMean.length - 1;
   $('#rl').innerHTML = `${c.tasks} tasks over a catalog of ${c.catalogTools} tools (${c.realMimirTools} are Mimir’s real tools). The graph is trained on one wording of each job and tested on a <b>different, unseen wording</b>. Five independent runs; shaded band is one standard deviation. “Complete” means every tool the task needs was pulled.`;
+  const llm = r.llm?.methods || {};
+  const allT = llm['All tools preloaded'];
+  const graphT = llm['Graph, after learning'];
+  const flatBest = r.flatLearner ? Math.max(...r.flatLearner.rows.slice(1).map(x => x.complete)) : null;
+  $('#rl').insertAdjacentHTML('afterend', `<section class="card summary"><h2>The short version</h2><ul>
+    ${allT && graphT ? `<li><b>It shrinks the prompt.</b> On a small local model the tool list went from ${fmt(allT.avgPromptTokens)} to ${fmt(graphT.avgPromptTokens)} tokens, and each answer took about half the time.</li><li><b>It did not make that model more accurate.</b> The first tool it picked was right ${graphT.firstCallHitPct}% of the time, against ${allT.firstCallHitPct}% with every tool loaded.</li>` : ''}
+    <li><b>It learns, about as well as a simple alternative.</b> Coverage of unseen wordings went from ${lc.testCompleteMean[0]}% to ${lc.testCompleteMean[1]}% after one pass and ${lc.testCompleteMean[last]}% after five. A keyword index that also remembers past tasks reaches ${flatBest ?? '?'}%.</li>
+    ${r.jargon ? `<li><b>It picks up private words.</b> A made-up team word was found ${r.jargon.heldOut.cold}% of the time before any example, ${r.jargon.heldOut.afterOneExample}% after one, ${r.jargon.heldOut.afterTwoExamples}% after two.</li>` : ''}
+    <li><b>It gets slower as the catalog grows,</b> from about ${Math.round(r.scale[0].load[0].p50ms)} ms at ${fmt(r.scale[0].catalogTools)} tools to about ${Math.round(r.scale.at(-1).load[0].p50ms)} ms at ${fmt(r.scale.at(-1).catalogTools)}.</li></ul></section>`);
+  $('#rl').insertAdjacentHTML('afterend', '<p class="note"><b>Plain terms.</b> “Held-out”: tasks the graph was not trained on. “Cold start”: before any learning. “Keyword search” (BM25): the standard word-matching search. “Entity jobs”: jobs about a named thing it learned, such as a client. “Skill jobs”: jobs made of several steps it knows as a routine.</p>');
   const orange = '#ff5b1f';
   const body = [];
   body.push(`<section class="card"><h2>It learns: held-out accuracy rises with experience</h2>${lineChart({
@@ -333,7 +351,7 @@ async function results(root) {
     body.push(`<section class="card"><h2>End to end with a real local model</h2>${barChart({ rows, title: 'Chance the model calls a needed tool first' })}<p class="note">${esc(r.llm.model)} running locally through Ollama, ${r.llm.sampleSize} unseen tasks, temperature 0. Each row gives the model a different list of tools. “Hit” means its first tool call was one the task needs. The last number on each row is the average prompt tokens and time per call.</p>
       <table><thead><tr><th>Tools offered by</th><th class="num">Right first call</th><th class="num">Needed tool offered</th><th class="num">Tools</th><th class="num">Prompt tokens</th><th class="num">Time per call</th></tr></thead><tbody>${Object.entries(r.llm.methods).map(([k, v]) => `<tr class="${k.includes('learning') ? 'win' : ''}"><td>${esc(k)}</td><td class="num">${v.firstCallHitPct}%</td><td class="num">${v.toolOfferedPct}%</td><td class="num">${v.avgToolsOffered}</td><td class="num">${fmt(v.avgPromptTokens)}</td><td class="num">${fmt(v.avgMs)} ms</td></tr>`).join('')}</tbody></table></section>`);
   }
-  body.push(`<section class="card"><h2>When it isn’t sure</h2><table><thead><tr><th>Confidence needed</th><th class="num">Tasks it answers</th><th class="num">Right when it answers</th></tr></thead><tbody>${r.confidence.sweep.map(s => `<tr><td>top score ≥ ${s.threshold}</td><td class="num">${s.coveragePct}%</td><td class="num">${s.completeWhenConfident ?? '-'}%</td></tr>`).join('')}</tbody></table><p class="note">The graph knows when it is unsure. In the agent, an unsure answer falls back to the default tool set instead of guessing: ${r.confidence.withFallback.complete}% complete with that fallback, still far below preloading (${r.confidence.withFallback.avgSchemaChars.toLocaleString()} characters per call on average).</p></section>`);
+  body.push(`<section class="card"><h2>When it isn’t sure</h2><table><thead><tr><th>Confidence needed</th><th class="num">Tasks it answers</th><th class="num">Right when it answers</th></tr></thead><tbody>${collapseSweep(r.confidence.sweep).map(s => `<tr><td>top score ${s.label}</td><td class="num">${s.coveragePct}%</td><td class="num">${s.completeWhenConfident ?? '-'}%</td></tr>`).join('')}</tbody></table><p class="note">A match is “strong” at a top score of 1 or more; the Try it page warns when a match is weaker. If an agent fell back to its default tool set below that score, ${r.confidence.withFallback.complete}% of jobs would be complete, at ${r.confidence.withFallback.avgSchemaChars.toLocaleString()} characters per call on average. The Mimir integration today falls back only when no word matched at all.</p></section>`);
   body.push(`<section class="card"><h2>A tool the graph has never seen</h2><table><thead><tr><th>Held-out wording, tool added at run time</th><th class="num">Found</th></tr></thead><tbody><tr><td>Only its description</td><td class="num">${r.drift.heldOutCompletePct.onlyDescription}%</td></tr><tr><td>After 1 example</td><td class="num">${r.drift.heldOutCompletePct.afterOneExample}%</td></tr><tr><td>After 2 examples</td><td class="num">${r.drift.heldOutCompletePct.afterTwoExamples}%</td></tr></tbody></table><p class="note">${r.drift.newTools} new tools were added with no rebuild. ${esc(r.drift.note)}.</p></section>`);
   body.push(`<section class="card"><h2>Does it hold up under load and size?</h2><table><thead><tr><th>Catalog</th><th class="num">Graph accuracy (cold)</th><th class="num">Keyword search</th><th class="num">Requests / pull</th><th class="num">1 client</th><th class="num">8 clients</th><th class="num">32 clients</th></tr></thead><tbody>${r.scale.map(s => `<tr><td>${fmt(s.catalogTools)} tools</td><td class="num">${s.graphCompleteCold}%</td><td class="num">${s.bm25Complete}%</td><td class="num">${s.graphAvgRequests}</td>${s.load.map(l => `<td class="num">${l.perSec}/s · p95 ${l.p95ms} ms</td>`).join('')}</tr>`).join('')}</tbody></table><p class="note">Pulls per second and 95th-percentile latency of a full retrieval (several HydraDB hops) on one small laptop VM (4 cores, 3 GB), with HydraDB and the load generator on the same machine. Extra tools beyond the first 264 are synthetic distractors made from the same vocabulary. The prompt stays small as the catalog grows; preloading would grow with it.</p></section>`);
   $('#rc').innerHTML = body.join('<div style="height:18px"></div>');

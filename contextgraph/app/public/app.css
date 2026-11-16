@@ -175,3 +175,48 @@ footer a { display: inline-block; padding: 8px 4px; }
   .card table { display: block; overflow-x: auto; }
   .wrap { overflow-x: hidden; }
 }
+
+#out { scroll-margin-top: 84px; }
+@media (max-width: 560px) {
+  .top { position: static; }
+  #out { scroll-margin-top: 12px; }
+  .tool .score { display: none; }
+  .card { overflow-x: auto; }
+  .card table { display: table; min-width: 520px; }
+}
+
+@media (max-width: 560px) {
+  .tool > div:first-child { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .tool .srv { margin-left: 0; }
+  .tool .name { overflow-wrap: anywhere; }
+  .why span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* Spacing and rhythm: room to breathe, input above the fold. */
+.hero { gap: 56px; padding-top: 44px; padding-bottom: 36px; align-items: center; }
+.hero h1 { font-size: clamp(30px, 3.6vw, 48px); line-height: 1.08; max-width: 18ch; margin-bottom: 20px; }
+.hero .lede { font-size: 18px; line-height: 1.6; max-width: 52ch; }
+.counter { padding: 26px 28px; }
+.ask { margin-top: 12px; }
+.chips { gap: 12px; margin-top: 16px; }
+.chip { padding: 9px 16px; }
+.grid2 { gap: 32px; }
+.card { padding: 28px 32px; }
+.card h2, .card h3 { margin-bottom: 18px; }
+.tool { padding: 20px 0; gap: 8px 16px; }
+.tool .desc { line-height: 1.5; margin-top: 2px; }
+.why { margin-top: 6px; gap: 8px; }
+.answerkey { margin-top: 22px; padding-top: 18px; line-height: 1.6; }
+.feedback { margin-top: 20px; gap: 12px; }
+.statrow { margin-top: 40px; gap: 20px; }
+#out { margin-top: 36px; }
+.card.summary { margin: 28px 0 8px; }
+.card.summary ul { margin: 0; padding-left: 22px; display: grid; gap: 14px; line-height: 1.6; font-size: 17px; }
+.card + .card, section.card { margin-bottom: 28px; }
+#rl + p.note { margin: 6px 0 20px; max-width: 80ch; }
+
+.graph text { font-size: 15px; }
+.grid2 { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+.grid2 > section:nth-child(2) { position: sticky; top: 84px; align-self: start; }
+.hero h1 { font-size: clamp(30px, 3.3vw, 44px); max-width: 24ch; }
+@media (max-width: 900px) { .grid2 > section:nth-child(2) { position: static; } .grid2 { grid-template-columns: 1fr; } }
