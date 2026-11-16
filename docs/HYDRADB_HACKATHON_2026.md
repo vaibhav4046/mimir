@@ -128,6 +128,8 @@ event eligibility before representing a captured demo as a live hosted app.
 85–105s: Inject trusted corrective feedback edge; rerun; explain limitations.
 105–120s: Public demo URL, source repo, persona, willingness-to-pay signal.
 
+**Confirmed organizer event:** https://luma.com/bqwllms4 — the event page lists the event venue as Discord and registration as approval-required. Official Discord invite: https://discord.com/invite/YPtwenvxY8 . The public Luma page does NOT show a submission form, so inspect the actual server announcement/submission channel. Do not reuse the unrelated August Hack Hydra submission form.
+
 ## Submission gate
 
 - [ ] OSS engine deployed and tested, not Cloud
