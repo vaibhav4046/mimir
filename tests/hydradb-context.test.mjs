@@ -116,3 +116,18 @@ test('feedback persists graph suppression without removing available permissions
   const restored = await router.route('research web sources', tools, { scope: 'feedback-a' });
   assert.ok(restored.tools.some(t => t.function.name === 'browser_search'));
 });
+
+test('all-suppressed graph selection never expands back to the full registry', async () => {
+  const graph = mockHydra();
+  const router = new HydraContextRouter({ token: 'test-token', fetchImpl: graph.fetchImpl });
+  const onlySearch = [tool('browser_search', 'Search the web for source material')];
+  const before = await router.route('research', onlySearch, { scope: 'all-suppressed-test' });
+  assert.equal(before.tools.length, 1);
+  await router.teach({
+    scope: 'all-suppressed-test', capability: 'research',
+    toolName: 'browser_search', relevant: false,
+  });
+  const after = await router.route('research', onlySearch, { scope: 'all-suppressed-test' });
+  assert.deepEqual(after.tools, []);
+  assert.equal(after.trace.status, 'all-suppressed');
+});
