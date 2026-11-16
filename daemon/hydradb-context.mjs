@@ -177,7 +177,8 @@ export class HydraContextRouter {
     }
 
     await this.seed(schemas, scope);
-    const returned = new Set();
+    const routed = new Set();
+    const blocked = new Set();
     for (const intent of intents) {
       const id = stableId(scope, 'capability', intent);
       const rows = await this.query(
@@ -188,24 +189,31 @@ export class HydraContextRouter {
         'MATCH (c {id: $id})-[:SUPPRESSES]->(t) RETURN t.name AS name LIMIT 512',
         { id },
       );
-      const blockedNames = new Set(suppressed.map(row => row.name));
-      for (const row of rows) {
-        if (row.name && !blockedNames.has(row.name)) returned.add(row.name);
-      }
+      for (const row of rows) if (row.name) routed.add(row.name);
+      for (const row of suppressed) if (row.name) blocked.add(row.name);
     }
 
-    // Security invariant: an untrusted graph answer cannot add new privileges.
-    const selected = schemas.filter(s => returned.has(String(s.function?.name || s.name)));
-    // Do not silently pass an empty tool list for unknown/underspecified prompts.
-    const usable = selected.length ? selected : schemas;
+    // A suppression dominates a route, even when several intents matched.
+    // Graph output never grants a tool outside the authorised Mimir schema.
+    const selected = schemas.filter(s => {
+      const name = String(s.function?.name || s.name);
+      return routed.has(name) && !blocked.has(name);
+    });
+    // Distinguish a new capability with zero matches (gracefully fall back)
+    // from verified feedback that suppressed EVERY candidate (return none).
+    const usable = selected.length || routed.size ? selected : schemas;
+    const status = selected.length
+      ? 'hydradb-traversal'
+      : routed.size ? 'all-suppressed' : 'no-matching-edges';
     return {
       tools: usable,
       trace: {
-        status: selected.length ? 'hydradb-traversal' : 'no-matching-edges',
+        status,
         intents,
         before: schemas.length,
         after: usable.length,
-        graphReturned: returned.size,
+        graphReturned: routed.size,
+        suppressed: blocked.size,
         elapsedMs: Math.round(performance.now() - start),
       },
     };
