@@ -26,7 +26,8 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/hydra-db/hydradb.git /tmp/hydradb
           cd /tmp/hydradb
-          cargo +stable build --locked --features server-runtime --bin graph-node
+          bash scripts/install_lagraph.sh /tmp/hydradb/.hydradb/lagraph
+          LAGRAPH_LIB_DIR=/tmp/hydradb/.hydradb/lagraph/lib cargo +stable build --locked --features server-runtime --bin graph-node
       - name: Start real local HydraDB instance
         run: |
           cd /tmp/hydradb
