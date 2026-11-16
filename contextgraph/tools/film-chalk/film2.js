@@ -118,7 +118,6 @@ function endCard(ctx, t) {
   drawAll(ctx, sunDisc, t); drawAll(ctx, sunRays, t);
   const s = 1.35; ctx.save(); ctx.translate(560 - MX * s, 900 - MBY * s); ctx.scale(s, s);
   const tm = 4.6 + u * 1.3; drawAll(ctx, mimirParts, tm); drawAll(ctx, faceIntro.slice(0, 4), tm); if (tm > 6.4) liveFaces(ctx, t, { mimir: 'h', tester: 'n' }); ctx.restore();
-  drawAll(ctx, hydra, t);
 }
 
 function renderAt(t) {
@@ -139,6 +138,11 @@ function renderAt(t) {
   dust.forEach(d => { X.fillStyle = `rgba(244,241,230,${d[2]})`; X.fillRect(d[0], d[1], d[3], d[3]); });
   if (HEADS[0]) { const h = HEADS[0]; X.save(); X.translate(h.x, h.y); X.rotate(-0.6); X.fillStyle = h.s.c; X.beginPath(); X.roundRect(0, -8, 54, 16, 4); X.fill(); X.fillStyle = 'rgba(0,0,0,0.25)'; X.fillRect(30, -8, 24, 16); X.restore(); }
   ers.forEach(ex => { const wob = Math.sin(t * 14) * 8; X.save(); X.translate(ex, 520 + wob); X.rotate(0.12); X.fillStyle = 'rgba(0,0,0,0.3)'; X.beginPath(); X.roundRect(-52, -30, 120, 90, 10); X.fill(); X.fillStyle = '#c9b48a'; X.beginPath(); X.roundRect(-60, -48, 120, 52, 10); X.fill(); X.fillStyle = '#3b3f45'; X.beginPath(); X.roundRect(-60, -4, 120, 30, 6); X.fill(); X.restore(); });
+  if (t > C.end0 + 0.8) { // the real logos on framed plaques, fading in
+    const a = ss(0, 1.4, t - C.end0 - 0.8), plaque = (img, x, y, sz) => { if (!img || !img.complete) return; X.save(); X.globalAlpha = a; X.fillStyle = '#0a0a0a'; X.beginPath(); X.roundRect(x - 10, y - 10, sz + 20, sz + 20, 18); X.fill(); X.strokeStyle = 'rgba(244,241,230,0.9)'; X.lineWidth = 6; X.stroke(); X.beginPath(); X.roundRect(x, y, sz, sz, 10); X.clip(); X.drawImage(img, x, y, sz, sz); X.restore(); };
+    plaque(document.getElementById('im'), 1200, 520, 240); plaque(document.getElementById('ih'), 1500, 520, 240);
+    X.save(); X.globalAlpha = a; X.strokeStyle = 'rgba(244,241,230,0.9)'; X.lineWidth = 8; X.lineCap = 'round'; X.beginPath(); X.moveTo(1450, 640); X.lineTo(1450, 700); X.moveTo(1420, 670); X.lineTo(1480, 670); X.stroke(); X.restore();
+  }
   const f = Math.max(1 - ss(0, 1.0, t), ss(C.total - 1.4, C.total, t)); if (f > 0) { X.fillStyle = `rgba(0,0,0,${f})`; X.fillRect(0, 0, W, H); }
 }
 window.renderAt = renderAt; renderAt(0);
