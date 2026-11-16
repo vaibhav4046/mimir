@@ -29,7 +29,7 @@ export function CodeKnowledgeGraphView() {
       const result = await apiFetch('/v1/projects/knowledge-graph');
       if (!Array.isArray(result.nodes) || !Array.isArray(result.edges)) throw new Error('Invalid graph payload');
       setGraph(result);
-      setSelectedId(previous => result.nodes.some(n => n.id === previous) ? previous : 'project:root');
+      setSelectedId(previous => result.nodes.some(n => n.id === previous) ? previous : (result.nodes.find(n => n.id === 'project:root')?.id || result.nodes[0]?.id || ''));
     } catch (e) {
       setError(e.message || 'Code graph unavailable');
     } finally { setBusy(false); }
@@ -47,10 +47,11 @@ export function CodeKnowledgeGraphView() {
     let matches = graph.nodes.filter(n => (kind === 'All' || n.type === kind)
       && (!q || [n.label, n.path, n.type, n.summary, n.layer].some(v => String(v || '').toLowerCase().includes(q))));
     if (q && showRelated) {
-      const ids = new Set(matches.map(n => n.id));
+      const frontier = new Set(matches.map(n => n.id));
+      const ids = new Set(frontier);
       for (const edge of edges) {
-        if (ids.has(edge.from)) ids.add(edge.to);
-        if (ids.has(edge.to)) ids.add(edge.from);
+        if (frontier.has(edge.from)) ids.add(edge.to);
+        if (frontier.has(edge.to)) ids.add(edge.from);
       }
       matches = graph.nodes.filter(n => ids.has(n.id));
     }
