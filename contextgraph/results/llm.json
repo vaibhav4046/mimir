@@ -7,7 +7,7 @@
    "toolOfferedPct": 100,
    "avgToolsOffered": 264,
    "avgPromptTokens": 15522,
-   "avgMs": 1061,
+   "avgMs": 1071,
    "rows": [
     {
      "id": "c00p2",
@@ -17,7 +17,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15526,
-     "ms": 12446
+     "ms": 13256
     },
     {
      "id": "c02p2",
@@ -27,7 +27,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15526,
-     "ms": 818
+     "ms": 807
     },
     {
      "id": "c04p2",
@@ -37,7 +37,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15522,
-     "ms": 555
+     "ms": 508
     },
     {
      "id": "c06p2",
@@ -47,7 +47,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15525,
-     "ms": 619
+     "ms": 623
     },
     {
      "id": "c08p2",
@@ -57,7 +57,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15522,
-     "ms": 738
+     "ms": 718
     },
     {
      "id": "c10p2",
@@ -67,7 +67,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15520,
-     "ms": 1058
+     "ms": 1014
     },
     {
      "id": "c12p2",
@@ -77,7 +77,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15521,
-     "ms": 537
+     "ms": 523
     },
     {
      "id": "c14p2",
@@ -87,7 +87,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15530,
-     "ms": 756
+     "ms": 724
     },
     {
      "id": "c16p2",
@@ -97,7 +97,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15524,
-     "ms": 1006
+     "ms": 1004
     },
     {
      "id": "c18p2",
@@ -107,7 +107,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15528,
-     "ms": 624
+     "ms": 602
     },
     {
      "id": "c20p2",
@@ -117,7 +117,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15523,
-     "ms": 640
+     "ms": 602
     },
     {
      "id": "c22p2",
@@ -127,7 +127,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15523,
-     "ms": 588
+     "ms": 579
     },
     {
      "id": "c24p2",
@@ -137,7 +137,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15522,
-     "ms": 504
+     "ms": 515
     },
     {
      "id": "c26p2",
@@ -147,7 +147,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15522,
-     "ms": 832
+     "ms": 801
     },
     {
      "id": "c28p2",
@@ -157,7 +157,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15522,
-     "ms": 478
+     "ms": 520
     },
     {
      "id": "c30p2",
@@ -167,7 +167,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15522,
-     "ms": 517
+     "ms": 502
     },
     {
      "id": "c32p2",
@@ -177,7 +177,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15526,
-     "ms": 750
+     "ms": 826
     },
     {
      "id": "c34p2",
@@ -187,7 +187,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15521,
-     "ms": 595
+     "ms": 591
     },
     {
      "id": "c36p2",
@@ -197,7 +197,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15524,
-     "ms": 742
+     "ms": 740
     },
     {
      "id": "c38p2",
@@ -207,7 +207,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15520,
-     "ms": 500
+     "ms": 498
     },
     {
      "id": "c40p2",
@@ -217,7 +217,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15524,
-     "ms": 561
+     "ms": 558
     },
     {
      "id": "c42p2",
@@ -227,7 +227,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15520,
-     "ms": 532
+     "ms": 506
     },
     {
      "id": "c44p2",
@@ -237,7 +237,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15526,
-     "ms": 574
+     "ms": 528
     },
     {
      "id": "c46p2",
@@ -247,7 +247,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15524,
-     "ms": 514
+     "ms": 536
     },
     {
      "id": "c48p2",
@@ -257,7 +257,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15522,
-     "ms": 944
+     "ms": 916
     },
     {
      "id": "c50p2",
@@ -267,7 +267,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15519,
-     "ms": 515
+     "ms": 503
     },
     {
      "id": "c52p2",
@@ -277,7 +277,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15521,
-     "ms": 1844
+     "ms": 1805
     },
     {
      "id": "c54p2",
@@ -287,7 +287,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15521,
-     "ms": 4340
+     "ms": 4232
     },
     {
      "id": "c56p2",
@@ -297,7 +297,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15520,
-     "ms": 818
+     "ms": 840
     },
     {
      "id": "c58p2",
@@ -307,7 +307,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15525,
-     "ms": 506
+     "ms": 514
     },
     {
      "id": "c60p2",
@@ -317,7 +317,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15519,
-     "ms": 624
+     "ms": 629
     },
     {
      "id": "c62p2",
@@ -327,7 +327,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15519,
-     "ms": 621
+     "ms": 614
     },
     {
      "id": "c64p2",
@@ -337,7 +337,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15520,
-     "ms": 426
+     "ms": 416
     },
     {
      "id": "c66p2",
@@ -347,7 +347,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15521,
-     "ms": 584
+     "ms": 588
     },
     {
      "id": "c68p2",
@@ -357,7 +357,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15520,
-     "ms": 1081
+     "ms": 1079
     },
     {
      "id": "c70p2",
@@ -367,7 +367,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15521,
-     "ms": 494
+     "ms": 482
     },
     {
      "id": "c72p2",
@@ -377,7 +377,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 15520,
-     "ms": 532
+     "ms": 533
     },
     {
      "id": "c74p2",
@@ -387,7 +387,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15521,
-     "ms": 506
+     "ms": 492
     },
     {
      "id": "c76p2",
@@ -397,7 +397,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15522,
-     "ms": 540
+     "ms": 546
     },
     {
      "id": "c78p2",
@@ -407,7 +407,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 15521,
-     "ms": 570
+     "ms": 563
     }
    ]
   },
@@ -416,7 +416,7 @@
    "toolOfferedPct": 45,
    "avgToolsOffered": 4.5,
    "avgPromptTokens": 383,
-   "avgMs": 664,
+   "avgMs": 637,
    "rows": [
     {
      "id": "c00p2",
@@ -426,7 +426,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 454,
-     "ms": 8376
+     "ms": 7595
     },
     {
      "id": "c02p2",
@@ -436,7 +436,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 492,
-     "ms": 432
+     "ms": 442
     },
     {
      "id": "c04p2",
@@ -446,7 +446,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 407,
-     "ms": 327
+     "ms": 346
     },
     {
      "id": "c06p2",
@@ -456,7 +456,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 256,
-     "ms": 373
+     "ms": 372
     },
     {
      "id": "c08p2",
@@ -466,7 +466,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 462,
-     "ms": 481
+     "ms": 470
     },
     {
      "id": "c10p2",
@@ -476,7 +476,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 49,
-     "ms": 335
+     "ms": 334
     },
     {
      "id": "c12p2",
@@ -486,7 +486,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 427,
-     "ms": 347
+     "ms": 353
     },
     {
      "id": "c14p2",
@@ -496,7 +496,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 462,
-     "ms": 491
+     "ms": 481
     },
     {
      "id": "c16p2",
@@ -506,7 +506,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 318,
-     "ms": 508
+     "ms": 504
     },
     {
      "id": "c18p2",
@@ -516,7 +516,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 482,
-     "ms": 420
+     "ms": 414
     },
     {
      "id": "c20p2",
@@ -536,7 +536,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 485,
-     "ms": 360
+     "ms": 352
     },
     {
      "id": "c24p2",
@@ -546,7 +546,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 384,
-     "ms": 439
+     "ms": 429
     },
     {
      "id": "c26p2",
@@ -556,7 +556,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 468,
-     "ms": 540
+     "ms": 522
     },
     {
      "id": "c28p2",
@@ -566,7 +566,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 470,
-     "ms": 509
+     "ms": 499
     },
     {
      "id": "c30p2",
@@ -576,7 +576,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 343,
-     "ms": 328
+     "ms": 325
     },
     {
      "id": "c32p2",
@@ -586,7 +586,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 370,
-     "ms": 247
+     "ms": 245
     },
     {
      "id": "c34p2",
@@ -596,7 +596,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 591,
-     "ms": 849
+     "ms": 825
     },
     {
      "id": "c36p2",
@@ -606,7 +606,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 435,
-     "ms": 591
+     "ms": 573
     },
     {
      "id": "c38p2",
@@ -616,7 +616,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 566,
-     "ms": 486
+     "ms": 468
     },
     {
      "id": "c40p2",
@@ -626,7 +626,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 323,
-     "ms": 360
+     "ms": 382
     },
     {
      "id": "c42p2",
@@ -636,7 +636,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 440,
-     "ms": 464
+     "ms": 444
     },
     {
      "id": "c44p2",
@@ -646,7 +646,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 338,
-     "ms": 342
+     "ms": 305
     },
     {
      "id": "c46p2",
@@ -656,7 +656,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 519,
-     "ms": 682
+     "ms": 621
     },
     {
      "id": "c48p2",
@@ -666,7 +666,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 462,
-     "ms": 1511
+     "ms": 1482
     },
     {
      "id": "c50p2",
@@ -676,7 +676,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 185,
-     "ms": 377
+     "ms": 344
     },
     {
      "id": "c52p2",
@@ -696,7 +696,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 313,
-     "ms": 445
+     "ms": 460
     },
     {
      "id": "c56p2",
@@ -706,7 +706,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 187,
-     "ms": 346
+     "ms": 349
     },
     {
      "id": "c58p2",
@@ -726,7 +726,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 457,
-     "ms": 778
+     "ms": 772
     },
     {
      "id": "c62p2",
@@ -736,7 +736,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 476,
-     "ms": 481
+     "ms": 479
     },
     {
      "id": "c64p2",
@@ -746,7 +746,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 440,
-     "ms": 301
+     "ms": 296
     },
     {
      "id": "c66p2",
@@ -756,7 +756,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 243,
-     "ms": 404
+     "ms": 394
     },
     {
      "id": "c68p2",
@@ -766,7 +766,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 379,
-     "ms": 411
+     "ms": 392
     },
     {
      "id": "c70p2",
@@ -776,7 +776,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 435,
-     "ms": 358
+     "ms": 345
     },
     {
      "id": "c72p2",
@@ -786,7 +786,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 518,
-     "ms": 489
+     "ms": 497
     },
     {
      "id": "c74p2",
@@ -796,7 +796,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 520,
-     "ms": 433
+     "ms": 448
     },
     {
      "id": "c76p2",
@@ -806,7 +806,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 51,
-     "ms": 187
+     "ms": 180
     },
     {
      "id": "c78p2",
@@ -816,7 +816,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 292,
-     "ms": 330
+     "ms": 327
     }
    ]
   },
@@ -825,7 +825,7 @@
    "toolOfferedPct": 65,
    "avgToolsOffered": 5.5,
    "avgPromptTokens": 464,
-   "avgMs": 492,
+   "avgMs": 481,
    "rows": [
     {
      "id": "c00p2",
@@ -835,7 +835,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 454,
-     "ms": 291
+     "ms": 278
     },
     {
      "id": "c02p2",
@@ -845,7 +845,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 492,
-     "ms": 434
+     "ms": 413
     },
     {
      "id": "c04p2",
@@ -855,7 +855,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 407,
-     "ms": 277
+     "ms": 264
     },
     {
      "id": "c06p2",
@@ -865,7 +865,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 470,
-     "ms": 343
+     "ms": 480
     },
     {
      "id": "c08p2",
@@ -875,7 +875,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 462,
-     "ms": 410
+     "ms": 396
     },
     {
      "id": "c10p2",
@@ -885,7 +885,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 49,
-     "ms": 350
+     "ms": 342
     },
     {
      "id": "c12p2",
@@ -895,7 +895,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 447,
-     "ms": 303
+     "ms": 297
     },
     {
      "id": "c14p2",
@@ -905,7 +905,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 474,
-     "ms": 479
+     "ms": 450
     },
     {
      "id": "c16p2",
@@ -915,7 +915,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 449,
-     "ms": 643
+     "ms": 624
     },
     {
      "id": "c18p2",
@@ -925,7 +925,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 482,
-     "ms": 435
+     "ms": 446
     },
     {
      "id": "c20p2",
@@ -935,7 +935,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 355,
-     "ms": 388
+     "ms": 372
     },
     {
      "id": "c22p2",
@@ -945,7 +945,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 587,
-     "ms": 399
+     "ms": 398
     },
     {
      "id": "c24p2",
@@ -955,7 +955,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 430,
-     "ms": 1846
+     "ms": 1809
     },
     {
      "id": "c26p2",
@@ -965,7 +965,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 477,
-     "ms": 452
+     "ms": 443
     },
     {
      "id": "c28p2",
@@ -975,7 +975,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 470,
-     "ms": 451
+     "ms": 416
     },
     {
      "id": "c30p2",
@@ -985,7 +985,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 544,
-     "ms": 370
+     "ms": 359
     },
     {
      "id": "c32p2",
@@ -995,7 +995,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 474,
-     "ms": 290
+     "ms": 269
     },
     {
      "id": "c34p2",
@@ -1005,7 +1005,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 744,
-     "ms": 552
+     "ms": 488
     },
     {
      "id": "c36p2",
@@ -1015,7 +1015,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 541,
-     "ms": 395
+     "ms": 409
     },
     {
      "id": "c38p2",
@@ -1025,7 +1025,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 566,
-     "ms": 407
+     "ms": 396
     },
     {
      "id": "c40p2",
@@ -1035,7 +1035,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 528,
-     "ms": 400
+     "ms": 410
     },
     {
      "id": "c42p2",
@@ -1045,7 +1045,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 430,
-     "ms": 395
+     "ms": 372
     },
     {
      "id": "c44p2",
@@ -1055,7 +1055,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 456,
-     "ms": 924
+     "ms": 910
     },
     {
      "id": "c46p2",
@@ -1065,7 +1065,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 519,
-     "ms": 543
+     "ms": 531
     },
     {
      "id": "c48p2",
@@ -1075,7 +1075,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 462,
-     "ms": 570
+     "ms": 552
     },
     {
      "id": "c50p2",
@@ -1085,7 +1085,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 371,
-     "ms": 392
+     "ms": 388
     },
     {
      "id": "c52p2",
@@ -1095,7 +1095,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 374,
-     "ms": 662
+     "ms": 660
     },
     {
      "id": "c54p2",
@@ -1105,7 +1105,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 363,
-     "ms": 1010
+     "ms": 987
     },
     {
      "id": "c56p2",
@@ -1115,7 +1115,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 605,
-     "ms": 565
+     "ms": 552
     },
     {
      "id": "c58p2",
@@ -1125,7 +1125,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 529,
-     "ms": 456
+     "ms": 449
     },
     {
      "id": "c60p2",
@@ -1135,7 +1135,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 607,
-     "ms": 369
+     "ms": 373
     },
     {
      "id": "c62p2",
@@ -1145,7 +1145,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 476,
-     "ms": 403
+     "ms": 427
     },
     {
      "id": "c64p2",
@@ -1155,7 +1155,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 473,
-     "ms": 427
+     "ms": 416
     },
     {
      "id": "c66p2",
@@ -1165,7 +1165,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 243,
-     "ms": 392
+     "ms": 365
     },
     {
      "id": "c68p2",
@@ -1175,7 +1175,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 437,
-     "ms": 687
+     "ms": 629
     },
     {
      "id": "c70p2",
@@ -1185,7 +1185,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 435,
-     "ms": 286
+     "ms": 297
     },
     {
      "id": "c72p2",
@@ -1195,7 +1195,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 518,
-     "ms": 300
+     "ms": 281
     },
     {
      "id": "c74p2",
@@ -1205,7 +1205,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 519,
-     "ms": 486
+     "ms": 448
     },
     {
      "id": "c76p2",
@@ -1215,7 +1215,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 379,
-     "ms": 499
+     "ms": 491
     },
     {
      "id": "c78p2",
@@ -1225,7 +1225,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 444,
-     "ms": 385
+     "ms": 372
     }
    ]
   },
@@ -1234,7 +1234,7 @@
    "toolOfferedPct": 77.5,
    "avgToolsOffered": 5.7,
    "avgPromptTokens": 489,
-   "avgMs": 623,
+   "avgMs": 612,
    "rows": [
     {
      "id": "c00p2",
@@ -1244,7 +1244,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 520,
-     "ms": 679
+     "ms": 612
     },
     {
      "id": "c02p2",
@@ -1254,7 +1254,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 468,
-     "ms": 502
+     "ms": 484
     },
     {
      "id": "c04p2",
@@ -1264,7 +1264,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 359,
-     "ms": 359
+     "ms": 333
     },
     {
      "id": "c06p2",
@@ -1274,7 +1274,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 485,
-     "ms": 712
+     "ms": 680
     },
     {
      "id": "c08p2",
@@ -1284,7 +1284,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 462,
-     "ms": 520
+     "ms": 505
     },
     {
      "id": "c10p2",
@@ -1294,7 +1294,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 474,
-     "ms": 474
+     "ms": 500
     },
     {
      "id": "c12p2",
@@ -1304,7 +1304,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 432,
-     "ms": 362
+     "ms": 339
     },
     {
      "id": "c14p2",
@@ -1314,7 +1314,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 463,
-     "ms": 538
+     "ms": 497
     },
     {
      "id": "c16p2",
@@ -1324,7 +1324,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 484,
-     "ms": 1732
+     "ms": 1671
     },
     {
      "id": "c18p2",
@@ -1334,7 +1334,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 482,
-     "ms": 466
+     "ms": 471
     },
     {
      "id": "c20p2",
@@ -1344,7 +1344,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 413,
-     "ms": 424
+     "ms": 432
     },
     {
      "id": "c22p2",
@@ -1354,7 +1354,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 608,
-     "ms": 375
+     "ms": 390
     },
     {
      "id": "c24p2",
@@ -1364,7 +1364,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 430,
-     "ms": 390
+     "ms": 436
     },
     {
      "id": "c26p2",
@@ -1374,7 +1374,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 477,
-     "ms": 499
+     "ms": 461
     },
     {
      "id": "c28p2",
@@ -1384,7 +1384,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 470,
-     "ms": 510
+     "ms": 503
     },
     {
      "id": "c30p2",
@@ -1394,7 +1394,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 457,
-     "ms": 352
+     "ms": 364
     },
     {
      "id": "c32p2",
@@ -1404,7 +1404,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 454,
-     "ms": 233
+     "ms": 216
     },
     {
      "id": "c34p2",
@@ -1414,7 +1414,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 672,
-     "ms": 1077
+     "ms": 1007
     },
     {
      "id": "c36p2",
@@ -1424,7 +1424,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 543,
-     "ms": 431
+     "ms": 406
     },
     {
      "id": "c38p2",
@@ -1434,7 +1434,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 545,
-     "ms": 325
+     "ms": 320
     },
     {
      "id": "c40p2",
@@ -1444,7 +1444,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 507,
-     "ms": 1274
+     "ms": 1250
     },
     {
      "id": "c42p2",
@@ -1454,7 +1454,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 540,
-     "ms": 530
+     "ms": 515
     },
     {
      "id": "c44p2",
@@ -1464,7 +1464,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 351,
-     "ms": 486
+     "ms": 491
     },
     {
      "id": "c46p2",
@@ -1474,7 +1474,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 529,
-     "ms": 931
+     "ms": 896
     },
     {
      "id": "c48p2",
@@ -1484,7 +1484,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 465,
-     "ms": 801
+     "ms": 764
     },
     {
      "id": "c50p2",
@@ -1504,7 +1504,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 421,
-     "ms": 649
+     "ms": 657
     },
     {
      "id": "c54p2",
@@ -1514,7 +1514,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 363,
-     "ms": 1029
+     "ms": 1192
     },
     {
      "id": "c56p2",
@@ -1524,7 +1524,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 609,
-     "ms": 596
+     "ms": 574
     },
     {
      "id": "c58p2",
@@ -1534,7 +1534,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 530,
-     "ms": 431
+     "ms": 475
     },
     {
      "id": "c60p2",
@@ -1544,7 +1544,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 561,
-     "ms": 248
+     "ms": 278
     },
     {
      "id": "c62p2",
@@ -1554,7 +1554,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 532,
-     "ms": 523
+     "ms": 493
     },
     {
      "id": "c64p2",
@@ -1564,7 +1564,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 497,
-     "ms": 651
+     "ms": 607
     },
     {
      "id": "c66p2",
@@ -1574,7 +1574,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 370,
-     "ms": 499
+     "ms": 475
     },
     {
      "id": "c68p2",
@@ -1584,7 +1584,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 437,
-     "ms": 654
+     "ms": 641
     },
     {
      "id": "c70p2",
@@ -1594,7 +1594,7 @@
      "hit": false,
      "offered": false,
      "promptTokens": 475,
-     "ms": 372
+     "ms": 368
     },
     {
      "id": "c72p2",
@@ -1604,7 +1604,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 711,
-     "ms": 1554
+     "ms": 1493
     },
     {
      "id": "c74p2",
@@ -1614,7 +1614,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 549,
-     "ms": 486
+     "ms": 491
     },
     {
      "id": "c76p2",
@@ -1624,7 +1624,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 523,
-     "ms": 1229
+     "ms": 1192
     },
     {
      "id": "c78p2",
@@ -1634,16 +1634,16 @@
      "hit": false,
      "offered": false,
      "promptTokens": 349,
-     "ms": 529
+     "ms": 531
     }
    ]
   },
   "Graph, after learning": {
-   "firstCallHitPct": 32.5,
-   "toolOfferedPct": 75,
+   "firstCallHitPct": 35,
+   "toolOfferedPct": 82.5,
    "avgToolsOffered": 5.5,
-   "avgPromptTokens": 504,
-   "avgMs": 541,
+   "avgPromptTokens": 494,
+   "avgMs": 580,
    "rows": [
     {
      "id": "c00p2",
@@ -1652,8 +1652,8 @@
      "firstCall": "github__create_issue",
      "hit": true,
      "offered": true,
-     "promptTokens": 553,
-     "ms": 698
+     "promptTokens": 545,
+     "ms": 683
     },
     {
      "id": "c02p2",
@@ -1663,7 +1663,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 489,
-     "ms": 509
+     "ms": 555
     },
     {
      "id": "c04p2",
@@ -1672,28 +1672,28 @@
      "firstCall": "gmail__search_emails",
      "hit": true,
      "offered": true,
-     "promptTokens": 493,
-     "ms": 374
+     "promptTokens": 500,
+     "ms": 371
     },
     {
      "id": "c06p2",
      "kind": "D",
      "tools": 6,
-     "firstCall": null,
-     "hit": false,
-     "offered": false,
-     "promptTokens": 471,
-     "ms": 558
+     "firstCall": "calendar__find_free_time",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 491,
+     "ms": 447
     },
     {
      "id": "c08p2",
      "kind": "D",
      "tools": 6,
-     "firstCall": null,
+     "firstCall": "browser_search",
      "hit": false,
      "offered": false,
-     "promptTokens": 588,
-     "ms": 343
+     "promptTokens": 516,
+     "ms": 417
     },
     {
      "id": "c10p2",
@@ -1702,8 +1702,8 @@
      "firstCall": null,
      "hit": false,
      "offered": true,
-     "promptTokens": 525,
-     "ms": 386
+     "promptTokens": 506,
+     "ms": 436
     },
     {
      "id": "c12p2",
@@ -1712,28 +1712,28 @@
      "firstCall": "shopify__list_orders",
      "hit": true,
      "offered": true,
-     "promptTokens": 501,
-     "ms": 407
+     "promptTokens": 511,
+     "ms": 355
     },
     {
      "id": "c14p2",
      "kind": "D",
      "tools": 6,
-     "firstCall": null,
+     "firstCall": "slack__send_direct_message",
      "hit": false,
      "offered": false,
-     "promptTokens": 649,
-     "ms": 413
+     "promptTokens": 581,
+     "ms": 547
     },
     {
      "id": "c16p2",
      "kind": "D",
-     "tools": 3,
-     "firstCall": "cloudflare__create_dns_record",
-     "hit": true,
+     "tools": 4,
+     "firstCall": null,
+     "hit": false,
      "offered": true,
-     "promptTokens": 309,
-     "ms": 536
+     "promptTokens": 375,
+     "ms": 2164
     },
     {
      "id": "c18p2",
@@ -1742,8 +1742,8 @@
      "firstCall": "docker__container_logs",
      "hit": true,
      "offered": true,
-     "promptTokens": 589,
-     "ms": 506
+     "promptTokens": 696,
+     "ms": 516
     },
     {
      "id": "c20p2",
@@ -1753,7 +1753,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 481,
-     "ms": 445
+     "ms": 448
     },
     {
      "id": "c22p2",
@@ -1762,8 +1762,8 @@
      "firstCall": null,
      "hit": false,
      "offered": false,
-     "promptTokens": 574,
-     "ms": 410
+     "promptTokens": 587,
+     "ms": 324
     },
     {
      "id": "c24p2",
@@ -1773,7 +1773,7 @@
      "hit": true,
      "offered": true,
      "promptTokens": 481,
-     "ms": 400
+     "ms": 370
     },
     {
      "id": "c26p2",
@@ -1782,8 +1782,8 @@
      "firstCall": "social__post_tweet",
      "hit": true,
      "offered": true,
-     "promptTokens": 552,
-     "ms": 600
+     "promptTokens": 487,
+     "ms": 573
     },
     {
      "id": "c28p2",
@@ -1793,27 +1793,27 @@
      "hit": false,
      "offered": true,
      "promptTokens": 470,
-     "ms": 454
+     "ms": 442
     },
     {
      "id": "c30p2",
      "kind": "D",
      "tools": 6,
-     "firstCall": "browser_search",
-     "hit": true,
+     "firstCall": "news__summarize_article",
+     "hit": false,
      "offered": true,
-     "promptTokens": 550,
-     "ms": 479
+     "promptTokens": 539,
+     "ms": 439
     },
     {
      "id": "c32p2",
      "kind": "D",
-     "tools": 4,
+     "tools": 6,
      "firstCall": null,
      "hit": false,
      "offered": false,
-     "promptTokens": 365,
-     "ms": 236
+     "promptTokens": 613,
+     "ms": 260
     },
     {
      "id": "c34p2",
@@ -1822,18 +1822,18 @@
      "firstCall": null,
      "hit": false,
      "offered": false,
-     "promptTokens": 672,
-     "ms": 762
+     "promptTokens": 604,
+     "ms": 758
     },
     {
      "id": "c36p2",
      "kind": "D",
      "tools": 6,
-     "firstCall": "image__generate_image",
+     "firstCall": null,
      "hit": false,
      "offered": true,
-     "promptTokens": 603,
-     "ms": 585
+     "promptTokens": 584,
+     "ms": 664
     },
     {
      "id": "c38p2",
@@ -1842,8 +1842,8 @@
      "firstCall": "support__get_customer_history",
      "hit": false,
      "offered": false,
-     "promptTokens": 503,
-     "ms": 930
+     "promptTokens": 464,
+     "ms": 373
     },
     {
      "id": "c40p2",
@@ -1853,37 +1853,37 @@
      "hit": false,
      "offered": true,
      "promptTokens": 608,
-     "ms": 685
+     "ms": 828
     },
     {
      "id": "c42p2",
      "kind": "S",
      "tools": 6,
-     "firstCall": null,
+     "firstCall": "drive__search_files",
      "hit": false,
      "offered": true,
-     "promptTokens": 542,
-     "ms": 404
+     "promptTokens": 540,
+     "ms": 393
     },
     {
      "id": "c44p2",
      "kind": "S",
      "tools": 6,
-     "firstCall": null,
-     "hit": false,
+     "firstCall": "slack__post_message",
+     "hit": true,
      "offered": true,
      "promptTokens": 517,
-     "ms": 521
+     "ms": 533
     },
     {
      "id": "c46p2",
      "kind": "S",
      "tools": 6,
-     "firstCall": "stripe__create_invoice",
+     "firstCall": null,
      "hit": false,
      "offered": true,
      "promptTokens": 491,
-     "ms": 962
+     "ms": 946
     },
     {
      "id": "c48p2",
@@ -1891,19 +1891,19 @@
      "tools": 6,
      "firstCall": null,
      "hit": false,
-     "offered": false,
-     "promptTokens": 464,
-     "ms": 589
+     "offered": true,
+     "promptTokens": 506,
+     "ms": 480
     },
     {
      "id": "c50p2",
      "kind": "S",
      "tools": 6,
-     "firstCall": "analytics__get_site_traffic",
+     "firstCall": "aws__cost_explorer_report",
      "hit": false,
      "offered": true,
-     "promptTokens": 567,
-     "ms": 407
+     "promptTokens": 539,
+     "ms": 393
     },
     {
      "id": "c52p2",
@@ -1912,8 +1912,8 @@
      "firstCall": null,
      "hit": false,
      "offered": true,
-     "promptTokens": 502,
-     "ms": 429
+     "promptTokens": 481,
+     "ms": 682
     },
     {
      "id": "c54p2",
@@ -1923,7 +1923,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 306,
-     "ms": 1021
+     "ms": 669
     },
     {
      "id": "c56p2",
@@ -1933,7 +1933,7 @@
      "hit": false,
      "offered": true,
      "promptTokens": 605,
-     "ms": 604
+     "ms": 535
     },
     {
      "id": "c58p2",
@@ -1943,17 +1943,17 @@
      "hit": true,
      "offered": true,
      "promptTokens": 381,
-     "ms": 444
+     "ms": 352
     },
     {
      "id": "c60p2",
      "kind": "S",
-     "tools": 6,
+     "tools": 4,
      "firstCall": null,
      "hit": false,
      "offered": true,
-     "promptTokens": 636,
-     "ms": 492
+     "promptTokens": 488,
+     "ms": 400
     },
     {
      "id": "c62p2",
@@ -1962,88 +1962,88 @@
      "firstCall": null,
      "hit": false,
      "offered": false,
-     "promptTokens": 539,
-     "ms": 598
+     "promptTokens": 482,
+     "ms": 516
     },
     {
      "id": "c64p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": "fs_list",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 516,
+     "ms": 297
+    },
+    {
+     "id": "c66p2",
      "kind": "S",
      "tools": 5,
      "firstCall": null,
      "hit": false,
      "offered": true,
-     "promptTokens": 485,
-     "ms": 523
-    },
-    {
-     "id": "c66p2",
-     "kind": "S",
-     "tools": 6,
-     "firstCall": null,
-     "hit": false,
-     "offered": true,
-     "promptTokens": 553,
-     "ms": 452
+     "promptTokens": 409,
+     "ms": 518
     },
     {
      "id": "c68p2",
      "kind": "S",
-     "tools": 3,
+     "tools": 5,
      "firstCall": null,
      "hit": false,
      "offered": true,
-     "promptTokens": 276,
-     "ms": 556
+     "promptTokens": 393,
+     "ms": 1333
     },
     {
      "id": "c70p2",
      "kind": "E",
      "tools": 6,
-     "firstCall": "linear__search_tickets",
-     "hit": true,
+     "firstCall": "hr__list_open_roles",
+     "hit": false,
      "offered": true,
-     "promptTokens": 540,
-     "ms": 441
+     "promptTokens": 444,
+     "ms": 375
     },
     {
      "id": "c72p2",
      "kind": "E",
-     "tools": 4,
+     "tools": 3,
      "firstCall": null,
      "hit": false,
      "offered": true,
-     "promptTokens": 362,
-     "ms": 750
+     "promptTokens": 296,
+     "ms": 861
     },
     {
      "id": "c74p2",
      "kind": "E",
-     "tools": 5,
+     "tools": 3,
      "firstCall": "aws__cloudwatch_get_logs",
      "hit": true,
      "offered": true,
-     "promptTokens": 401,
-     "ms": 389
+     "promptTokens": 296,
+     "ms": 336
     },
     {
      "id": "c76p2",
      "kind": "E",
-     "tools": 6,
-     "firstCall": "linear__search_tickets",
-     "hit": false,
+     "tools": 5,
+     "firstCall": "sentry__list_errors",
+     "hit": true,
      "offered": true,
-     "promptTokens": 524,
-     "ms": 385
+     "promptTokens": 475,
+     "ms": 1033
     },
     {
      "id": "c78p2",
      "kind": "E",
      "tools": 6,
-     "firstCall": null,
+     "firstCall": "github__create_release",
      "hit": false,
-     "offered": false,
-     "promptTokens": 448,
-     "ms": 966
+     "offered": true,
+     "promptTokens": 457,
+     "ms": 589
     }
    ]
   }

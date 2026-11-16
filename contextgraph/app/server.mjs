@@ -14,7 +14,7 @@ const PORT = Number(process.env.PORT || 7860);
 const store = new HydraStore({ url: process.env.HYDRA_URL || 'http://127.0.0.1:18443', token: process.env.HYDRA_TOKEN || 'local-dev-auth-token-32-characters-long' });
 const bm25 = bm25WithSkills();
 
-const state = { ready: false, stage: 'starting', graph: null, ns: '', learned: 0, seededAt: null, log: [] };
+const state = { ready: false, stage: 'starting', graph: null, examples: [], ns: '', learned: 0, seededAt: null, log: [] };
 const say = m => {
   state.stage = m;
   console.error(new Date().toISOString().slice(11, 19), m);
@@ -48,6 +48,7 @@ async function buildGraph() {
   await waitForHydra();
   // A fresh namespace per build: nothing from an earlier run can leave duplicate edges behind.
   state.ns = `demo-${Date.now().toString(36)}`;
+  store.edgeCount = {};
   setNamespace(state.ns);
   say('seeding the graph in HydraDB');
   const g = new ContextGraph(store, { k: 6 });
@@ -55,6 +56,12 @@ async function buildGraph() {
   for (const name of ENTITY_NAMES) await g.registerEntity(name);
   say('adding semantic bridge edges');
   await g.loadSimilar(SIMILAR);
+  // Which example prompts does the untrained graph already get right? The page leads with those.
+  state.examples = [];
+  for (const t of TASKS.filter(x => x.split === 'test').filter((_, i) => i % 5 === 0)) {
+    const ids = (await g.retrieve(t.text, { k: 6 })).tools.map(x => x.id);
+    state.examples.push({ text: t.text, kind: t.kind, tools: t.tools, hit: t.tools.every(x => ids.includes(x)) });
+  }
   state.graph = g;
   state.learned = 0;
   state.seededAt = new Date().toISOString();
@@ -102,6 +109,21 @@ const limited = ip => {
   return list.length > 60;
 };
 
+// Behind a tunnel or proxy you control, set TRUST_PROXY=1 so the real client address is read from its header.
+const TRUST_PROXY = process.env.TRUST_PROXY === '1';
+// /api/reset wipes what visitors taught. It is off unless RESET_TOKEN is set, and then needs that token.
+const RESET_TOKEN = process.env.RESET_TOKEN || '';
+const STOPWORDS = new Set('a an and are as at be but by can could do for from has have how i if in into is it its me my of on or our please so than that the their them then there these they this to up us was we what when where which who will with would you your'.split(' '));
+const FEEDBACK_PER_MIN = 6;
+const feedbackHits = new Map();
+const feedbackLimited = ip => {
+  const now = Date.now();
+  const list = (feedbackHits.get(ip) || []).filter(t => now - t < 60_000);
+  list.push(now);
+  feedbackHits.set(ip, list);
+  if (feedbackHits.size > 5000) feedbackHits.clear();
+  return list.length > FEEDBACK_PER_MIN;
+};
 const RESET_COOLDOWN_MS = 60_000;
 let lastResetAt = 0;
 let building = false;
@@ -112,7 +134,8 @@ const SECURITY_HEADERS = {
 };
 
 const toolMeta = new Map(TOOLS.map(t => [t.id, t]));
-const clean = s => String(s || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 300);
+const bodyOf = b => (b && typeof b === 'object' && !Array.isArray(b) ? b : {});
+const clean = s => (typeof s === 'string' ? s : '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 300);
 
 function view(r, text) {
   const ids = r.tools.map(t => t.id);
@@ -135,16 +158,23 @@ const edgeCounts = async () => ({ MENTIONS: 0, REQUIRES: 0, SERVES: 0, RESOLVES_
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json', '.mp4': 'video/mp4', '.webp': 'image/webp', '.jpg': 'image/jpeg' };
 function serveStatic(req, res, urlPath) {
-  const rel = urlPath === '/' ? 'index.html' : decodeURIComponent(urlPath).replace(/^\/+/, '');
-  const file = path.resolve(ROOT, 'public', rel);
-  if (!file.startsWith(path.resolve(ROOT, 'public'))) return json(res, 403, { error: 'Forbidden' });
+  if (req.method !== 'GET' && req.method !== 'HEAD') return json(res, 405, { error: 'Method not allowed' });
+  let rel;
+  try {
+    rel = urlPath === '/' ? 'index.html' : decodeURIComponent(urlPath).replace(/^\/+/, '');
+  } catch {
+    return json(res, 400, { error: 'Bad path' });
+  }
+  const root = path.resolve(ROOT, 'public');
+  const file = path.resolve(root, rel);
+  if (file !== root && !file.startsWith(root + path.sep)) return json(res, 403, { error: 'Forbidden' });
   if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return json(res, 404, { error: 'Not found' });
   res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache', ...SECURITY_HEADERS });
   fs.createReadStream(file).pipe(res);
 }
 
 const server = http.createServer(async (req, res) => {
-  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || '';
+  const ip = TRUST_PROXY ? String(req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for']?.split(',').pop() || '').trim() || req.socket.remoteAddress || '' : req.socket.remoteAddress || '';
   const url = new URL(req.url, 'http://x');
   try {
     if (url.pathname.startsWith('/api/')) {
@@ -159,7 +189,7 @@ const server = http.createServer(async (req, res) => {
           edges: await edgeCounts(),
           learned: state.learned,
           hydra: { requests: store.requests, p50ms: pctl(store.latencies.slice(-400), 0.5), p95ms: pctl(store.latencies.slice(-400), 0.95) },
-          examples: TASKS.filter(t => t.split === 'test').filter((_, i) => i % 5 === 0).map(t => ({ text: t.text, kind: t.kind, tools: t.tools })),
+          examples: state.examples,
         });
       }
       if (req.method === 'GET' && url.pathname === '/api/tools') {
@@ -170,15 +200,16 @@ const server = http.createServer(async (req, res) => {
         return fs.existsSync(f) ? json(res, 200, JSON.parse(fs.readFileSync(f, 'utf8'))) : json(res, 404, { error: 'No benchmark results yet' });
       }
       if (req.method === 'POST' && url.pathname === '/api/retrieve') {
-        const { text, k } = await readBody(req);
+        const { text, k } = bodyOf(await readBody(req));
         const t = clean(text);
         if (t.length < 3) return json(res, 400, { error: 'Type a task first.' });
         const r = await state.graph.retrieve(t, { k: Math.min(12, Math.max(1, Number(k) || 6)) });
         return json(res, 200, view(r, t));
       }
       if (req.method === 'POST' && url.pathname === '/api/feedback') {
-        const { text, used } = await readBody(req);
-        const t = clean(text);
+        if (feedbackLimited(ip)) return json(res, 429, { error: 'That is a lot of lessons at once. Try again in a minute.' });
+        const { text, used } = bodyOf(await readBody(req));
+        const t = clean(text).split(/s+/).filter(w => !STOPWORDS.has(w.toLowerCase())).join(' ');
         const ids = (Array.isArray(used) ? used : []).filter(u => toolMeta.has(u)).slice(0, 6);
         if (t.length < 3 || !ids.length) return json(res, 400, { error: 'Pick at least one tool that the task really needed.' });
         const before = await state.graph.retrieve(t);
@@ -188,6 +219,7 @@ const server = http.createServer(async (req, res) => {
         return json(res, 200, { learned: stats, before: view(before, t), after: view(after, t), examples: state.learned });
       }
       if (req.method === 'POST' && url.pathname === '/api/reset') {
+        if (!RESET_TOKEN || req.headers['x-reset-token'] !== RESET_TOKEN) return json(res, 403, { error: 'Reset is disabled on this demo.' });
         const wait = RESET_COOLDOWN_MS - (Date.now() - lastResetAt);
         if (building || wait > 0) return json(res, 429, { error: `Someone just reset the demo. Try again in ${Math.max(1, Math.ceil(wait / 1000))}s.` });
         lastResetAt = Date.now();
@@ -210,5 +242,7 @@ function pctl(a, p) {
   return +s[Math.min(s.length - 1, Math.floor(s.length * p))].toFixed(1);
 }
 
+server.requestTimeout = 15_000;
+server.headersTimeout = 10_000;
 server.listen(PORT, '0.0.0.0', () => console.error(`Context Graph Lab on http://127.0.0.1:${PORT}`));
 build().catch(e => say(`FAILED: ${e.message}`));

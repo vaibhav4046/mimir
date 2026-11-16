@@ -154,3 +154,24 @@ tr.win td { background: var(--orange-soft); }
   .diff { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* Judge-review fixes: readable small text, contrast, tap targets, and a layout that works on a phone. */
+.chip.miss { border-style: dashed; }
+::placeholder { color: #a0a0ab; opacity: 1; }
+.chip small, .tool .srv, .why span { font-size: 12px; }
+.chip { min-height: 40px; }
+.btn.sm { min-height: 40px; }
+footer a { display: inline-block; padding: 8px 4px; }
+@media (max-width: 900px) {
+  .top { flex-wrap: wrap; gap: 10px 14px; }
+  nav { display: flex; order: 3; width: 100%; margin-left: 0; overflow-x: auto; }
+  nav a { white-space: nowrap; padding: 10px 14px; }
+}
+@media (max-width: 560px) {
+  .brand small { display: none; }
+  .pill { max-width: 62vw; overflow: hidden; text-overflow: ellipsis; padding: 5px 10px; }
+  .hero h1 { font-size: clamp(28px, 8.5vw, 38px); }
+  .card, .wrap { min-width: 0; }
+  .card table { display: block; overflow-x: auto; }
+  .wrap { overflow-x: hidden; }
+}

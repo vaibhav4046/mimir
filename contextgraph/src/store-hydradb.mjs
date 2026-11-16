@@ -125,15 +125,15 @@ export class HydraStore {
     }
     // Edge with a weight: replace it so there is never a parallel edge with another weight.
     await this.q(`MATCH (a {id: $s})-[r:${type}]->(b {id: $d}) DELETE r`, { s: src, d: dst });
-    await this.q(`CREATE (a {id: $s})-[:${type} {w: $w}]->(b {id: $d})`, { s: src, d: dst, w });
+    await this.q(`CREATE (a {id: $s})-[:${type} {w: $w}]->(b {id: $d})`, { s: src, d: dst, w }, { retries: 0 });
   }
 
   async upsertEdges(type, rows) {
     // Seeding: edges are new, so create them directly (no delete first), concurrently.
     this.edgeCount[type] = (this.edgeCount[type] || 0) + rows.length;
     await this.pool(rows, r => (r.w === undefined
-      ? this.q(`CREATE (a {id: $s})-[:${type}]->(b {id: $d})`, { s: r.src, d: r.dst })
-      : this.q(`CREATE (a {id: $s})-[:${type} {w: $w}]->(b {id: $d})`, { s: r.src, d: r.dst, w: r.w })));
+      ? this.q(`CREATE (a {id: $s})-[:${type}]->(b {id: $d})`, { s: r.src, d: r.dst }, { retries: 0 })
+      : this.q(`CREATE (a {id: $s})-[:${type} {w: $w}]->(b {id: $d})`, { s: r.src, d: r.dst, w: r.w }, { retries: 0 })));
   }
 
   async applyEdgeWrites(type, rows) {
@@ -146,7 +146,7 @@ export class HydraStore {
       if (r.create) {
         this.edgeCount[type] = (this.edgeCount[type] || 0) + 1;
       }
-      if (r.create) return this.q(`CREATE (a {id: $s})-[:${type} {w: $w}]->(b {id: $d})`, { s: r.src, d: r.dst, w: r.w });
+      if (r.create) return this.q(`CREATE (a {id: $s})-[:${type} {w: $w}]->(b {id: $d})`, { s: r.src, d: r.dst, w: r.w }, { retries: 0 });
       return this.q(`MATCH (a {id: $s})-[r:${type}]->(b {id: $d}) SET r.w = $w`, { s: r.src, d: r.dst, w: r.w });
     });
   }

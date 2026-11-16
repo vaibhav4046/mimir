@@ -83,7 +83,7 @@ export async function renderDeck(root) {
   const llmAll = llm?.['All tools preloaded'];
   const llmLearned = llm?.['Graph, after learning'];
   const orange = '#ff5b1f';
-  const tokensPre = R ? Math.round(R.config.allToolsSchemaChars / 4) : 19000;
+  const tokensPre = llmAll ? llmAll.avgPromptTokens : R ? Math.round(R.config.allToolsSchemaChars / 4) : 15500;
 
   const scenes = [
     `<div class="cold" style="display:flex;flex-direction:column;flex:1"><div class="well"><i class="ring"></i><i class="ring"></i><i class="ring"></i><img src="/img/mimir-head.svg" alt="Mimir, the keeper of the well"></div><div class="runes" data-r="0">ᛗ ᛁ ᛗ ᛁ ᚱ</div><h1 data-r="1">Carry less. Know where to look.</h1><p data-r="2">A context layer for agents, built on HydraDB.</p></div>`,
@@ -108,15 +108,15 @@ export async function renderDeck(root) {
      <div class="row" style="margin-top:12px">
        <div class="card2" data-r="1"><div class="num" style="color:var(--orange)">1.65B</div><p>tokens a month from just the tool list: 55,000 tokens × 1,000 calls a day × 30 days.</p></div>
        <div class="card2" data-r="2"><div class="num">$4,950</div><p>a month for that one team at an example <b>$3 per million</b> input tokens. About $495 if the prompt cache serves it at a tenth of the price. Your rate will differ.</p></div>
-       <div class="card2" data-r="3"><div class="num" style="color:var(--red)">2.4×</div><p>On a laptop it is worse: our 264-tool catalog is about ${fmt(tokensPre)} tokens, bigger than the 8,192-token window Mimir gives a local model by default.</p></div>
+       <div class="card2" data-r="3"><div class="num" style="color:var(--red)">${(tokensPre / 8192).toFixed(1)}×</div><p>On a laptop it is worse: our 264-tool catalog came to ${fmt(tokensPre)} tokens as the model counted them, bigger than the 8,192-token window Mimir gives a local model by default.</p></div>
      </div>
      <p class="big" data-r="4" style="margin-top:34px">And it is not only money. More tools in front of a model means more wrong picks, slower answers, and less room for the actual job.</p>
      <p class="src" data-r="4">Token counts: Anthropic Engineering. Prices are an example rate, not a quote; cached-read discount is an assumption.</p>`,
     // 4 who
     `<div class="tag" data-r="0">Who it is for</div>
-     <h2 data-r="0">Anyone whose agent is connected to more than a handful of apps.</h2>
+     <h2 data-r="0">People running agents on local or small models with dozens of tools.</h2>
      <div class="row" style="margin-top:14px">
-       <div class="card2 persona" data-r="1"><div class="av" style="background:#ffc247">P</div><h3>Priya, runs an online shop</h3><p>Not technical. Her assistant touches the shop, payments, email, calendar and a spreadsheet.</p><p class="pain">Pain: it picks the wrong app, or forgets what “Sweetcrumb” means.</p><p class="gain">With the graph: it already knows which apps belong to which client.</p></div>
+       <div class="card2 persona" data-r="1"><div class="av" style="background:#ffc247">M</div><h3>Mira, builds a local-first agent app</h3><p>Small models by default, a hundred-plus tools across servers, no tool search on those models.</p><p class="pain">Pain: the tool list eats the context window before the request arrives.</p><p class="gain">With the graph: a handful of tools per task, and it remembers which app a client lives in.</p></div>
        <div class="card2 persona" data-r="2"><div class="av" style="background:#5ac8ff">D</div><h3>Dev, leads a small agency</h3><p>Builds agents for five clients with 60+ tools across servers.</p><p class="pain">Pain: token bills and “too many tools” errors.</p><p class="gain">With the graph: each task pulls five tools, not sixty.</p></div>
        <div class="card2 persona" data-r="3"><div class="av" style="background:#43e08a">L</div><h3>Lee, runs a small model at home</h3><p>1.7B model on a laptop. Private, free, and an 8K window.</p><p class="pain">Pain: the tool list doesn’t even fit.</p><p class="gain">With the graph: it fits, and it is faster.</p></div>
      </div>`,
@@ -126,7 +126,7 @@ export async function renderDeck(root) {
      <div class="row" style="margin-top:30px">
        <div class="card2" data-r="1"><h3 style="color:var(--orange)">1 · Walk</h3><p>The task’s words lead through skills, things the agent already knows, and the apps they live in, to the few tools that matter. All of it is HydraDB traversal.</p></div>
        <div class="card2" data-r="2"><h3 style="color:var(--orange)">2 · Pull</h3><p>About five tool definitions go to the model instead of two hundred and sixty-four. If the graph is unsure, it says so and the agent falls back.</p></div>
-       <div class="card2" data-r="3"><h3 style="color:var(--orange)">3 · Learn</h3><p>Tell it what worked. Edge weights change, new links appear, entities attach to their apps. The next task is sharper.</p></div>
+       <div class="card2" data-r="3"><h3 style="color:var(--orange)">3 · Learn</h3><p>Tell it what worked. Edge weights change, new links appear, entities attach to their apps. The next task can use what it learned.</p></div>
      </div>
      <p class="big" data-r="4" style="margin-top:34px">One sentence: <b style="color:#fff">an agent that remembers where its tools and its world connect, and gets better every time.</b></p>`,
     // 6 demo card
@@ -161,11 +161,11 @@ export async function renderDeck(root) {
     `<div class="tag" data-r="0">Why a graph, why HydraDB</div>
      <h2 data-r="0">Would this fall apart on a plain store? Parts of it would.</h2>
      <div class="row" style="margin-top:14px">
-       <div class="card2" data-r="1"><h3>Hops a keyword index can’t make</h3><p>“Morning briefing” never says calendar. A skill links it to news, mail and calendar tools. “Tickets for Northwind” means a different app than “tickets for Acme”: that is an entity-to-app link. Entity jobs: ${R ? `${lc.byKindMean.E[0]}% → ${lc.byKindMean.E[last]}%` : '…'} after learning, against ${R ? bl.bm25ToolsAndSkills.byKind.E : '…'}% for keyword search.</p></div>
+       <div class="card2" data-r="1"><h3>Hops through skills and systems</h3><p>“Morning briefing” never says calendar. A skill links it to news, mail and calendar tools, and “tickets for Northwind” resolves to Northwind’s app. Each pull shows the path it took.</p></div>
        <div class="card2" data-r="2"><h3>Weights that are the memory</h3><p>Every “that worked” is an edge update in HydraDB. ${R ? `${fmt(lc.edgeWritesPerTrial)} edge writes` : 'Thousands of edge writes'} per run of 160 examples, no retraining, no model.</p></div>
        <div class="card2" data-r="3"><h3>Speed, honestly</h3><p>${R ? R.scale.map(s => `${fmt(s.catalogTools)} tools: ${Math.round(s.load[0].p50ms)} ms per lookup`).join('<br>') + '<br>It slows as the catalog grows. The prompt does not.' : ''}</p></div>
      </div>
-     <p class="big" data-r="4" style="margin-top:30px">Honest part: a flat index with skills reaches ${R ? bl.bm25ToolsAndSkills.complete : '…'}% on the same tasks. The graph’s edge is learning, entities, and scale, not magic.</p>`,
+     <p class="big" data-r="4" style="margin-top:30px">Honest part: a keyword index that also learns from past tasks reaches ${R?.flatLearner ? Math.max(...R.flatLearner.rows.slice(1).map(x => x.complete)) : '…'}% on the same tasks, about what the graph gets. What the graph adds is a visible path for every pull and state kept in HydraDB, not a higher score.</p>`,
     // 10 me + gtm
     `<div class="tag" data-r="0">Why me · who pays</div>
      <h2 data-r="0">I already ship the agent this plugs into.</h2>

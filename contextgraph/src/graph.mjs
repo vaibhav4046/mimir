@@ -22,10 +22,10 @@ export const DEFAULTS = {
   minScore: 0.05, // below this the graph is unsure and the caller should fall back
   skillBoost: 0.9, // how much of a skill's score flows to the tools it requires
   entityBoost: 2, // multiplier slope for tools on a system the entity lives in
-  coUseBoost: 0.5,
+  coUseBoost: 0, // tools used together no longer boost each other: it hurt jobs the graph had not seen (see bench/unseen-jobs.mjs)
   eta: 0.5, // learning rate for reinforcement
   lambda: 0.3, // decay for tools that were pulled but not used
-  newEdge: 0.25, // starting weight of an edge created from experience
+  newEdge: 0.12, // starting weight of an edge created from experience (weaker than before: stronger edges hurt unseen jobs)
   similarWeight: 0.6, // how much a semantically similar word counts compared with the exact word
   minIdfToLearn: 0.25, // generic words never become edges
   prune: 0.03,
@@ -344,6 +344,7 @@ export class ContextGraph {
   async learn({ text, used, retrieved = [] }) {
     const words = uniq(tokens(text));
     const o = this.o;
+    used = uniq(used);
     const usedIds = used.map(u => nodeId('Tool', u));
     const unusedIds = retrieved.filter(r => !used.includes(r)).map(r => nodeId('Tool', r));
     const termIds = words.map(w => nodeId('Term', w));

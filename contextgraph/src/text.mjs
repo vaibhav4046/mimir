@@ -5,7 +5,7 @@ const STOP = new Set(
     .split(' '),
 );
 
-/** Very light stemmer: enough to join "invoices"/"invoice" and "logging"/"logs"/"log". */
+/** Very light stemmer: joins plurals ("invoices"/"invoice", "logs"/"log"). It does not handle "-ing" forms. */
 export function stem(w) {
   if (w.length > 5 && w.endsWith('ing')) w = w.slice(0, -3);
   else if (w.length > 4 && w.endsWith('ies')) w = `${w.slice(0, -3)}y`;

@@ -1,9 +1,9 @@
 // The live-demo segment of the video: real clicks in the real app, each with its narration.
-// The tasks were chosen by running the held-out set: the first is a hit, the second misses one tool,
-// and after one correction a differently worded version of the same job is covered.
+// The tasks were chosen by running them: the first is a hit, the second misses one tool, and after one
+// correction a differently worded version of the same job is covered (some rewordings are not; see the Benchmark page).
 const TASK_A = 'Do the competitor watch and note what is new';
 const TASK_B = 'Handle the outage: dig into the errors and post an update';
-const TASK_C = 'Something broke after the release, investigate and tell everyone';
+const TASK_C = 'We are seeing a spike of errors, dig in and let the channel know';
 
 async function glide(page, selector) {
   const el = page.locator(selector).first();
@@ -84,7 +84,7 @@ export function demoSteps() {
     },
     {
       id: 'd3b',
-      say: `All four tools again, even though I never taught it that sentence. It didn't memorize my words. It learned the connection.`,
+      say: `Before I taught it anything, this wording would have missed two of the four tools. Now all four come back, even though I never taught it this sentence. I'll be straight: I picked a rewording that works. Some don't carry over, and the benchmark page shows how often.`,
       run: async (page, { sleep }) => {
         await glide(page, '.tool:nth-of-type(2)');
         await sleep(2);

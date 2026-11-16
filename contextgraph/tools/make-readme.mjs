@@ -27,11 +27,30 @@ md.push('');
 md.push('### Versus the alternatives (held-out tasks)');
 md.push(row('Method', 'Complete', 'Tools in prompt', 'Schema characters'));
 md.push(row('---', '---:', '---:', '---:'));
-md.push(row(`Preload all ${c.catalogTools}`, '100%', String(c.catalogTools), c.allToolsSchemaChars.toLocaleString()));
-md.push(row('**Graph, after learning**', `**${lc.testCompleteMean[last]}%**`, String(lc.avgToolsLoaded[last]), '~1,500'));
-md.push(row('Graph, cold start', `${lc.testCompleteMean[0]}%`, String(lc.avgToolsLoaded[0]), '~1,500'));
+md.push(row(`Preload all ${c.catalogTools} (complete by construction)`, '100%', String(c.catalogTools), c.allToolsSchemaChars.toLocaleString()));
+md.push(row('**Graph, after learning**', `**${lc.testCompleteMean[last]}%**`, String(lc.avgToolsLoaded[last]), (R.scale?.[0]?.graphSchemaChars || 0).toLocaleString()));
+md.push(row('Graph, cold start', `${lc.testCompleteMean[0]}%`, String(lc.avgToolsLoaded[0]), (R.scale?.[0]?.graphSchemaChars || 0).toLocaleString()));
 md.push(row('Keyword search (BM25) over tools and skills', `${bl.bm25ToolsAndSkills.complete}%`, String(bl.bm25ToolsAndSkills.avgTools), bl.bm25ToolsAndSkills.avgSchemaChars.toLocaleString()));
 md.push(row('Keyword search (BM25) over tools', `${bl.bm25Tools.complete}%`, String(bl.bm25Tools.avgTools), bl.bm25Tools.avgSchemaChars.toLocaleString()));
+if (R.flatLearner) {
+  md.push('');
+  md.push('### Against a keyword index that also learns');
+  md.push(R.flatLearner.note);
+  md.push('');
+  md.push(row('Method', 'Complete', 'Plain', 'Skill', 'Entity'));
+  md.push(row('---', '---:', '---:', '---:', '---:'));
+  md.push(row('Graph, after learning', `${lc.testCompleteMean[last]}%`, `${lc.byKindMean.D[last]}%`, `${lc.byKindMean.S[last]}%`, `${lc.byKindMean.E[last]}%`));
+  for (const x of R.flatLearner.rows) md.push(row(x.label, `${x.complete}%`, `${x.byKind.D}%`, `${x.byKind.S}%`, `${x.byKind.E}%`));
+}
+if (R.unseenJobs) {
+  md.push('');
+  md.push('### Jobs it has never seen');
+  md.push(R.unseenJobs.note);
+  md.push('');
+  md.push(row('Method', 'Complete', 'Plain', 'Skill', 'Entity'));
+  md.push(row('---', '---:', '---:', '---:', '---:'));
+  for (const x of R.unseenJobs.rows) md.push(row(x.label, `${x.complete}%`, `${x.byKind.D}%`, `${x.byKind.S}%`, `${x.byKind.E}%`));
+}
 if (R.llm) {
   md.push('');
   md.push(`### End to end with a real local model (${R.llm.model}, Ollama, ${R.llm.sampleSize} unseen tasks, temperature 0)`);
@@ -63,8 +82,10 @@ const tpl = fs.readFileSync(new URL('README.template.md', dir), 'utf8');
 const out = tpl
   .replaceAll('{{TOOLS}}', String(c.catalogTools))
   .replaceAll('{{MODELLED}}', String(c.catalogTools - c.realMimirTools))
-  .replaceAll('{{PRELOAD_TOKENS}}', Math.round(c.allToolsSchemaChars / 4).toLocaleString())
+  .replaceAll('{{PRELOAD_TOKENS}}', (R.llm?.methods?.['All tools preloaded']?.avgPromptTokens ?? Math.round(c.allToolsSchemaChars / 4)).toLocaleString())
   .replaceAll('{{BM25S}}', String(bl.bm25ToolsAndSkills.complete))
+  .replaceAll('{{FLAT}}', String(R.flatLearner ? Math.max(...R.flatLearner.rows.slice(1).map(x => x.complete)) : '?'))
+  .replaceAll('{{UNSEEN}}', String(R.unseenJobs?.rows.find(x => x.label === 'Graph, after learning')?.complete ?? '?') + '%')
   .replaceAll('{{LIVE}}', LIVE)
   .replaceAll('{{VIDEO}}', VIDEO)
   .replace('{{RESULTS}}', md.join('\n'));

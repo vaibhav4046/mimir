@@ -1,6 +1,1 @@
-Built an agent context layer on @hydra_db.
-
-Agents re-read every tool manual on every call (Anthropic: ~55K tokens for 5 apps). I keep tools, skills and known entities in a HydraDB graph; each task walks it and pulls ~6 of 264 tools. It learns from every task: unseen-wording coverage 60% → 69.3%.
-
-Live: http://127.0.0.1:7860
-Code: https://github.com/vaibhav4046/mimir
+My agent's tool list was 15,522 tokens before it read my request. Context Graph keeps tools in @hydra_db and pulls ~6 of 264 per task: 15,522 to 494 tokens, about half the time per call. It doesn't make a tiny model more accurate. Code, demo and write-up: https://github.com/vaibhav4046/mimir/tree/main/contextgraph

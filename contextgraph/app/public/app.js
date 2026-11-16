@@ -21,7 +21,7 @@ async function pollStatus() {
     const s = await api('/api/status');
     ready = s.ready;
     pill.className = `pill ${s.ready ? 'ok' : ''}`;
-    $('span', pill).textContent = s.ready ? `HydraDB live · ${s.learned} tasks learned` : `Loading graph into HydraDB: ${s.stage}`;
+    $('span', pill).textContent = s.ready ? `HydraDB live · ${s.learned} ${s.learned === 1 ? 'task' : 'tasks'} learned` : `Loading graph into HydraDB: ${s.stage}`;
   } catch {
     pill.className = 'pill bad';
     $('span', pill).textContent = 'Server unreachable';
@@ -35,7 +35,7 @@ function route() {
   const hash = location.hash.replace(/^#/, '').split('?')[0];
   const key = hash.split('/').slice(0, 2).join('/');
   document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === `#${key}` || (key === '' && a.dataset.nav === 'lab')));
-  (routes[hash] || routes[key] || lab)(main);
+  (Object.hasOwn(routes, hash) ? routes[hash] : Object.hasOwn(routes, key) ? routes[key] : lab)(main);
   window.scrollTo(0, 0);
 }
 addEventListener('hashchange', route);
@@ -56,7 +56,7 @@ async function lab(root) {
       <div>
         <div class="eyebrow">Agent context layer · built on HydraDB</div>
         <h1>Your agent shouldn’t read 264 tool manuals before it reads your request.</h1>
-        <p class="lede">Context Graph keeps an agent’s tools, skills and the things it already knows in a graph database. For each task it walks the graph and pulls only what the task needs, then gets sharper every time it is told what worked.</p>
+        <p class="lede">An AI agent re-reads the manual for every tool it has, on every request. Context Graph keeps those tools in a HydraDB graph that remembers how they connect, hands the agent only the few a task needs, and adjusts its links when you tell it what worked.</p>
       </div>
       <div class="counter" aria-live="polite">
         <div class="barlabel"><span>Tools the agent has</span><span>Tools it needs for this task</span></div>
@@ -73,7 +73,7 @@ async function lab(root) {
       <label for="q" class="eyebrow" style="margin:0">What should your agent do?</label>
       <div class="askrow"><input id="q" maxlength="300" placeholder="e.g. Block two hours on Friday for planning" aria-describedby="hint"><button class="btn" id="go">Find the tools</button></div>
       <div class="chips" id="chips" aria-label="Example tasks"></div>
-      <div class="muted" id="hint" style="font-size:13.5px">These examples were never used to train the graph. Try your own wording too.</div>
+      <div class="muted" id="hint" style="font-size:13.5px">These examples were never used to train the graph. Ones marked ↻ are cases the untrained graph misses, so you can teach it. Try your own wording too.</div>
     </form>
 
     <div id="out"></div>
@@ -92,8 +92,10 @@ async function lab(root) {
   await waitReady();
   info = await api('/api/info');
   drawStats(info);
-  const picks = info.examples.slice(0, 10);
-  $('#chips').innerHTML = picks.map((e, i) => `<button type="button" class="chip" data-i="${i}">${esc(e.text)}</button>`).join('');
+  const hits = info.examples.filter(e => e.hit);
+  const misses = info.examples.filter(e => !e.hit);
+  const picks = [...hits.slice(0, 7), ...misses.slice(0, 3)];
+  $('#chips').innerHTML = picks.map((e, i) => `<button type="button" class="chip ${e.hit ? '' : 'miss'}" data-i="${i}" title="${e.hit ? 'The untrained graph gets this one right' : 'The untrained graph misses a tool here: try teaching it'}">${e.hit ? '' : '↻ '}${esc(e.text)}</button>`).join('');
   $('#chips').onclick = e => {
     const b = e.target.closest('.chip');
     if (!b) return;
@@ -108,6 +110,10 @@ async function lab(root) {
   };
 
   async function run(text, key) {
+    if (String(text).trim().length < 3) {
+      $('#out').innerHTML = `<div class="card" role="alert">Type a task first, for example “Block two hours on Friday for planning”.</div>`;
+      return;
+    }
     $('#go').disabled = true;
     try {
       const r = await api('/api/retrieve', { text });
@@ -139,18 +145,23 @@ async function lab(root) {
       })
       .join('');
     const hit = key ? key.every(k => r.tools.some(t => t.id === k)) : null;
+    const weak = r.confident && r.tools.length && r.tools[0].score < 0.3;
     const answer = key
-      ? `<div class="answerkey">Tools this task really needs: <b>${key.map(esc).join(', ')}</b> · ${hit ? '<b style="color:var(--green)">all pulled ✓</b>' : '<b style="color:var(--red)">missed some</b>'}. Keyword search would have picked: ${r.compare.keywordSearchPicks.slice(0, 4).map(esc).join(', ') || 'nothing'}${key.every(k => r.compare.keywordSearchPicks.includes(k)) ? ' (also correct)' : ''}.</div>`
+      ? `<div class="answerkey">Tools this task really needs: <b>${key.map(esc).join(', ')}</b> · ${hit ? `<b style="color:var(--green)">all pulled ✓${banner ? ' (the same wording you taught it)' : ''}</b>` : '<b style="color:var(--red)">missed some</b>'}. Keyword search would have picked: ${r.compare.keywordSearchPicks.slice(0, 4).map(esc).join(', ') || 'nothing'}${key.every(k => r.compare.keywordSearchPicks.includes(k)) ? ' (also correct)' : ''}.</div>`
       : `<div class="answerkey">Keyword search on the same catalog would have picked: ${r.compare.keywordSearchPicks.slice(0, 4).map(esc).join(', ') || 'nothing'}.</div>`;
     $('#out').innerHTML = `${banner}<div class="grid2">
-      <section class="card" aria-labelledby="tl"><h3 id="tl">Pulled for this task <span class="sub">${r.confident ? '' : 'The graph is unsure here, so a real agent would fall back to its default tools.'}</span></h3>${toolHtml || '<p class="muted">Nothing matched. Teach it below.</p>'}${answer}
-        <div class="feedback" id="fb"><span class="muted">Was this right?</span><button class="btn good sm" id="yes">Yes, these are right</button><button class="btn ghost sm" id="no">Not quite, let me fix it</button></div>
+      <section class="card" aria-labelledby="tl"><h3 id="tl">Pulled for this task <span class="sub">${r.confident ? (weak ? 'Low confidence: the words matched these tools only weakly, so check them.' : '') : 'The graph is unsure here, so a real agent would fall back to its default tools.'}</span></h3>${toolHtml || '<p class="muted">Nothing matched. Use “Let me fix it” below to teach it which tools this needs.</p>'}${answer}
+        <div class="feedback" id="fb"><span class="muted">Was this right?</span>${r.tools.length ? '<button class="btn good sm" id="yes">Yes, these are right</button>' : ''}<button class="btn ghost sm" id="no">${r.tools.length ? 'Not quite, let me fix it' : 'Let me fix it'}</button></div>
         <div id="pickerBox"></div>
       </section>
       <section class="card" aria-labelledby="gl"><h3 id="gl">What the graph walked through <span class="sub">words → skills / systems → tools</span></h3>${graphSvg(r.trace)}<div class="legend"><span><i style="border-color:#4b4b57"></i>word</span><span><i style="border-color:var(--gold)"></i>skill</span><span><i style="border-color:var(--green)"></i>thing it knows</span><span><i style="border-color:var(--blue)"></i>system</span><span><i style="border-color:var(--orange)"></i>tool</span></div></section>
     </div>`;
-    $('#yes').onclick = () => teach(r.tools.map(t => t.id));
+    if ($('#yes')) $('#yes').onclick = () => teach(r.tools.map(t => t.id));
     $('#no').onclick = () => openPicker(r);
+    const heading = $('#tl');
+    heading.tabIndex = -1;
+    $('#out').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    heading.focus({ preventScroll: true });
   }
 
   let allTools = null;
@@ -228,7 +239,7 @@ function graphSvg(trace) {
   const W = 560;
   const colW = (W - 150) / Math.max(1, maxD);
   const rowH = 34;
-  const H = Math.max(...cols.map(c => (c ? c.length : 0))) * rowH + 20;
+  const H = Math.max(1, ...cols.filter(Boolean).map(c => c.length)) * rowH + 20;
   cols.forEach((c, ci) => c?.forEach((n, ri) => { n.x = 10 + ci * colW; n.y = 12 + ri * rowH + (H - 20 - c.length * rowH) / 2; n.w = 140; }));
   const hot = new Set(trace.filter(e => e.toKind === 'tool').sort((a, b) => b.w - a.w).slice(0, 3).map(e => key(e.to, e.toKind)));
   const edges = trace.map(e => {
@@ -250,9 +261,18 @@ async function results(root) {
   root.innerHTML = `<div class="wrap"><div class="eyebrow">Benchmark · measured on a running HydraDB node</div><h1>Does it work, and does it get better?</h1><p class="lede" id="rl">Loading results…</p><div id="rc"></div></div>`;
   let r;
   try {
-    r = await api('/api/results');
+    for (let attempt = 0; ; attempt++) {
+      try {
+        r = await api('/api/results');
+        break;
+      } catch (err) {
+        if (attempt >= 20 || !/loading/i.test(err.message)) throw err;
+        $('#rl').textContent = 'The server is still loading the graph into HydraDB. One moment…';
+        await new Promise(res => setTimeout(res, 1500));
+      }
+    }
   } catch {
-    $('#rl').textContent = 'The benchmark has not been run on this server yet.';
+    $('#rl').textContent = 'The benchmark results could not be loaded. Try refreshing in a moment.';
     return;
   }
   const c = r.config;
@@ -281,16 +301,33 @@ async function results(root) {
     })}<p class="note">Private jargon cannot be in any tool description, so the graph starts at ${j.heldOut.cold}%. After one example it finds the right tools ${j.heldOut.afterOneExample}% of the time, after two ${j.heldOut.afterTwoExamples}%. Forgetting check: the ${r.config.test} general held-out tasks scored ${j.regressionBefore}% before learning the jargon and ${j.regressionAfter}% after, so nothing was damaged.</p></section>`);
   }
   const kinds = { D: 'Plain jobs (1–2 tools)', S: 'Multi-step jobs (known skills)', E: 'Jobs about a thing it learned (Acme, Kestrel…)' };
-  body.push(`<section class="card"><h2>Where the graph earns its place</h2>${lineChart({ xs: lc.epochs, title: 'Held-out accuracy by job type', width: 760, height: 320, series: [
+  body.push(`<section class="card"><h2>Where learning helped, by kind of job</h2>${lineChart({ xs: lc.epochs, title: 'Held-out accuracy by job type', width: 760, height: 320, series: [
     { name: 'Plain', color: '#9b9ba6', values: lc.byKindMean.D }, { name: 'Skills', color: '#ffc247', values: lc.byKindMean.S }, { name: 'Entities', color: '#43e08a', values: lc.byKindMean.E },
-  ], xLabel: 'Training passes' })}<div class="legend"><span><i style="border-color:#9b9ba6"></i>${kinds.D}</span><span><i style="border-color:#ffc247"></i>${kinds.S}</span><span><i style="border-color:#43e08a"></i>${kinds.E}</span></div><p class="note">Entities are the clearest win for a graph: the same words (“tickets”, “logs”) belong to different systems depending on who is asked about, and that is a link, not a keyword.</p></section>`);
+  ], xLabel: 'Training passes' })}<div class="legend"><span><i style="border-color:#9b9ba6"></i>${kinds.D}</span><span><i style="border-color:#ffc247"></i>${kinds.S}</span><span><i style="border-color:#43e08a"></i>${kinds.E}</span></div><p class="note">Plain jobs (40 held-out tasks) barely move. Skill jobs (30 tasks) and jobs about a thing it learned (only 10 tasks) improve. A keyword index that also learns gets to a similar level (next card), so this shows that learning helps, not that only a graph can do it.</p></section>`);
   body.push(`<section class="card"><h2>Versus the alternatives (held-out tasks)</h2>${barChart({ title: 'Share of tasks where every needed tool was pulled', rows: [
     { label: 'Preload all 264 tools', value: 100, color: '#6a6a74', text: `100% · ${c.catalogTools} tools` },
     { label: 'Graph after learning', value: lc.testCompleteMean[last], color: orange, text: `${lc.testCompleteMean[last]}% · ${lc.avgToolsLoaded[last]} tools` },
     { label: 'Graph, cold start', value: lc.testCompleteMean[0], color: '#c2481a', text: `${lc.testCompleteMean[0]}% · ${lc.avgToolsLoaded[0]} tools` },
     { label: 'Keyword search + skills', value: bl.bm25ToolsAndSkills.complete, color: '#ffc247', text: `${bl.bm25ToolsAndSkills.complete}% · ${bl.bm25ToolsAndSkills.avgTools} tools` },
     { label: 'Keyword search', value: bl.bm25Tools.complete, color: '#ff6464', text: `${bl.bm25Tools.complete}% · ${bl.bm25Tools.avgTools} tools` },
-  ] })}<p class="note">Preloading is always “complete” because it hands over everything, at ${Math.round(c.allToolsSchemaChars / 4).toLocaleString()} estimated tokens per call. The graph hands over about ${lc.avgToolsLoaded[last]} tools (roughly 1,500 characters). A small model with that many tools in front of it also picks the wrong one more often, as the local-model test below shows.</p></section>`);
+  ] })}<p class="note">Preloading is always “complete” because it hands over everything, at ${Math.round(c.allToolsSchemaChars / 4).toLocaleString()} estimated tokens per call. The graph hands over about ${lc.avgToolsLoaded[last]} tools (about ${fmt(r.scale?.[0]?.graphSchemaChars || 0)} characters). Whether that helps a small model choose the right tool is tested below. It saves tokens and time; it did not raise accuracy.</p></section>`);
+  if (r.flatLearner || r.unseenJobs) {
+    const pc = v => (v === undefined ? '–' : `${v}%`);
+    const bk = lc.byKindMean;
+    const graphRows = [
+      { label: 'Graph, cold start', complete: lc.testCompleteMean[0], byKind: { D: bk.D[0], S: bk.S[0], E: bk.E[0] } },
+      { label: 'Graph, after learning', complete: lc.testCompleteMean[last], byKind: { D: bk.D[last], S: bk.S[last], E: bk.E[last] }, win: true },
+    ];
+    const table = (rows, caption) => `<table><thead><tr><th>${caption}</th><th class="num">Every tool pulled</th><th class="num">Plain jobs</th><th class="num">Skill jobs</th><th class="num">Entity jobs</th></tr></thead><tbody>${rows.map(x => `<tr class="${x.win ? 'win' : ''}"><td>${esc(x.label)}</td><td class="num">${pc(x.complete)}</td><td class="num">${pc(x.byKind.D)}</td><td class="num">${pc(x.byKind.S)}</td><td class="num">${pc(x.byKind.E)}</td></tr>`).join('')}</tbody></table>`;
+    if (r.flatLearner) {
+      const best = Math.max(...r.flatLearner.rows.slice(1).map(x => x.complete));
+      const gap = +(lc.testCompleteMean[last] - best).toFixed(1);
+      body.push(`<section class="card"><h2>Against a keyword index that also learns</h2>${table([...graphRows, ...r.flatLearner.rows.map(x => ({ ...x }))], 'Same 160 training tasks, same 80 held-out tasks')}<p class="note">${gap > 5 ? `The graph is ahead by ${gap} points.` : gap >= -5 ? `The graph is ${gap >= 0 ? 'ahead' : 'behind'} by ${Math.abs(gap)} points, which is inside the sampling error of about 5 points on 80 tasks. On this benchmark the graph is not measurably better than a keyword index that stores past tasks.` : `The learning keyword index is ahead by ${-gap} points.`} What the graph adds is a visible path for every pull and state kept in HydraDB; it is not a higher score here.</p></section>`);
+    }
+    if (r.unseenJobs) {
+      body.push(`<section class="card"><h2>Jobs it has never seen</h2>${table(r.unseenJobs.rows.map(x => ({ ...x, win: x.label === 'Graph, after learning' })), 'Train on half of the jobs, test on the other half')}<p class="note">${esc(r.unseenJobs.note)} Learning on other jobs can hurt a job it has not seen, because words shared across jobs get pulled toward the wrong tools. I weakened two learning settings after seeing this test (tools used together no longer boost each other, and new links start weaker), so this test is no longer fully untouched.</p></section>`);
+    }
+  }
   if (r.llm) {
     const rows = Object.entries(r.llm.methods).map(([k, v]) => ({ label: k, value: v.firstCallHitPct, color: k.startsWith('All') ? '#6a6a74' : k.includes('learning') ? orange : '#4a4a55', text: `${v.firstCallHitPct}% · ${v.avgToolsOffered} tools · ${v.avgMs} ms` }));
     body.push(`<section class="card"><h2>End to end with a real local model</h2>${barChart({ rows, title: 'Chance the model calls a needed tool first' })}<p class="note">${esc(r.llm.model)} running locally through Ollama, ${r.llm.sampleSize} unseen tasks, temperature 0. Each row gives the model a different list of tools. “Hit” means its first tool call was one the task needs. The last number on each row is the average prompt tokens and time per call.</p>
@@ -312,14 +349,14 @@ function how(root) {
     <tr><td class="mono">Skill → Tool (requires)</td><td>The tools a known procedure needs, even if the request never names them.</td></tr>
     <tr><td class="mono">Entity → System</td><td>Where a thing the agent already resolved lives (Acme → payments, CRM).</td></tr>
     <tr><td class="mono">System → Tool</td><td>Which app a tool belongs to.</td></tr>
-    <tr><td class="mono">Tool → Tool (used with)</td><td>Tools that were used together before.</td></tr></tbody></table></section>
+    <tr><td class="mono">Tool → Tool (used with)</td><td>Tools that were used together before. Recorded, but its boost is off: it hurt jobs the graph had not seen.</td></tr></tbody></table></section>
   <section class="card"><h2>One pull, step by step</h2><ol style="padding-left:20px;margin:0;display:grid;gap:8px;color:#d6d6dc">
     <li>Split the request into words. <span class="muted">0 requests</span></li>
     <li>Words → similar words (one HydraDB request, many words joined with UNION ALL).</li>
     <li>Words → tools and skills (one request).</li>
     <li>Skills → the tools they require (one request).</li>
     <li>Things the agent knows → systems → their tools, as a boost (two requests).</li>
-    <li>Tools used together before (one request).</li>
+    <li>Tools used together before (one request; its boost is off by default).</li>
     <li>Return the best few. If nothing scored, say so and fall back.</li></ol>
     <p class="note" style="margin-top:12px">Learning, after a task: strengthen the edges to tools that were really used, add edges for words that pointed nowhere, weaken edges to tools that were pulled and ignored, link the entity to the system it turned out to live in, link tools used together.</p></section></div>
   <section class="card" style="margin-top:18px"><h2>Honest limits</h2><ul style="margin:0;padding-left:20px;display:grid;gap:6px;color:#cfcfd6">
