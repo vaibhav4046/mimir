@@ -7,6 +7,7 @@ import {
 function mockHydra() {
   const names = new Map();
   const edges = new Map();
+  const suppressed = new Map();
   const calls = [];
   const fetchImpl = async (_url, opts) => {
     const { query, parameters, cell_id } = JSON.parse(opts.body);
@@ -26,7 +27,13 @@ function mockHydra() {
       rows = [...(edges.get(parameters.id) || [])].map(id => [{ type: 'string', value: names.get(id) }]);
     } else if (query.includes('MATCH (c {id: $id})-[:SUPPRESSES]->(t)')) {
       columns = ['name'];
-      rows = [];
+      rows = [...(suppressed.get(parameters.id) || [])].map(id => [{ type: 'string', value: names.get(id) }]);
+    } else if (query.includes('MERGE (a:Capability {id: $src})-[:SUPPRESSES]->(b:Tool {id: $dst})')) {
+      const out = suppressed.get(parameters.src) || new Set();
+      out.add(parameters.dst);
+      suppressed.set(parameters.src, out);
+    } else if (query.includes('MATCH (a {id: $src})-[r:SUPPRESSES]->(b {id: $dst}) DELETE r')) {
+      suppressed.get(parameters.src)?.delete(parameters.dst);
     } else {
       throw Error('Unexpected query: ' + query);
     }
@@ -93,4 +100,18 @@ test('degraded graph response cannot be confused with a verified result', async 
 
 test('remote plaintext HydraDB is rejected', () => {
   assert.throws(() => new HydraContextRouter({ url: 'http://graph.example.com:8443', token: 'x' }), /HTTPS/);
+});
+
+test('feedback persists graph suppression without removing available permissions', async () => {
+  const graph = mockHydra();
+  const router = new HydraContextRouter({ token: 'test-token', fetchImpl: graph.fetchImpl });
+  const before = await router.route('research web sources', tools, { scope: 'feedback-a' });
+  assert.ok(before.tools.some(t => t.function.name === 'browser_search'));
+  await router.teach({ scope: 'feedback-a', capability: 'research', toolName: 'browser_search', relevant: false });
+  const after = await router.route('research web sources', tools, { scope: 'feedback-a' });
+  assert.ok(!after.tools.some(t => t.function.name === 'browser_search'));
+  assert.ok(after.tools.some(t => t.function.name === 'knowledge_search'));
+  await router.teach({ scope: 'feedback-a', capability: 'research', toolName: 'browser_search', relevant: true });
+  const restored = await router.route('research web sources', tools, { scope: 'feedback-a' });
+  assert.ok(restored.tools.some(t => t.function.name === 'browser_search'));
 });
