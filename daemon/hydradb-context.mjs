@@ -12,7 +12,7 @@ import crypto from 'node:crypto';
  */
 
 const RULES = Object.freeze({
-  research: /\\b(research|search|find|browse|look up|investigat|source|cite|web|news|researcher)\\b/i,
+  research: /\\b(research|search|find|browse|look up|investigat(?:e|ion|ing)|source|cite|web|news|researcher)\\b/i,
   files: /\\b(file|folder|directory|document|read|write|edit|workspace|pdf|csv|local)\\b/i,
   code: /\\b(code|program|debug|build|test|terminal|shell|script|implement|refactor|git|deploy)\\b/i,
   memory: /\\b(remember|memory|recall|context|knowledge|previous|earlier|history|facts?)\\b/i,
