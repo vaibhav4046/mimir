@@ -22,6 +22,7 @@ import {
 } from './agi-harness.mjs';
 import { buildSharedContext, buildStructuredStateNote, captureUserFacts, fitHistoryToWindow, recallFromOmitted } from './context-recall.mjs';
 import { runBrowserAgentSuite } from './browser-agent-suite.mjs';
+import { getHydraContextRouter } from './hydradb-context.mjs';
 
 const WORKSPACE_REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MAX_TOOL_STEPS = 24;
@@ -1810,6 +1811,25 @@ export class AgentRunner {
         modelName: selectedModel,
         explicitToolNames: toolNames,
       });
+      // Optional HydraDB OSS graph context gate. It can only narrow the
+      // pre-existing permission-checked tool set, never elevate privileges.
+      // An unreachable graph is explicit degraded mode, not a claimed win.
+      if (process.env.MIMIR_HYDRA_CONTEXT === '1' && !Array.isArray(toolNames)) {
+        try {
+          const routed = await getHydraContextRouter().route(userText, modeFilteredTools, {
+            scope: String(userId || bot.id || 'default'),
+          });
+          const names = new Set(routed.tools.map(t => t?.function?.name || t?.name));
+          const narrowed = allTools.filter(t => names.has(t?.function?.name || t?.name));
+          if (narrowed.length) allTools = narrowed;
+          console.info('[hydradb-context]', JSON.stringify({
+            ...routed.trace, permissionChecked: true,
+            modelToolCount: allTools.length,
+          }));
+        } catch (err) {
+          console.warn('[hydradb-context] DEGRADED: graph path unavailable:', err?.message || String(err));
+        }
+      }
       const allowedToolNames = new Set(allTools.map(t => t?.function?.name || t?.name).filter(Boolean));
       const creativeIntentFmt =
         currentDepth === 0 &&
