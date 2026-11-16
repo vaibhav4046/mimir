@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-16T09:07:58.464Z",
+ "generatedAt": "2026-11-16T10:10:25.137Z",
  "config": {
   "k": 6,
   "trials": 5,
@@ -429,35 +429,35 @@
     "toolOfferedPct": 100,
     "avgToolsOffered": 264,
     "avgPromptTokens": 15522,
-    "avgMs": 1178
+    "avgMs": 1276
    },
    "BM25 on tools": {
     "firstCallHitPct": 30,
     "toolOfferedPct": 45,
     "avgToolsOffered": 4.5,
     "avgPromptTokens": 383,
-    "avgMs": 759
+    "avgMs": 724
    },
    "BM25 on tools + skills": {
-    "firstCallHitPct": 32.5,
+    "firstCallHitPct": 30,
     "toolOfferedPct": 65,
     "avgToolsOffered": 5.5,
     "avgPromptTokens": 464,
-    "avgMs": 519
+    "avgMs": 578
    },
    "Graph, cold start": {
     "firstCallHitPct": 37.5,
     "toolOfferedPct": 85,
     "avgToolsOffered": 7.9,
     "avgPromptTokens": 626,
-    "avgMs": 640
+    "avgMs": 760
    },
    "Graph, after learning": {
-    "firstCallHitPct": 35,
+    "firstCallHitPct": 37.5,
     "toolOfferedPct": 82.5,
     "avgToolsOffered": 6.3,
     "avgPromptTokens": 543,
-    "avgMs": 683
+    "avgMs": 645
    }
   }
  }

@@ -13,11 +13,14 @@ const OLLAMA = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
 const MODEL = process.env.EMBED_MODEL || 'all-minilm';
 const EXTRA = fs.existsSync(new URL('../data/extra-words.txt', import.meta.url)) ? fs.readFileSync(new URL('../data/extra-words.txt', import.meta.url), 'utf8').split(/\s+/) : [];
 
+// EXCLUDE_TEST=1 builds the vocabulary from the catalog, skills and TRAINING tasks only (no held-out wording).
+const EXCLUDE_TEST = process.env.EXCLUDE_TEST === '1';
+const OUT = new URL(process.env.OUT || '../data/similar.json', import.meta.url);
 const docWords = new Set([
   ...TOOLS.flatMap(t => tokens(`${t.id.replace(/__/g, ' ').replace(/_/g, ' ')} ${t.description}`)),
   ...SKILLS.flatMap(([n, d]) => tokens(`${n.replace(/-/g, ' ')} ${d}`)),
 ]);
-const vocab = [...new Set([...docWords, ...TASKS.flatMap(t => tokens(t.text)), ...EXTRA.flatMap(w => tokens(w))])];
+const vocab = [...new Set([...docWords, ...TASKS.filter(t => !EXCLUDE_TEST || t.split !== 'test').flatMap(t => tokens(t.text)), ...EXTRA.flatMap(w => tokens(w))])];
 console.error(`anchors ${docWords.size}, vocabulary ${vocab.length}`);
 
 async function embed(words) {
@@ -53,6 +56,6 @@ for (const w of vocab) {
     .map(([a, s]) => [a, +s.toFixed(3)]);
   if (near.length) similar.push([w, near]);
 }
-fs.writeFileSync(new URL('../data/similar.json', import.meta.url), JSON.stringify({ model: MODEL, minSim: MIN, top: TOP, words: vocab.length, similar }));
+fs.writeFileSync(OUT, JSON.stringify({ model: MODEL, minSim: MIN, top: TOP, words: vocab.length, similar }));
 console.error(`wrote ${similar.length} words with neighbours, ${similar.reduce((s, [, n]) => s + n.length, 0)} edges`);
 console.error('sample:', JSON.stringify(similar.filter(([w]) => ['block', 'planning', 'quote', 'sick', 'recruiting', 'german', 'exception'].includes(w))));

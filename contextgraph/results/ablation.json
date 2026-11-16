@@ -1,0 +1,37 @@
+[
+ {
+  "label": "Full cold graph (as shipped)",
+  "complete": 68.75,
+  "D": 72.5,
+  "S": 63.33333333333333,
+  "E": 70
+ },
+ {
+  "label": "Offline bridge only (no live embedding)",
+  "complete": 63.74999999999999,
+  "D": 65,
+  "S": 60,
+  "E": 70
+ },
+ {
+  "label": "No similar-word bridge",
+  "complete": 58.75,
+  "D": 60,
+  "S": 56.666666666666664,
+  "E": 60
+ },
+ {
+  "label": "No skills",
+  "complete": 45,
+  "D": 67.5,
+  "S": 3.3333333333333335,
+  "E": 80
+ },
+ {
+  "label": "Old leaky bridge (saw held-out words)",
+  "complete": 68.75,
+  "D": 72.5,
+  "S": 63.33333333333333,
+  "E": 70
+ }
+]

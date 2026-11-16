@@ -21,6 +21,8 @@ export const DEFAULTS = {
   relCutoff: 0.3, // keep tools scoring at least this fraction of the best
   minScore: 0.05, // below this no word pointed at a tool: `confident` is false and the caller should fall back
   kWeak: 12, // when the match is weak (top score below strongScore) offer up to this many tools instead of k: coverage rises for about 100 more tokens
+  liveOnlyScore: 0.35, // when every word in the request is new to the graph (only live-embedded neighbours to go on), the top score must reach this
+  embedBudgetMs: Infinity, // live embedding of new words may take at most this long per request (apps set ~40 so a request never waits on it)
   strongScore: 1, // top score at or above this is `strong`; held-out, 84% of tasks reach it and 72% of those are complete (the rest: 67.5%)
   skillBoost: 0.9, // how much of a skill's score flows to the tools it requires
   entityBoost: 2, // multiplier slope for tools on a system the entity lives in
@@ -225,7 +227,8 @@ export class ContextGraph {
     // 1. word -> (similar word ->) tool | skill
     const seedIds = words.map(w => nodeId('Term', w));
     let simSeeds = [];
-    if (this.hasSimilar) {
+    let liveOnly = false;
+    if (this.hasSimilar || this.embedUnknown) {
       const sim = await this.store.outMany('SIMILAR', seedIds);
       const seen = new Map();
       words.forEach((w, i) => {
@@ -234,6 +237,35 @@ export class ContextGraph {
           if (!seen.has(dst) || seen.get(dst).weight < weight) seen.set(dst, { id: dst, weight, via: w });
         }
       });
+      // Words the offline vocabulary never saw: embed them now (optional, fails open to "no extra links").
+      if (this.embedUnknown) {
+        const unknown = words.filter((w, i) => !(sim.get(seedIds[i]) || []).length && !this.df.has(w));
+        // If no word in the request is one the graph knows, live-embedded neighbours are all the evidence there is.
+        // That is how random letters end up "similar" to a tool, so such a request must clear a much higher bar.
+        liveOnly = unknown.length === words.length;
+        // Embed at most 16 per request (longest first): the text is untrusted and each word costs a scan of every anchor.
+        const capped = [...unknown].sort((a, b) => b.length - a.length).slice(0, 16);
+        if (capped.length) {
+          let found = new Map();
+          try {
+            const pending = Promise.resolve(this.embedUnknown(capped, [...this.df.keys()].filter(a => this.df.get(a) > 0))).catch(() => new Map());
+            // Latency budget: if the live embedding is not back in time, answer without it. It keeps running and is
+            // cached, so the same new word is free next time. (Benchmarks leave the budget off so they measure it fully.)
+            found = Number.isFinite(this.o.embedBudgetMs)
+              ? await Promise.race([pending, new Promise(resolve => setTimeout(() => resolve(new Map()), this.o.embedBudgetMs))])
+              : await pending;
+          } catch {
+            // an embedder that throws just means no extra links
+          }
+          for (const [w, near] of found) {
+            for (const [anchor, sw] of near) {
+              const dst = nodeId('Term', anchor);
+              const weight = sw * this.o.similarWeight;
+              if (!seen.has(dst) || seen.get(dst).weight < weight) seen.set(dst, { id: dst, weight, via: w });
+            }
+          }
+        }
+      }
       simSeeds = [...seen.values()];
     }
     const termIds = [...seedIds, ...simSeeds.map(s => s.id)];
@@ -340,7 +372,7 @@ export class ContextGraph {
       skills: skillIds.map(id => this.skills.get(id).name),
       words,
       entities: entityHits.map(e => e.name),
-      confident: best >= this.o.minScore,
+      confident: best >= (liveOnly ? this.o.liveOnlyScore : this.o.minScore),
       strong: best >= this.o.strongScore,
       requests: this.store.requests - req0,
       ms: +(performance.now() - t0).toFixed(2),

@@ -9,10 +9,12 @@ import { fileURLToPath } from 'node:url';
 import { HydraStore, cell } from '../src/store-hydradb.mjs';
 import { ContextGraph } from '../src/graph.mjs';
 import { setNamespace } from '../src/text.mjs';
+import { createEmbedder } from '../src/embed-similar.mjs';
 import { TOOLS, SERVERS, SKILLS, ENTITY_NAMES, TASKS, SIMILAR, bm25WithSkills, ALL_SCHEMA_CHARS, schemaChars } from '../bench/lib.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 7860);
+const embedder = process.env.EMBED === '0' ? null : createEmbedder();
 const store = new HydraStore({ url: process.env.HYDRA_URL || 'http://127.0.0.1:18443', token: process.env.HYDRA_TOKEN || 'local-dev-auth-token-32-characters-long' });
 const bm25 = bm25WithSkills();
 
@@ -53,11 +55,13 @@ async function buildGraph() {
   store.edgeCount = {};
   setNamespace(state.ns);
   say('seeding the graph in HydraDB');
-  const g = new ContextGraph(store, { k: 6 });
+  const g = new ContextGraph(store, { k: 6, embedBudgetMs: 40 });
+  if (embedder) g.embedUnknown = embedder;
   await g.seed({ tools: TOOLS, skills: SKILLS, servers: SERVERS.map(s => s.name) });
   for (const name of ENTITY_NAMES) await g.registerEntity(name);
   say('adding semantic bridge edges');
   await g.loadSimilar(SIMILAR);
+  if (embedder) await g.retrieve('qwertyuiop').catch(() => {}); // warm the embedder (anchor vectors) so the first visitor is not slow
   // Which example prompts does the untrained graph already get right? The page leads with those.
   state.examples = [];
   for (const t of TASKS.filter(x => x.split === 'test').filter((_, i) => i % 5 === 0)) {
@@ -190,7 +194,8 @@ async function buildCustom(list) {
   const id = crypto.randomBytes(6).toString('hex');
   const ns = `byo-${id}`;
   setNamespace(ns);
-  const graph = new ContextGraph(store, { k: 6 });
+  const graph = new ContextGraph(store, { k: 6, embedBudgetMs: 40 });
+  if (embedder) graph.embedUnknown = embedder;
   await graph.seed({ tools: list, skills: [], servers: [...new Set(list.map(t => t.server))] });
   const entry = {
     id, ns, graph, tools: list, learned: 0,

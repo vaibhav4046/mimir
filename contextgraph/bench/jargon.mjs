@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import { HydraStore } from '../src/store-hydradb.mjs';
 import { setNamespace } from '../src/text.mjs';
 import { ContextGraph } from '../src/graph.mjs';
-import { SIMILAR, TOOLS, SKILLS, SERVERS, ENTITY_NAMES, testTasks, score, pct, toolIdSet, bm25WithSkills } from './lib.mjs';
+import { SIMILAR, TOOLS, SKILLS, SERVERS, ENTITY_NAMES, testTasks, score, pct, toolIdSet, bm25WithSkills, EMBEDDER } from './lib.mjs';
 
 // [jargon, tools, [phrasing 0, phrasing 1, held-out phrasing 2]]
 const JARGON = [
@@ -30,6 +30,7 @@ const g = new ContextGraph(store, { k: 6 });
 await g.seed({ tools: TOOLS, skills: SKILLS, servers: SERVERS.map(s => s.name) });
 for (const name of ENTITY_NAMES) await g.registerEntity(name);
 await g.loadSimilar(SIMILAR);
+if (EMBEDDER) g.embedUnknown = EMBEDDER;
 
 const evalHeldOut = async () => {
   setNamespace(ns);

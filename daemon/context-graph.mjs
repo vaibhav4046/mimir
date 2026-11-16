@@ -1,6 +1,7 @@
 import { HydraStore } from '../contextgraph/src/store-hydradb.mjs';
 import { ContextGraph } from '../contextgraph/src/graph.mjs';
 import { setNamespace } from '../contextgraph/src/text.mjs';
+import { createEmbedder } from '../contextgraph/src/embed-similar.mjs';
 
 /**
  * Context Graph for Mimir's agent loop (optional, off by default).
@@ -24,6 +25,7 @@ export class AgentContextGraph {
     this.namespace = namespace;
     this.graph = null;
     this.initPromise = null;
+    this.activeConfigKey = '';
     this.lastPull = null;
     this.failures = 0;
     this.lastFailureAt = 0;
@@ -38,14 +40,24 @@ export class AgentContextGraph {
   }
 
   async #init() {
-    if (this.graph) return this.graph;
+    const cfg = this.getSettings().contextGraph || {};
+    const url = cfg.url || 'http://127.0.0.1:18443';
+    const k = cfg.k || 6;
+    const key = `${url}|${k}`;
+    if (this.graph && this.activeConfigKey === key) return this.graph;
+    if (this.activeConfigKey && this.activeConfigKey !== key) {
+      this.graph = null;
+      this.initPromise = null;
+    }
     this.initPromise ||= (async () => {
-      const cfg = this.getSettings().contextGraph || {};
-      const store = this.injectedStore || new HydraStore({ url: cfg.url || 'http://127.0.0.1:18443', token: process.env.MIMIR_CONTEXT_GRAPH_TOKEN || cfg.token || undefined });
+      const store = this.injectedStore || new HydraStore({ url, token: process.env.MIMIR_CONTEXT_GRAPH_TOKEN || cfg.token || undefined });
       await store.init();
       setNamespace(this.namespace);
-      const g = new ContextGraph(store, { k: cfg.k || 6 });
+      const g = new ContextGraph(store, { k, embedBudgetMs: 40 });
+      // Words the graph has never seen are embedded live. It fails open: no Ollama or model just means no extra links.
+      g.embedUnknown = createEmbedder({ url: this.getSettings().ollamaUrl || undefined });
       await g.restore(serverOf);
+      this.activeConfigKey = key;
       this.graph = g;
       return g;
     })();
@@ -59,7 +71,8 @@ export class AgentContextGraph {
 
   /** The subset of `tools` to offer for this request, or null to keep the full list. */
   async select(userText, tools) {
-    if (!this.enabled || !Array.isArray(tools) || tools.length < 8 || String(userText || '').trim().length < 4) return null;
+    this.narrowed = false;
+    if (!this.enabled || !Array.isArray(tools) || tools.length < 8 || typeof userText !== 'string' || userText.trim().length < 4) return null;
     try {
       const g = await this.#init();
       setNamespace(this.namespace);
@@ -68,11 +81,13 @@ export class AgentContextGraph {
         const name = nameOf(t);
         if (name && !known.has(name)) await g.addTool({ id: name, server: serverOf(name), description: descOf(t) });
       }
-      const r = await g.retrieve(userText);
+      const r = await g.retrieve(String(userText || '').slice(0, 1500));
       this.lastPull = { at: new Date().toISOString(), pulled: r.tools.length, of: tools.length, confident: r.confident, ms: r.ms, requests: r.requests, tools: r.tools.map(x => x.id) };
       if (!r.confident || !r.tools.length) return null;
       const keep = new Set(r.tools.map(x => x.id));
       const subset = tools.filter(t => keep.has(nameOf(t)));
+      this.failures = 0; // a healthy pull: transient errors spread over hours must not add up to a trip
+      this.narrowed = subset.length > 0;
       return subset.length ? subset : null;
     } catch (err) {
       this.failures += 1;
@@ -89,7 +104,9 @@ export class AgentContextGraph {
       const used = [...new Set((turnMessages || []).filter(m => m.role === 'tool' && m.approved !== false && !String(m.content || '').startsWith('ERROR:')).map(m => m.toolName).filter(Boolean))];
       if (!used.length) return;
       setNamespace(this.namespace);
-      await this.graph.learn({ text: userText, used, retrieved: offered || [] });
+      // "Offered but not used" only counts against a tool when the graph narrowed the list. On a full-list turn
+      // (the graph was unsure) not being picked out of 100+ tools says nothing, so learn from what worked only.
+      await this.graph.learn({ text: String(userText || '').slice(0, 1500), used, retrieved: this.narrowed ? offered || [] : [] });
       this.lastPull = { ...(this.lastPull || {}), learnedFrom: used };
     } catch (err) {
       this.failures += 1;

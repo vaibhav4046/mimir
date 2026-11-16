@@ -487,7 +487,7 @@ function how(root) {
     <li>The 245 tools that aren’t Mimir’s own are modelled on the public MCP servers of the same names; nothing here executes them.</li>
     <li>Task labels and skills were written by one person, so the benchmark is a controlled test, not a field study. The next step is replaying real agent logs.</li>
     <li>Held-out accuracy is well below 100%. The graph helps most when wording varies, a thing is known, or the catalog is large; it does not understand language, it follows learned links.</li>
-    <li>Similar-word links come from a small embedding model and are noisy for single words.</li>
+    <li>Similar-word links come from a small embedding model and are noisy for single words. The word list behind them was once built with the test sentences in it, which flattered the first results by 5 points; it is now built without them and new words are embedded live, and all numbers were re-run.</li>
     <li>HydraDB’s query dialect is narrow (no expressions in RETURN, one relationship type per pattern). This design works inside it.</li></ul></section></div>`;
 }
 

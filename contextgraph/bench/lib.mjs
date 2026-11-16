@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { createEmbedder } from '../src/embed-similar.mjs';
 import { TOOLS, SERVERS, toSchema } from '../data/catalog.mjs';
 import { SKILLS, ENTITIES } from '../data/skills.mjs';
 import { TASKS, ENTITY_NAMES } from '../data/tasks.mjs';
@@ -12,9 +13,13 @@ export const toolIdSet = new Set(TOOLS.map(t => t.id));
 /** Seeds a fresh graph on the given store. */
 export const SIMILAR = fs.existsSync(new URL('../data/similar.json', import.meta.url)) ? JSON.parse(fs.readFileSync(new URL('../data/similar.json', import.meta.url), 'utf8')).similar : [];
 
+// One shared embedder: its cache and anchor vectors are reused across every graph the benchmarks build.
+export const EMBEDDER = process.env.EMBED === '0' ? null : createEmbedder();
+
 export async function freshGraph(store, opts = {}, withSimilar = true) {
   await store.clear?.();
   const g = new ContextGraph(store, opts);
+  if (withSimilar && EMBEDDER) g.embedUnknown = EMBEDDER;
   await g.seed({ tools: TOOLS, skills: SKILLS, servers: SERVERS.map(s => s.name) });
   for (const name of ENTITY_NAMES) await g.registerEntity(name);
   if (withSimilar && SIMILAR.length) await g.loadSimilar(SIMILAR);

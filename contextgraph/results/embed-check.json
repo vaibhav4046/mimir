@@ -1,0 +1,18 @@
+[
+ {
+  "label": "clean bridge (offline vocabulary only)",
+  "complete": 63.74999999999999,
+  "D": 65,
+  "S": 60,
+  "E": 70,
+  "avgMs": 0.4
+ },
+ {
+  "label": "clean bridge + query-time embedding of new words",
+  "complete": 68.75,
+  "D": 72.5,
+  "S": 63.33333333333333,
+  "E": 70,
+  "avgMs": 87.4
+ }
+]

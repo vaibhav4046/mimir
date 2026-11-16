@@ -1,0 +1,23 @@
+{
+  "noBridge": {
+    "label": "no bridge",
+    "complete": 58.75,
+    "D": 60,
+    "S": 56.666666666666664,
+    "E": 60
+  },
+  "clean": {
+    "label": "bridge from catalog+skills+TRAIN words only",
+    "complete": 63.74999999999999,
+    "D": 65,
+    "S": 60,
+    "E": 70
+  },
+  "leaky": {
+    "label": "bridge from all words incl. held-out (old)",
+    "complete": 68.75,
+    "D": 72.5,
+    "S": 63.33333333333333,
+    "E": 70
+  }
+}

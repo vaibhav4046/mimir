@@ -4,11 +4,24 @@
 Context Graph keeps an agent's tools, skills and the things it has already resolved in a [HydraDB](https://github.com/hydra-db/hydradb) graph.
 For each task the agent walks the graph and pulls only the few tools the task needs, and it adjusts its links when it is told what worked.
 
+## In one minute (no technical background needed)
+
+Imagine a helper who, before every single question, reads the instruction manual of every tool in a huge toolbox. That is how most AI agents work today. It is slow, it costs money, and small AI models that run on your own laptop cannot even fit all the manuals in their head.
+
+**Context Graph is a map of the toolbox.** It remembers which tools belong to which jobs, hands the helper only the few it needs, and gets better each time it sees what worked. The map is stored in [HydraDB](https://github.com/hydra-db/hydradb), a graph database, so it survives restarts and you can see *why* each tool was picked.
+
+- **Try it in 30 seconds:** open the live demo and press **Show me in 30 seconds**. You watch it pick tools, get one wrong, learn, and get it right.
+- **Use it on your own tools:** the demo has a **Try it on your own tools** box. Paste a list of tools and it builds a private map for you.
+- **Use it in a real app:** in [Mimir](https://github.com/vaibhav4046/mimir), open Settings, then **Tool memory (HydraDB)**, then **Turn on**. The chat header then shows, for example, "Tool memory: 5 of 18 tools". If HydraDB is not running, Mimir simply uses every tool as before.
+- **The honest verdict:** it saves a lot of reading (about 15,500 tokens down to about 500 on the test catalog) and about half the time per call. On a tiny model it did **not** make the first tool choice more accurate, and a plain keyword index that also learns scores about the same. The limits are listed in full, in plain words, near the bottom.
+
 - **Live demo:** https://tooth-refrigerator-achieve-trim.trycloudflare.com
 - **Video walkthrough:** https://www.loom.com/share/2528c92e151447ffb309f0b16df119de
 - **Track:** 2, the agent context layer (with Track 1's continual-learning mechanics: edge reweighting, gap-driven ingestion, path shortcuts)
 - **Built on:** HydraDB v0.4.0, built from source and run by us (not the hosted platform). The benchmark, the scale test and the local-model test ran against a running HydraDB node; the two comparison tests (a keyword index that learns, and jobs it has never seen) run in process, and the in-process store matches HydraDB exactly in the parity test.
 - **Wired into a real agent:** [Mimir](https://github.com/vaibhav4046/mimir)'s agent loop can use it (`daemon/context-graph.mjs`). It is opt-in, off by default, and fails open.
+
+![How a request flows through the HydraDB graph](docs/img/architecture.svg)
 
 ## The problem
 
@@ -58,6 +71,10 @@ link an entity to the system it turned out to live in, record tools used togethe
 
 ## Results
 
+![Held-out coverage over training passes](docs/img/learning-curve.svg)
+
+![Prompt tokens with and without Context Graph](docs/img/tokens.svg)
+
 240 tasks (160 for training, 80 held out with different wording) over a catalog of 264 tools (19 are Mimir's real tools, 30 skills). "Complete" means every tool the task needs was pulled (top 6). 5 independent runs with different training order; ± is one standard deviation.
 
 ### It learns: held-out accuracy by training pass
@@ -103,11 +120,11 @@ Train on half of the jobs, test on the other half (all phrasings), then swap and
 ### End to end with a real local model (qwen3:1.7b, Ollama, 40 unseen tasks, temperature 0)
 | Tools offered by | First call is a needed tool | Needed tool offered | Tools | Prompt tokens | Time per call |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| All tools preloaded | 42.5% | 100% | 264 | 15,522 | 1,178 ms |
-| BM25 on tools | 30% | 45% | 4.5 | 383 | 759 ms |
-| BM25 on tools + skills | 32.5% | 65% | 5.5 | 464 | 519 ms |
-| Graph, cold start | 37.5% | 85% | 7.9 | 626 | 640 ms |
-| Graph, after learning | 35% | 82.5% | 6.3 | 543 | 683 ms |
+| All tools preloaded | 42.5% | 100% | 264 | 15,522 | 1,276 ms |
+| BM25 on tools | 30% | 45% | 4.5 | 383 | 724 ms |
+| BM25 on tools + skills | 30% | 65% | 5.5 | 464 | 578 ms |
+| Graph, cold start | 37.5% | 85% | 7.9 | 626 | 760 ms |
+| Graph, after learning | 37.5% | 82.5% | 6.3 | 543 | 645 ms |
 
 The preload row was given a 40,960-token context window so that 264 tools fit; every other row used 8,192. With 40 tasks, one task is 2.5 points.
 
@@ -136,34 +153,44 @@ In the agent an unsure pull falls back to the default tool set: 70% complete wit
 Pulls per second and 95th-percentile latency of a complete retrieval. Tools beyond the first 264 are synthetic distractors built from the same vocabulary, so accuracy at larger sizes shows how well each method ignores noise.
 
 ### Cold-start ablation (80 held-out tasks, in process)
-Runs `node bench/ablation.mjs` (`k: 6`, `kWeak: 12`) against the in-process store (which matches HydraDB in `test/parity.mjs`).
+Runs `node bench/ablation.mjs` (`k: 6`, `kWeak: 12`) against the in-process store (it matches HydraDB in `test/parity.mjs`). All variants are cold: no learning.
 
 | Variant | Complete | Plain (D) | Skill (S) | Entity (E) |
 | --- | ---: | ---: | ---: | ---: |
-| Full cold graph | 68.8% | 72.5% | 63.3% | 70.0% |
+| Full cold graph (as shipped) | 68.8% | 72.5% | 63.3% | 70.0% |
+| Offline bridge only (no live embedding) | 63.7% | 65.0% | 60.0% | 70.0% |
 | No similar-word bridge | 58.8% | 60.0% | 56.7% | 60.0% |
 | No skills | 45.0% | 67.5% | 3.3% | 80.0% |
-
-Note: the similar-word vocabulary (`data/similar.json`) was built from all task text including held-out wording (no labels), so the 10-point drop without the bridge is partly in-distribution.
+| Old leaky bridge (saw held-out words) | 68.8% | 72.5% | 63.3% | 70.0% |
 
 ### AI-simulated persona review (not real users)
 Before the final polish, an AI-simulated 6-persona panel scored the product `3, 3, 2, cite-2/recommend-5, 3, 5` (out of 10). Addressed from that review: fixed the `/api/feedback` whitespace split bug, added the 30-second guided demo (always picks an unlearned task), added the side-by-side `$` comparison and plain-language summary, fixed mobile layout and the 3-column graph view, added "Try it on your own tools" (`POST /api/custom`), and added HydraDB request timeouts. Still open: no drop-in MCP gateway or npm package yet, and no multi-tenant auth on the shared demo.
 
 ## Honest limits
 
-- The 245 tools that are not Mimir's own are modelled on the public MCP servers of the same names. Nothing here executes them.
-- Task labels, skills and entity links were written by one person. This is a controlled benchmark, not a field study. The next step is replaying real agent logs.
-- "Held-out" means held-out wording, not held-out jobs. Each job appears in training in two other phrasings, and the 30 skills were written from the same ground truth as the skill-job labels, so the skill-job gain is partly in-distribution.
-- The learning gain is concentrated: plain jobs (40 held-out tasks) move only a little, skill jobs (30) and entity jobs (only 10) more. Coverage peaks after the first training pass and drifts down with more passes over the same examples. With 80 tasks the sampling error is about 5 points. The "±" in the tables is the spread over training-order shuffles on one fixed test set, not a confidence interval.
-- Preload-everything shows 100% because it hands over every tool by construction; that number is not measured.
-- I tuned after seeing test results, three times: the "strong" confidence threshold (1.0) was picked from a sweep over held-out rows; two learner settings (`coUseBoost` to 0, `newEdge` to 0.12) were changed after the unseen-jobs test showed the first settings hurt (moving 5-pass held-out from 69.3% to 69%); and adaptive size (`kWeak: 12`) was chosen from a 3-option grid on held-out tasks. Held-out figures that were also used to choose settings should be read with that in mind.
-- Held-out accuracy is well below 100%. The graph does not understand language; it follows learned links. It helps most when wording varies, a thing is known, or the catalog is large.
-- A keyword index that knows the skills reaches 58.8% on the same tasks, and one that also learns from the same training tasks reaches 67.5%, about what the graph gets after learning. On this benchmark the graph is not measurably better than a flat index that stores past tasks. What it adds is a visible path for every pull and state kept outside the app process, in HydraDB.
-- Learning on other jobs can hurt a job the graph has not seen. Training on half of the jobs and testing on the other half lowered coverage under the first settings I tried (72.1% cold to 60.4%). I then turned off the co-use boost and weakened new links, which brought it back to 73.8%; I chose those two settings after seeing that test, so it is no longer fully untouched.
-- On a real small model (qwen3:1.7b through Ollama, 40 unseen tasks) the graph cut the prompt from about 15,500 to about 500 tokens and the time per call roughly in half, but it did **not** improve first-call accuracy: 35% against 42.5% with every tool loaded, because the needed tool was missing from the pulled list on 17.5% of tasks. The measured win there is cost and speed, not correctness.
-- The semantic bridge uses single-word embeddings from `all-minilm`, which are noisy. Its vocabulary was built from the catalog and all task words including held-out (no labels).
-- HydraDB's query dialect is narrow (no expressions in `RETURN`, one relationship type per pattern, no property writes in batch shapes). The design works inside it; see `src/store-hydradb.mjs` for the shapes used and why.
+**What is real and what is modelled**
+- The 245 tools that are not Mimir's own are modelled on the public MCP servers of the same names. Nothing here executes them. Mimir's own 19 tools are real and wired in.
+- One person wrote the task labels, skills and entity links. This is a controlled benchmark, not a field study. The next step is replaying real agent logs.
+- "Held-out" means held-out *wording*, not held-out jobs: each job also appears in training in two other phrasings. The 30 skills were written from the same ground truth as the skill-job labels, so the skill-job gain is partly in-distribution.
+
+**What I fixed after finding it**
+- The word-similarity bridge used to be built from every word in the benchmark, including the held-out sentences. That flattered cold-start coverage by 5 points (63.7% honest, 68.8% with the peek). Now the offline vocabulary comes from the catalog, the skills and the *training* tasks only, and words the graph has never seen are embedded live with the same small model and linked to the nearest tool and skill words. That earns the 68.8% back without peeking, and the ablation table shows each layer on its own. Every number on this page was re-run after the change.
+- Live embedding made random letters look "similar" to a tool, so when no word in a request is known to the graph it now needs a much higher score before it is trusted; otherwise Mimir offers every tool as usual (covered by a test). If Ollama or the embedding model is missing, the bridge just has fewer links; nothing breaks.
+- I tuned three settings after seeing held-out results (the "strong" confidence threshold, two learner settings, and the "weak match offers 12 tools" size). Treat the held-out numbers as slightly optimistic for that reason.
+
+**What the numbers do and do not show**
+- Held-out coverage is well below 100%. The graph does not understand language; it follows learned links. It helps most when wording varies, a thing is known, or the catalog is large.
+- A keyword index that learns from the same training tasks reaches 67.5%, about what the graph gets after learning (69%). On this benchmark the graph is **not** measurably more accurate than a flat learning index. What it adds is a visible path for every pull, and memory kept in HydraDB outside the app process.
+- With 80 held-out tasks the sampling error is about 5 points, so differences smaller than that are noise. The "±" in the tables is the spread over training-order shuffles, not a confidence interval.
+- Learning on other jobs can hurt a job the graph has not seen (first settings: 72.1% down to 60.4%). After weakening new links it holds at 73.8%.
+- On a real small model (qwen3:1.7b through Ollama, 40 unseen tasks) the graph cut the prompt from about 15,500 to about 500 tokens and roughly halved the time per call, but it did **not** improve first-call accuracy: 37.5% against 42.5% with every tool loaded. The measured win is cost and speed, not correctness.
+- "Preload everything" shows 100% because it hands over every tool by construction; that figure is not measured.
+
+**Engineering limits**
+- HydraDB's query language is narrow (no expressions in `RETURN`, one relationship type per pattern, no property writes in batch shapes). The design works inside it; `src/store-hydradb.mjs` lists the shapes used.
+- The catalog-size and load table was measured before live embedding of new words was added, so it times the graph lookup only. Live embedding adds one small local model call the first time a new word is seen, capped at 40 ms per request in the apps (it finishes in the background and is cached), and measured end to end the lookup stays around 25 to 35 ms median on this laptop (\`node bench/latency.mjs\`). The 600 to 1,300 ms per call in the local-model test is the model thinking, not the graph.
 - Load numbers come from one 4-core WSL VM with HydraDB and the load generator on the same machine.
+- Two processes learning into the same graph at once is tested (`node test/two-writers.mjs`: no crash, graph still answers, 67.5% held-out coverage afterwards). Updates to the very same edge can overwrite each other, which costs a little learning, not correctness.
 
 ## Run it
 

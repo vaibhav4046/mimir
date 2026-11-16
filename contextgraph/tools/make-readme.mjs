@@ -3,7 +3,20 @@
 import fs from 'node:fs';
 const [LIVE = '(see the repository description)', VIDEO = '(see the repository description)'] = process.argv.slice(2);
 const dir = new URL('../', import.meta.url);
-const R = JSON.parse(fs.readFileSync(new URL('results/results.json', dir), 'utf8'));
+function ablationTable() {
+  const p = new URL('results/ablation.json', dir);
+  if (!fs.existsSync(p)) return '(run `node bench/ablation.mjs`)';
+  const f = x => `${(Math.round(x * 10) / 10).toFixed(1)}%`;
+  const rows = JSON.parse(fs.readFileSync(p, 'utf8'));
+  return [
+    'Runs `node bench/ablation.mjs` (`k: 6`, `kWeak: 12`) against the in-process store (it matches HydraDB in `test/parity.mjs`). All variants are cold: no learning.',
+    '',
+    '| Variant | Complete | Plain (D) | Skill (S) | Entity (E) |',
+    '| --- | ---: | ---: | ---: | ---: |',
+    ...rows.map(r => `| ${r.label} | ${f(r.complete)} | ${f(r.D)} | ${f(r.S)} | ${f(r.E)} |`),
+  ].join('\n');
+}
+const R =JSON.parse(fs.readFileSync(new URL('results/results.json', dir), 'utf8'));
 const c = R.config;
 const lc = R.learningCurve;
 const bl = R.baselines;
@@ -94,6 +107,7 @@ const out = tpl
   .replaceAll('{{LLM_MISS}}', String(100 - (R.llm?.methods?.['Graph, after learning']?.toolOfferedPct ?? 0)))
   .replaceAll('{{FLAT}}', String(R.flatLearner ? Math.max(...R.flatLearner.rows.slice(1).map(x => x.complete)) : '?'))
   .replaceAll('{{UNSEEN}}', String(R.unseenJobs?.rows.find(x => x.label === 'Graph, after learning')?.complete ?? '?') + '%')
+  .replaceAll('{{ABLATION}}', ablationTable())
   .replaceAll('{{LIVE}}', LIVE)
   .replaceAll('{{VIDEO}}', VIDEO)
   .replace('{{RESULTS}}', md.join('\n'));

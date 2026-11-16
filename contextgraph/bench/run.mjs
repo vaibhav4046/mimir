@@ -8,6 +8,7 @@ import { setNamespace, nodeId } from '../src/text.mjs';
 import { Bm25 } from '../src/bm25.mjs';
 import {
   SIMILAR, TOOLS, SERVERS, SKILLS, TASKS, ENTITY_NAMES, ALL_SCHEMA_CHARS, bm25Tools, bm25WithSkills, evalBm25, score, mean, sd, pct, shuffle, trainTasks, testTasks, schemaChars, toolIdSet,
+  EMBEDDER,
 } from './lib.mjs';
 
 for (const t of TASKS) for (const r of t.tools) if (!toolIdSet.has(r)) throw new Error(`task ${t.id} needs unknown tool ${r}`);
@@ -30,6 +31,7 @@ async function freshGraph(ns) {
   await g.seed({ tools: TOOLS, skills: SKILLS, servers: SERVERS.map(s => s.name) });
   for (const name of ENTITY_NAMES) await g.registerEntity(name);
   await g.loadSimilar(SIMILAR);
+  if (EMBEDDER) g.embedUnknown = EMBEDDER;
   return g;
 }
 

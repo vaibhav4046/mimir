@@ -110,3 +110,39 @@ test('the HydraDB token is never an empty string (that made every call unauthent
   const src = (await import('node:fs')).readFileSync(new URL('../daemon/context-graph.mjs', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /MIMIR_CONTEXT_GRAPH_TOKEN \|\| ''/);
 });
+
+test('live-embedded neighbours help a new word next to known ones, but never make nonsense look confident', async () => {
+  setNamespace('embed-guard');
+  const g = new ContextGraph(new MemoryStore(), { k: 6 });
+  await g.seed({ tools: TOOLS, skills: [], servers: [] });
+  // A stand-in embedder that links every unknown word to the word "email" (the worst case for false confidence).
+  g.embedUnknown = async words => new Map(words.map(w => [w, [['email', 0.9]]]));
+  const nonsense = await g.retrieve('zzzz qqqq xxxx');
+  assert.equal(nonsense.confident, false, 'only live-embedded evidence and a weak score: fall back to every tool');
+  const mixed = await g.retrieve('Send an email to the blorbwave team');
+  assert.equal(mixed.confident, true, 'a known word plus a new word still works');
+  assert.ok(mixed.tools.some(t => /email|mail/.test(t.id)), mixed.tools.map(t => t.id).join(','));
+  g.embedUnknown = async () => {
+    throw new Error('ollama down');
+  };
+  const survived = await g.retrieve('Send an email to the blorbwave team');
+  assert.equal(survived.confident, true, 'a throwing embedder just means no extra links; retrieval still works');
+});
+
+test('a turn where the graph was unsure teaches only what worked, never "these tools lost"', async () => {
+  const cg = make(new MemoryStore());
+  const learned = [];
+  await cg.select('Send an email to my supplier asking for a quote', schemas); // initialise the graph
+  const realLearn = cg.graph.learn.bind(cg.graph);
+  cg.graph.learn = async arg => {
+    learned.push(arg);
+    return realLearn(arg);
+  };
+  const turn = [{ role: 'tool', toolName: 'gmail__send_email', content: 'ok', approved: true }];
+  await cg.select('zzzz qqqq xxxx', schemas); // unsure: the model gets every tool
+  await cg.record({ userText: 'zzzz qqqq xxxx', turnMessages: turn, offered: schemas.map(t => t.function.name) });
+  assert.deepEqual(learned.at(-1).retrieved, [], 'full-list turn: nothing counts against the tools that were not picked');
+  await cg.select('Send an email to my supplier asking for a quote', schemas); // confident: a narrowed list
+  await cg.record({ userText: 'Send an email to my supplier asking for a quote', turnMessages: turn, offered: ['gmail__send_email', 'gmail__search_email'] });
+  assert.deepEqual(learned.at(-1).retrieved, ['gmail__send_email', 'gmail__search_email'], 'narrowed turn: offered-but-unused is real evidence');
+});

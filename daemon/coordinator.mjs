@@ -904,10 +904,11 @@ export async function startCoordinator(options = {}) {
         if (body.contextGraph !== undefined) {
           const cg = body.contextGraph;
           if (!cg || typeof cg !== 'object' || Array.isArray(cg)) return json(res, 400, { error: 'contextGraph must be an object' });
+          if (cg.url !== undefined && typeof cg.url !== 'string') return json(res, 400, { error: 'contextGraph.url must be a string' });
           if (typeof cg.url === 'string' && cg.url.trim()) {
             await assertSafeUrl(cg.url.trim(), { allowLoopback: true });
             // The graph holds a bearer token and your tool list: keep it on this machine.
-            const host = new URL(cg.url.trim()).hostname.replace(/^[|]$/g, '');
+            const host = new URL(cg.url.trim()).hostname.replace(/^\[|\]$/g, '');
             if (!['127.0.0.1', 'localhost', '::1'].includes(host)) return json(res, 400, { error: 'contextGraph.url must point at a HydraDB on this computer (127.0.0.1 or localhost)' });
           }
           body.contextGraph = { enabled: Boolean(cg.enabled), url: (cg.url || 'http://127.0.0.1:18443').trim(), k: Math.min(12, Math.max(1, Number(cg.k) || 6)) };
