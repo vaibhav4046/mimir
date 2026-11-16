@@ -12,15 +12,15 @@ import crypto from 'node:crypto';
  */
 
 const RULES = Object.freeze({
-  research: /\\b(research|search|find|browse|look up|investigat(?:e|ion|ing)|source|cite|web|news|researcher)\\b/i,
-  files: /\\b(file|folder|directory|document|read|write|edit|workspace|pdf|csv|local)\\b/i,
-  code: /\\b(code|program|debug|build|test|terminal|shell|script|implement|refactor|git|deploy)\\b/i,
-  memory: /\\b(remember|memory|recall|context|knowledge|previous|earlier|history|facts?)\\b/i,
-  browser: /\\b(browser|navigate|website|webpage|page|click|form|url|screenshot)\\b/i,
-  collaborate: /\\b(team|delegate|subagent|council|swarm|coordinate)\\b/i,
-  communicate: /\\b(email|send|post|message|slack|telegram|notify|reply)\\b/i,
-  automate: /\\b(automate|schedule|routine|workflow|every day|monitor|cron)\\b/i,
-  creative: /\\b(image|generate|art|video|audio|music|design|render|forge)\\b/i,
+  research: /\b(research|search|find|browse|look up|investigat(?:e|ion|ing)|source|cite|web|news|researcher)\b/i,
+  files: /\b(file|folder|directory|document|read|write|edit|workspace|pdf|csv|local)\b/i,
+  code: /\b(code|program|debug|build|test|terminal|shell|script|implement|refactor|git|deploy)\b/i,
+  memory: /\b(remember|memory|recall|context|knowledge|previous|earlier|history|facts?)\b/i,
+  browser: /\b(browser|navigate|website|webpage|page|click|form|url|screenshot)\b/i,
+  collaborate: /\b(team|delegate|subagent|council|swarm|coordinate)\b/i,
+  communicate: /\b(email|send|post|message|slack|telegram|notify|reply)\b/i,
+  automate: /\b(automate|schedule|routine|workflow|every day|monitor|cron)\b/i,
+  creative: /\b(image|generate|art|video|audio|music|design|render|forge)\b/i,
 });
 
 export function capabilityForTask(task) {
