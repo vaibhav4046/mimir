@@ -211,7 +211,7 @@ const server = http.createServer(async (req, res) => {
       if (req.method === 'POST' && url.pathname === '/api/feedback') {
         if (feedbackLimited(ip)) return json(res, 429, { error: 'That is a lot of lessons at once. Try again in a minute.' });
         const { text, used } = bodyOf(await readBody(req));
-        const t = clean(text).split(/s+/).filter(w => !STOPWORDS.has(w.toLowerCase())).join(' ');
+        const t = clean(text).split(/\s+/).filter(w => !STOPWORDS.has(w.toLowerCase())).join(' ');
         const ids = (Array.isArray(used) ? used : []).filter(u => toolMeta.has(u)).slice(0, 6);
         if (t.length < 3 || !ids.length) return json(res, 400, { error: 'Pick at least one tool that the task really needed.' });
         const before = await state.graph.retrieve(t);
