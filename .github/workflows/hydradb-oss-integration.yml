@@ -60,7 +60,11 @@ jobs:
           curl --fail --silent http://127.0.0.1:8443/v1/graphs/default/query -H 'Authorization: Bearer local-development-token-32-bytes' -H 'Content-Type: application/json' -H 'X-Graph-Namespace: default' -d '{"cell_id":"cell-0","query":"MERGE (a {id: 90000001})-[:PROVES]->(b {id: 90000002})"}' >/tmp/hydra-write.json
           curl --fail --silent http://127.0.0.1:8443/v1/graphs/default/query -H 'Authorization: Bearer local-development-token-32-bytes' -H 'Content-Type: application/json' -H 'X-Graph-Namespace: default' -d '{"cell_id":"cell-0","query":"MATCH (a {id: 90000001})-[:PROVES]->(b) RETURN b.id AS id"}' >/tmp/hydra-read.json
           cat /tmp/hydra-read.json
+          cd "$GITHUB_WORKSPACE"
+          node -e "const r=require('/tmp/hydra-read.json'); if(r.rows?.[0]?.[0]?.value !== 90000002) process.exit(1)"
           node scripts/hydradb-benchmark.mjs
+          mkdir -p artifacts/hydradb
+          cp /tmp/hydra-write.json /tmp/hydra-read.json /tmp/hydradb.log artifacts/hydradb/
       - name: Preserve evidence from real server
         if: always()
         uses: actions/upload-artifact@v4
