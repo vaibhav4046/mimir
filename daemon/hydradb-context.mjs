@@ -148,7 +148,7 @@ export class HydraContextRouter {
    * Only callers with trusted evaluation/receipt evidence should teach.
    */
   async teach({ scope = 'default', capability, toolName, relevant }) {
-    if (!Object.hasOwn(RULES, capability) || !toolName || !/^[\\w.-]{1,160}$/.test(toolName)) {
+    if (!Object.hasOwn(RULES, capability) || !toolName || !/^[\w.-]{1,160}$/.test(toolName)) {
       throw new Error('Invalid graph feedback');
     }
     const params = {
