@@ -142,6 +142,32 @@ export class HydraContextRouter {
     this.seeded.add(signature);
   }
 
+  /**
+   * Persist corrective evidence as graph edges. A later seed does not erase
+   * suppression edges, unlike deleting a ROUTES_TO edge on every restart.
+   * Only callers with trusted evaluation/receipt evidence should teach.
+   */
+  async teach({ scope = 'default', capability, toolName, relevant }) {
+    if (!Object.hasOwn(RULES, capability) || !toolName || !/^[\\w.-]{1,160}$/.test(toolName)) {
+      throw new Error('Invalid graph feedback');
+    }
+    const params = {
+      src: stableId(scope, 'capability', capability),
+      dst: stableId(scope, 'tool', toolName),
+    };
+    if (relevant) {
+      await this.query(
+        'MATCH (a {id: $src})-[r:SUPPRESSES]->(b {id: $dst}) DELETE r',
+        params,
+      );
+    } else {
+      await this.query(
+        'MERGE (a:Capability {id: $src})-[:SUPPRESSES]->(b:Tool {id: $dst})',
+        params,
+      );
+    }
+  }
+
   async route(task, availableTools, { scope = 'default' } = {}) {
     const start = performance.now();
     const schemas = uniqueSchemas(availableTools);
@@ -153,11 +179,19 @@ export class HydraContextRouter {
     await this.seed(schemas, scope);
     const returned = new Set();
     for (const intent of intents) {
+      const id = stableId(scope, 'capability', intent);
       const rows = await this.query(
         'MATCH (c {id: $id})-[:ROUTES_TO]->(t) RETURN t.name AS name LIMIT 512',
-        { id: stableId(scope, 'capability', intent) },
+        { id },
       );
-      for (const row of rows) if (row.name) returned.add(row.name);
+      const suppressed = await this.query(
+        'MATCH (c {id: $id})-[:SUPPRESSES]->(t) RETURN t.name AS name LIMIT 512',
+        { id },
+      );
+      const blockedNames = new Set(suppressed.map(row => row.name));
+      for (const row of rows) {
+        if (row.name && !blockedNames.has(row.name)) returned.add(row.name);
+      }
     }
 
     // Security invariant: an untrusted graph answer cannot add new privileges.
