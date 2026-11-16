@@ -1,0 +1,80 @@
+name: HydraDB OSS end-to-end proof
+on:
+  push:
+    branches:
+      - feat/hydradb-agent-context-hackathon
+    paths:
+      - '.github/workflows/hydradb-oss-integration.yml'
+      - 'daemon/hydradb-context.mjs'
+      - 'scripts/hydradb-benchmark.mjs'
+      - 'scripts/hydradb-learning-curve.mjs'
+  workflow_dispatch: {}
+jobs:
+  self-hosted-hydradb-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      RUST_MIN_STACK: '33554432'
+      CARGO_BUILD_JOBS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native HydraDB prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends build-essential clang libclang-dev cmake pkg-config libcypher-parser-dev libgraphblas-dev
+          rustup toolchain install stable --profile minimal
+      - name: Clone and compile the open-source engine
+        run: |
+          git clone --depth 1 https://github.com/hydra-db/hydradb.git /tmp/hydradb
+          cd /tmp/hydradb
+          bash scripts/install_lagraph.sh /tmp/hydradb/.hydradb/lagraph
+          LAGRAPH_LIB_DIR=/tmp/hydradb/.hydradb/lagraph/lib cargo +stable build --locked --features server-runtime --bin graph-node
+      - name: Start real local HydraDB instance
+        run: |
+          cd /tmp/hydradb
+          mkdir -p .hydradb/store .hydradb/cache
+          printf '%s\n' 'local-development-token-32-bytes' > .hydradb/auth-token
+          echo "CLOUD_PROVIDER=local" >> "$GITHUB_ENV"
+          echo "LOCAL_PATH=/tmp/hydradb/.hydradb/store" >> "$GITHUB_ENV"
+          echo "GRAPH_NAMESPACE=default" >> "$GITHUB_ENV"
+          echo "GRAPH_ID=default" >> "$GITHUB_ENV"
+          echo "GRAPH_CELL_ID=cell-0" >> "$GITHUB_ENV"
+          echo "GRAPH_CELLS=cell-0" >> "$GITHUB_ENV"
+          echo "GRAPH_NODE_ID=node-0" >> "$GITHUB_ENV"
+          echo "GRAPH_BOLT_NODE_ADDRESSES=node-0=127.0.0.1:7687" >> "$GITHUB_ENV"
+          echo "GRAPH_ADVERTISED_BOLT_ADDR=127.0.0.1:7687" >> "$GITHUB_ENV"
+          echo "GRAPH_DATA_CACHE_DIR=/tmp/hydradb/.hydradb/cache" >> "$GITHUB_ENV"
+          echo "GRAPH_AUTH_TOKEN_FILE=/tmp/hydradb/.hydradb/auth-token" >> "$GITHUB_ENV"
+          echo "GRAPH_ALLOW_PLAINTEXT=true" >> "$GITHUB_ENV"
+      - name: Authenticated round trip and real benchmark
+        env:
+          MIMIR_HYDRADB_URL: http://127.0.0.1:8443
+          MIMIR_HYDRADB_TOKEN: local-development-token-32-bytes
+        run: |
+          cd /tmp/hydradb
+          env CLOUD_PROVIDER=local LOCAL_PATH="$PWD/.hydradb/store" GRAPH_NAMESPACE=default GRAPH_ID=default GRAPH_CELL_ID=cell-0 GRAPH_CELLS=cell-0 GRAPH_NODE_ID=node-0 GRAPH_BOLT_NODE_ADDRESSES=node-0=127.0.0.1:7687 GRAPH_ADVERTISED_BOLT_ADDR=127.0.0.1:7687 GRAPH_DATA_CACHE_DIR="$PWD/.hydradb/cache" GRAPH_AUTH_TOKEN_FILE="$PWD/.hydradb/auth-token" GRAPH_ALLOW_PLAINTEXT=true RUST_MIN_STACK=33554432 nohup target/debug/graph-node >/tmp/hydradb.log 2>&1 &
+          for i in $(seq 1 80); do
+            if curl --fail --silent http://127.0.0.1:8443/healthz >/dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:8443/healthz
+          curl --fail --silent http://127.0.0.1:8443/v1/graphs/default/query -H 'Authorization: Bearer local-development-token-32-bytes' -H 'Content-Type: application/json' -H 'X-Graph-Namespace: default' -d '{"cell_id":"cell-0","query":"MERGE (a {id: 90000001})-[:PROVES]->(b {id: 90000002})"}' >/tmp/hydra-write.json
+          curl --fail --silent http://127.0.0.1:8443/v1/graphs/default/query -H 'Authorization: Bearer local-development-token-32-bytes' -H 'Content-Type: application/json' -H 'X-Graph-Namespace: default' -d '{"cell_id":"cell-0","query":"MATCH (a {id: 90000001})-[:PROVES]->(b) RETURN b.id AS id"}' >/tmp/hydra-read.json
+          cat /tmp/hydra-read.json
+          cd "$GITHUB_WORKSPACE"
+          node -e "const r=require('/tmp/hydra-read.json'); if(r.rows?.[0]?.[0]?.value !== 90000002) process.exit(1)"
+          node scripts/hydradb-benchmark.mjs
+          node scripts/hydradb-learning-curve.mjs
+          mkdir -p artifacts/hydradb
+          cp /tmp/hydra-write.json /tmp/hydra-read.json /tmp/hydradb.log artifacts/hydradb/
+      - name: Preserve evidence from real server
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mimir-hydradb-oss-evidence
+          path: |
+            artifacts/hydradb/*.json
+            /tmp/hydra-write.json
+            /tmp/hydra-read.json
+            /tmp/hydradb.log
+          if-no-files-found: warn

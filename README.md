@@ -1,5 +1,33 @@
 # Mimir
 
+> **HydraDB Hackathon · Track 2: Agent Context Layer (Nov 16, 2026)**
+>
+> Mimir's optional `HydraContextRouter` integrates with the **self-hosted
+> [HydraDB open-source engine](https://github.com/hydra-db/hydradb)** to
+> graph-select relevant tool/MCP definitions before agent model calls.
+> `Capability`→`Tool` traversal and verified-feedback `SUPPRESSES` edges
+> shrink tool context without granting new permissions. Requires a running
+> OSS server and `MIMIR_HYDRA_CONTEXT=1`.
+>
+> [Hackathon runbook](docs/HYDRADB_HACKATHON_2026.md) ·
+> [Autonomous Mimir execution order](docs/MIMIR_HYDRA_EXECUTION_ORDER.md) ·
+> [Benchmark source](scripts/hydradb-benchmark.mjs) ·
+> [Test suite](tests/hydradb-context.test.mjs) ·
+> [OSS graph CI workflow](.github/workflows/hydradb-oss-integration.yml)
+>
+> **Verified OSS run (2026-11-16 01:11 GMT):**
+> [GitHub Actions end-to-end proof](https://github.com/vaibhav4046/mimir/actions/runs/43784241107)
+> compiled the upstream engine with native LAGraph, passed authenticated
+> write/traverse, and exercised the Mimir routing benchmark against the real
+> running server. Across **10 synthetic, labelled routing tasks** it measured
+> **81.55% fewer tool-schema JSON bytes**, **100% relevant-tool recall**,
+> **54.55% precision**, and **27.12 ms p95 latency** on warm round 3.
+> These are **tool-selection metrics, NOT end-to-end agent answer accuracy,
+> measured LLM token savings, production reliability or real-user demand**.
+> The Vercel landing site is not a public HydraDB-backed agent demo.
+> A separate held-out feedback-curve experiment is undergoing validation.
+
+
 **A local-first desktop AI workspace for multi-agent work, live browser control, code/document authoring, and gated execution.**
 
 Mimir runs locally on your machine with [Ollama](https://ollama.com) (plus optional OpenAI-compatible or OpenRouter endpoints). Assistants collaborate in threads and Spaces, inspect and edit files in an interactive Canvas, drive an observable browser window, search local and live sources, generate multi-format deliverables, and pause for human approval before taking external or irreversible actions.

@@ -1,0 +1,23 @@
+name: Mimir regression gate for HydraDB branch
+on:
+  push:
+    branches:
+      - feat/hydradb-agent-context-hackathon
+    paths:
+      - '.github/workflows/hydradb-mimir-regression.yml'
+      - 'daemon/agent-runner.mjs'
+      - 'daemon/hydradb-context.mjs'
+  workflow_dispatch: {}
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
