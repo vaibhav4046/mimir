@@ -109,7 +109,7 @@ test('feedback persists graph suppression without removing available permissions
   assert.ok(before.tools.some(t => t.function.name === 'browser_search'));
   await router.teach({ scope: 'feedback-a', capability: 'research', toolName: 'browser_search', relevant: false });
   const after = await router.route('research web sources', tools, { scope: 'feedback-a' });
-  assert.ok(!after.tools.some(t => t.function.name === 'browser_search'));
+  assert.ok(!after.tools.some(t => t.function.name === 'browser_search'), JSON.stringify({ trace: after.trace, selected: after.tools.map(t => t.function.name), calls: graph.calls.slice(-5) }));
   assert.ok(after.tools.some(t => t.function.name === 'knowledge_search'));
   await router.teach({ scope: 'feedback-a', capability: 'research', toolName: 'browser_search', relevant: true });
   const restored = await router.route('research web sources', tools, { scope: 'feedback-a' });
