@@ -40,6 +40,60 @@ function PreflightCard() {
   );
 }
 
+
+/** Optional HydraDB-backed tool memory: the agent is offered only the tools a graph pulls for the request. */
+function ContextGraphCard({ settings, onSaved }) {
+  const cg = settings?.contextGraph || { enabled: false, url: 'http://127.0.0.1:18443' };
+  const [status, setStatus] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const refresh = async () => {
+    try {
+      setStatus(await apiFetch('/v1/context-graph/status'));
+    } catch {
+      setStatus(null);
+    }
+  };
+  useEffect(() => {
+    refresh();
+    const t = setInterval(refresh, 3000);
+    return () => clearInterval(t);
+  }, []);
+  const toggle = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const saved = await apiFetch('/v1/settings', { method: 'PATCH', body: JSON.stringify({ contextGraph: { ...cg, enabled: !cg.enabled } }) });
+      onSaved?.(saved);
+      await refresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const pull = status?.lastPull;
+  return (
+    <div className="card" data-testid="context-graph-card">
+      <h3 className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <span>Tool memory (HydraDB)</span>
+        <button type="button" className="btn btn-sm" data-testid="context-graph-toggle" disabled={busy} onClick={toggle}>{cg.enabled ? 'Turn off' : 'Turn on'}</button>
+      </h3>
+      <div style={{ fontSize: 12.5, color: 'var(--ink-muted)' }}>
+        Instead of showing the model every tool on every request, Mimir keeps a graph of what each tool does in a HydraDB node on this PC, offers only the few a request needs, and learns from the tools that really worked. If HydraDB is unreachable or unsure, Mimir offers every tool as usual.
+      </div>
+      {error && <div role="alert">Could not change it: {error}</div>}
+      <div data-testid="context-graph-status" style={{ fontSize: 12.5, marginTop: 6 }}>
+        <strong>{cg.enabled ? (status?.connected ? 'On, connected to HydraDB' : status?.failures ? 'On, waiting for HydraDB (using every tool meanwhile)' : 'On, connects on the next request') : 'Off'}</strong>
+        {pull && !pull.error && pull.pulled != null && (
+          <span> · last request: offered {pull.pulled} of {pull.of} tools in {Math.round(pull.ms)} ms{pull.tools?.length ? ' (' + pull.tools.join(', ') + ')' : ''}{pull.learnedFrom?.length ? ' · learned from ' + pull.learnedFrom.join(', ') : ''}</span>
+        )}
+        {pull?.error && <span> · last error: {pull.error}</span>}
+      </div>
+    </div>
+  );
+}
+
 export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) {
   const [form, setForm] = useState(settings);
   const [saving, setSaving] = useState(false);
@@ -123,7 +177,8 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
     try {
       const updated = await apiFetch('/v1/settings', {
         method: 'PATCH',
-        body: JSON.stringify(form),
+        // The tool-memory card owns contextGraph; a stale copy here would undo its toggle.
+        body: JSON.stringify((({ contextGraph, ...rest }) => rest)(form)),
       });
       onSaved(updated);
       await onProbeModels();
@@ -151,6 +206,7 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
         <ModelSetupWizard settings={settings} onApplied={async updated => { onSaved(updated); await onProbeModels(); }} />
 
         <PreflightCard />
+        <ContextGraphCard settings={settings} onSaved={onSaved} />
 
         <form className="card" onSubmit={handleSave}>
           <h3 className="card-title">AI model</h3>

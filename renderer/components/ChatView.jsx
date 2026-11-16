@@ -1,3 +1,4 @@
+import { ContextGraphChip } from './ContextGraphChip.jsx';
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { apiFetch, encodeFilesForStaging, fetchArtifactBlob, isFileDragEvent } from '../api.js';
 import { BotAvatar } from './BotAvatar.jsx';
@@ -1323,6 +1324,7 @@ export function ChatView({
         </div>
         <div className="chat-session-meta">
           <span className="chat-mode-hint">{activeModeMeta.hint}</span>
+          <ContextGraphChip />
           {teamBots.length > 1 && onSwitchThreadBot && (
             <select
               className="select"

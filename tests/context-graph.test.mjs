@@ -83,3 +83,30 @@ test('entities the agent learned steer tools to the right system', async () => {
   assert.ok(second.tools[0].why.some(w => w.kind === 'entity'), 'explained by the entity link');
   assert.ok(second.trace.some(e => e.rel === 'RESOLVES_TO'), 'trace shows the link');
 });
+
+test('after giving up it tries again once a minute has passed, so a HydraDB restart heals it', async () => {
+  const flaky = new MemoryStore();
+  const realOut = flaky.outMany.bind(flaky);
+  let down = true;
+  flaky.outMany = async (...a) => {
+    if (down) throw new Error('HydraDB down');
+    return realOut(...a);
+  };
+  const cg = make(flaky);
+  for (let i = 0; i < 3; i++) await cg.select('send an email to the team', schemas);
+  assert.equal(cg.enabled, false);
+  down = false;
+  assert.equal(cg.enabled, false, 'still cooling down');
+  cg.lastFailureAt = Date.now() - 61_000;
+  assert.equal(cg.enabled, true, 'cooldown over');
+  const pulled = await cg.select('Send an email to my supplier asking for a quote', schemas);
+  assert.ok(pulled && pulled.length >= 1, 'works again after HydraDB came back');
+  assert.equal(cg.status().failures, 0);
+});
+
+test('the HydraDB token is never an empty string (that made every call unauthenticated)', async () => {
+  const { HydraStore } = await import('../contextgraph/src/store-hydradb.mjs');
+  assert.ok(new HydraStore({ token: undefined }).token.length >= 32);
+  const src = (await import('node:fs')).readFileSync(new URL('../daemon/context-graph.mjs', import.meta.url), 'utf8');
+  assert.doesNotMatch(src, /MIMIR_CONTEXT_GRAPH_TOKEN \|\| ''/);
+});

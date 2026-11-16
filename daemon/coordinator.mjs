@@ -901,6 +901,18 @@ export async function startCoordinator(options = {}) {
         if (body.responseMode !== undefined && !RESPONSE_MODES.includes(body.responseMode)) {
           return json(res, 400, { error: `responseMode must be one of ${RESPONSE_MODES.join(', ')}` });
         }
+        if (body.contextGraph !== undefined) {
+          const cg = body.contextGraph;
+          if (!cg || typeof cg !== 'object' || Array.isArray(cg)) return json(res, 400, { error: 'contextGraph must be an object' });
+          if (typeof cg.url === 'string' && cg.url.trim()) {
+            await assertSafeUrl(cg.url.trim(), { allowLoopback: true });
+            // The graph holds a bearer token and your tool list: keep it on this machine.
+            const host = new URL(cg.url.trim()).hostname.replace(/^[|]$/g, '');
+            if (!['127.0.0.1', 'localhost', '::1'].includes(host)) return json(res, 400, { error: 'contextGraph.url must point at a HydraDB on this computer (127.0.0.1 or localhost)' });
+          }
+          body.contextGraph = { enabled: Boolean(cg.enabled), url: (cg.url || 'http://127.0.0.1:18443').trim(), k: Math.min(12, Math.max(1, Number(cg.k) || 6)) };
+          runner.contextGraph = new AgentContextGraph({ getSettings: () => store.getSettings() });
+        }
         // Fast mode needs to know the smallest installed model.
         if (body.responseMode === 'fast' && !store.getSettings().autoTierModels?.fast_local) await modelLibrary.refreshTiers();
         const updated = store.updateSettings(body);
