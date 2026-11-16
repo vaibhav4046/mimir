@@ -31,6 +31,6 @@ I build Mimir, a local-first agent workspace, so I felt this directly. In Contex
 
 Live demo: https://tooth-refrigerator-achieve-trim.trycloudflare.com
 Code and benchmark: https://github.com/vaibhav4046/mimir/tree/main/contextgraph
-Walkthrough video: (video link added at submission)
+Walkthrough video: https://www.loom.com/share/2528c92e151447ffb309f0b16df119de
 
 @hydra_db

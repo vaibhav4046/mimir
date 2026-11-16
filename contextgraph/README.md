@@ -5,7 +5,7 @@ Context Graph keeps an agent's tools, skills and the things it has already resol
 For each task the agent walks the graph and pulls only the few tools the task needs, and it adjusts its links when it is told what worked.
 
 - **Live demo:** https://tooth-refrigerator-achieve-trim.trycloudflare.com
-- **Video walkthrough:** (video link added at submission)
+- **Video walkthrough:** https://www.loom.com/share/2528c92e151447ffb309f0b16df119de
 - **Track:** 2, the agent context layer (with Track 1's continual-learning mechanics: edge reweighting, gap-driven ingestion, path shortcuts)
 - **Built on:** HydraDB v0.4.0, built from source and run by us (not the hosted platform). The benchmark, the scale test and the local-model test ran against a running HydraDB node; the two comparison tests (a keyword index that learns, and jobs it has never seen) run in process, and the in-process store matches HydraDB exactly in the parity test.
 - **Wired into a real agent:** [Mimir](https://github.com/vaibhav4046/mimir)'s agent loop can use it (`daemon/context-graph.mjs`). It is opt-in, off by default, and fails open.

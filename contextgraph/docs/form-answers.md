@@ -4,7 +4,7 @@ Track: 2, Agent context layer (with Track 1 mechanics: edge reweighting, gap-dri
 Project name: Context Graph
 Live app: https://tooth-refrigerator-achieve-trim.trycloudflare.com
 Repo: https://github.com/vaibhav4046/mimir/tree/main/contextgraph
-Loom / video: (video link added at submission)
+Loom / video: https://www.loom.com/share/2528c92e151447ffb309f0b16df119de
 
 One-line pitch: Small local models run out of context just reading the tool list (264 tools is 15,522 tokens). Context Graph keeps tools and skills in HydraDB and pulls about 6 per task, cutting the prompt to 543 tokens and the time per call by about half.
 
