@@ -177,9 +177,11 @@ export class ContextGraph {
     const rows = [];
     const edges = [];
     for (const w of words) {
+      const tid = nodeId('Term', w);
+      this.termName.set(tid, w);
       this.df.set(w, (this.df.get(w) || 0) + 1);
-      rows.push({ id: nodeId('Term', w), label: 'Term', props: { name: w, df: this.df.get(w) } });
-      edges.push({ src: nodeId('Term', w), dst: id, w: 0.5 });
+      rows.push({ id: tid, label: 'Term', props: { name: w, df: this.df.get(w) } });
+      edges.push({ src: tid, dst: id, w: 0.5 });
     }
     await this.store.upsertNodes(rows);
     await this.store.upsertEdges('MENTIONS', edges);

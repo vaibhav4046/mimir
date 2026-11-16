@@ -26,17 +26,22 @@ export class AgentContextGraph {
     this.initPromise = null;
     this.lastPull = null;
     this.failures = 0;
+    this.lastFailureAt = 0;
   }
 
   get enabled() {
-    return Boolean(this.getSettings?.()?.contextGraph?.enabled) && this.failures < 3;
+    if (!this.getSettings?.()?.contextGraph?.enabled) return false;
+    if (this.failures < 3) return true;
+    // Circuit breaker: after 3 failures stay off for a minute, then try again (HydraDB may be back).
+    if (Date.now() - this.lastFailureAt > 60_000) { this.failures = 0; return true; }
+    return false;
   }
 
   async #init() {
     if (this.graph) return this.graph;
     this.initPromise ||= (async () => {
       const cfg = this.getSettings().contextGraph || {};
-      const store = this.injectedStore || new HydraStore({ url: cfg.url || 'http://127.0.0.1:18443', token: process.env.MIMIR_CONTEXT_GRAPH_TOKEN || '' });
+      const store = this.injectedStore || new HydraStore({ url: cfg.url || 'http://127.0.0.1:18443', token: process.env.MIMIR_CONTEXT_GRAPH_TOKEN || cfg.token || undefined });
       await store.init();
       setNamespace(this.namespace);
       const g = new ContextGraph(store, { k: cfg.k || 6 });
@@ -71,6 +76,7 @@ export class AgentContextGraph {
       return subset.length ? subset : null;
     } catch (err) {
       this.failures += 1;
+      this.lastFailureAt = Date.now();
       this.lastPull = { error: err.message, at: new Date().toISOString() };
       return null;
     }
@@ -87,6 +93,7 @@ export class AgentContextGraph {
       this.lastPull = { ...(this.lastPull || {}), learnedFrom: used };
     } catch (err) {
       this.failures += 1;
+      this.lastFailureAt = Date.now();
       this.lastPull = { error: err.message, at: new Date().toISOString() };
     }
   }
