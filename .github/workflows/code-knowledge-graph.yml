@@ -40,3 +40,9 @@ jobs:
           node -e "const g=require('./.ua/mimir-code-graph.json'); if(!g.nodes.length || !g.edges.length) process.exit(1); const ids=new Set(g.nodes.map(n=>n.id)); if(!g.edges.every(e=>ids.has(e.from)&&ids.has(e.to))) process.exit(2); console.log({nodes:g.nodes.length,edges:g.edges.length})"
       - name: Build renderer
         run: npm run build
+      - name: Publish graph JSON for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: mimir-code-knowledge-graph
+          path: .ua/mimir-code-graph.json
+          retention-days: 14
