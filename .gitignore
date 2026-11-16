@@ -21,3 +21,7 @@ __pycache__/
 android/local.properties
 rust/.cargo/config.toml
 
+
+# Local-only knowledge graph artifacts (may reveal private project structure)
+/.ua/
+/.understand-anything/
