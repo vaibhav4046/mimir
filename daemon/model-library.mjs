@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import os from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { isEmbeddingModel } from './embedding-models.mjs';
 
 const execFileAsync = promisify(execFile);
 
@@ -99,7 +100,7 @@ export function recommendModel(hw, catalog = MODEL_CATALOG) {
 export function pickTiers(installed, hw) {
   const rated = installed
     .map(m => ({ name: m.name, sizeGb: m.sizeGb, ...rateFit(m, hw) }))
-    .filter(m => m.rating !== 'too-big' && !/embed/i.test(m.name))
+    .filter(m => m.rating !== 'too-big' && !isEmbeddingModel(m.name))
     .sort((a, b) => a.sizeGb - b.sizeGb);
   if (!rated.length) return {};
   const good = rated.filter(m => usable(m.rating));
@@ -165,7 +166,7 @@ export class ModelLibrary {
     const tiers = pickTiers(ollama.models, hardware);
     const patch = { autoTierModels: tiers };
     const current = this.getSettings().ollamaModel;
-    if (tiers.balanced_local && !ollama.models.some(m => m.name === current)) patch.ollamaModel = tiers.balanced_local;
+    if (tiers.balanced_local && (!ollama.models.some(m => m.name === current) || isEmbeddingModel(current))) patch.ollamaModel = tiers.balanced_local;
     this.updateSettings(patch);
     return tiers;
   }

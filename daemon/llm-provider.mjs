@@ -65,6 +65,7 @@ function normalizeUrl(base) {
   return String(base || '').replace(/\/+$/, '');
 }
 
+import { chatModelsOnly, isEmbeddingModel } from './embedding-models.mjs';
 export function isLoopbackUrl(url) {
   try {
     const host = new URL(url).hostname.replace(/^\[|\]$/g, '');
@@ -159,7 +160,7 @@ export async function probeModels(settings) {
         const data = await res.json();
         result.ollama = {
           ok: true,
-          models: (data.models || []).map(m => m.name || m.model).filter(Boolean),
+          models: chatModelsOnly((data.models || []).map(m => m.name || m.model).filter(Boolean)),
           error: null,
         };
       } else {
@@ -485,6 +486,13 @@ async function withTransientRetry(fn, signal) {
   throw lastErr;
 }
 
+// An embedding-only model (all-minilm, nomic-embed-text, ...) cannot chat. If one was saved as the model, or set on a
+// teammate, use the best installed chat model instead of failing with an Ollama 400.
+function chatModelFor(model, settings) {
+  if (!isEmbeddingModel(model)) return model;
+  return settings.autoTierModels?.balanced_local || settings.autoTierModels?.fast_local || 'qwen3:1.7b';
+}
+
 export async function runChatTurn({ settings, modelOverride, messages, tools, onToken, onThinking, signal }) {
   const primary = settings.provider === 'openai-compat' ? 'openai-compat' : 'ollama';
   // Every model call passes through here, including fallback, so this is the one place
@@ -498,7 +506,7 @@ export async function runChatTurn({ settings, modelOverride, messages, tools, on
     if (target === 'ollama') {
       return withTransientRetry(() => callOllama({
         baseUrl: settings.ollamaUrl,
-        model: (mode === 'fast' && settings.autoTierModels?.fast_local) || modelOverride || settings.ollamaModel || 'qwen3:1.7b',
+        model: chatModelFor((mode === 'fast' && settings.autoTierModels?.fast_local) || modelOverride || settings.ollamaModel || 'qwen3:1.7b', settings),
         think: mode ? mode === 'reasoning' : settings.ollamaThink,
         numCtx: resolveNumCtx({ ...settings, provider: 'ollama' }),
         messages,

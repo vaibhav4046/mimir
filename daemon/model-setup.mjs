@@ -1,4 +1,5 @@
 import { runChatTurn, isLoopbackUrl } from './llm-provider.mjs';
+import { chatModelsOnly } from './embedding-models.mjs';
 
 export { isLoopbackUrl };
 
@@ -42,7 +43,7 @@ async function listModels({ kind, baseUrl, apiKey }) {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   return kind === 'ollama'
-    ? (data.models || []).map(m => m.name || m.model).filter(Boolean)
+    ? chatModelsOnly((data.models || []).map(m => m.name || m.model).filter(Boolean))
     : (data.data || []).map(m => m.id).filter(Boolean);
 }
 

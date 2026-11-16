@@ -1,5 +1,6 @@
 // HydraDB store: the graph lives in a running HydraDB node (github.com/hydra-db/hydradb) and every
-// read and write goes through its HTTP query API as OpenCypher. Nothing is cached client-side.
+// read and write goes through its HTTP query API as OpenCypher. The app keeps small lookup tables (names, document
+// frequencies) in memory; the graph itself, with every edge weight, lives in HydraDB.
 //
 // HydraDB's dialect is narrow (see USING-HYDRADB.md). The shapes used here, all verified live:
 //   nodes   UNWIND $rows AS row MERGE (n {id: row.id}) SET n:Label, n.name = row.name

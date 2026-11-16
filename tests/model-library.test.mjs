@@ -186,3 +186,13 @@ test('library API: overview, one-click install with progress, tiers updated, sig
   assert.equal(pub.hasOpenaiApiKey, true);
   assert.ok(!fs.readFileSync(path.join(dir, 'store.json'), 'utf8').includes('sk-or-v1-test-key'), 'key is in the vault, not in settings');
 });
+
+test('embedding-only models are never offered or chosen as a chat model', async () => {
+  const { isEmbeddingModel, chatModelsOnly } = await import('../daemon/embedding-models.mjs');
+  for (const name of ['all-minilm:latest', 'nomic-embed-text:latest', 'mxbai-embed-large', 'bge-m3:latest', 'snowflake-arctic-embed:335m', 'paraphrase-multilingual:latest']) assert.equal(isEmbeddingModel(name), true, name);
+  for (const name of ['qwen3.5:4b', 'qwen3:1.7b', 'llama3.2:3b', 'gemma3:4b', 'mistral:7b', 'phi4-mini', 'deepseek-r1:8b']) assert.equal(isEmbeddingModel(name), false, name);
+  assert.deepEqual(chatModelsOnly(['all-minilm:latest', 'qwen3.5:4b']), ['qwen3.5:4b']);
+  const installed = [{ name: 'all-minilm:latest', sizeGb: 0.05 }, { name: 'qwen3:1.7b', sizeGb: 1.4 }, { name: 'qwen3.5:4b', sizeGb: 3.4 }];
+  const tiers = pickTiers(installed, hw(15.7, nvidia(6)));
+  for (const name of Object.values(tiers)) assert.notEqual(name, 'all-minilm:latest');
+});

@@ -19,7 +19,8 @@ export const DEFAULTS = {
   k: 6, // most tools returned
   minTools: 3,
   relCutoff: 0.3, // keep tools scoring at least this fraction of the best
-  minScore: 0.05, // below this the graph is unsure and the caller should fall back
+  minScore: 0.05, // below this no word pointed at a tool: `confident` is false and the caller should fall back
+  strongScore: 1, // top score at or above this is `strong`; held-out, 84% of tasks reach it and 72% of those are complete (the rest: 67.5%)
   skillBoost: 0.9, // how much of a skill's score flows to the tools it requires
   entityBoost: 2, // multiplier slope for tools on a system the entity lives in
   coUseBoost: 0, // tools used together no longer boost each other: it hurt jobs the graph had not seen (see bench/unseen-jobs.mjs)
@@ -114,11 +115,19 @@ export class ContextGraph {
    * `serverOf(toolName)` says which system a tool belongs to.
    */
   async restore(serverOf = n => n.split('__')[0]) {
-    const [tools, terms, entities] = await Promise.all([
+    const [allTools, allSkills, allTerms, allEntities] = await Promise.all([
       this.store.nodesByLabel('Tool', ['name']),
+      this.store.nodesByLabel('Skill', ['name']),
       this.store.nodesByLabel('Term', ['name', 'df']),
       this.store.nodesByLabel('Entity', ['name']),
     ]);
+    // The store can hold other graphs too. Node ids are salted with the namespace, so keep only this graph's.
+    const mine = label => n => n.id === nodeId(label, n.name);
+    const tools = allTools.filter(mine('Tool'));
+    const terms = allTerms.filter(mine('Term'));
+    const entities = allEntities.filter(mine('Entity'));
+    for (const k of allSkills.filter(mine('Skill'))) this.skills.set(k.id, { name: k.name });
+    this.hasSimilar = [...(await this.store.outMany('SIMILAR', terms.slice(0, 300).map(t => t.id))).values()].some(v => v.length);
     for (const t of tools) {
       this.tools.set(t.id, { name: t.name, server: serverOf(t.name) });
       this.serverOfTool.set(t.id, nodeId('Server', serverOf(t.name)));
@@ -133,7 +142,7 @@ export class ContextGraph {
       this.entityById.set(e.id, e.name);
     }
     this.docCount = Math.max(1, this.tools.size + this.skills.size);
-    return { tools: tools.length, terms: terms.length, entities: entities.length };
+    return { tools: tools.length, skills: this.skills.size, terms: terms.length, entities: entities.length, similar: this.hasSimilar };
   }
 
   /** Semantic bridge: Term -SIMILAR{w}-> Term, from embedding neighbours built offline by tools/build-similar.mjs. */
@@ -304,7 +313,7 @@ export class ContextGraph {
 
     // 4. tools used together before
     const anchors = [...toolScore.entries()].sort(this.byScore).slice(0, 3);
-    if (anchors.length) {
+    if (anchors.length && this.o.coUseBoost > 0) {
       const next = await this.store.outMany('NEXT', anchors.map(a => a[0]));
       for (const [aid, as] of anchors) for (const { dst, w } of next.get(aid) || []) {
         addTool(dst, this.o.coUseBoost * as * w, { kind: 'used-with', tool: this.tools.get(aid)?.name });
@@ -329,6 +338,7 @@ export class ContextGraph {
       words,
       entities: entityHits.map(e => e.name),
       confident: best >= this.o.minScore,
+      strong: best >= this.o.strongScore,
       requests: this.store.requests - req0,
       ms: +(performance.now() - t0).toFixed(2),
     };
@@ -395,7 +405,7 @@ export class ContextGraph {
 
     // tools used together
     const coWrites = [];
-    if (usedIds.length > 1) {
+    if (usedIds.length > 1 && o.coUseBoost > 0) {
       const next = await this.store.outMany('NEXT', usedIds);
       for (const a of usedIds) for (const b of usedIds) {
         if (a === b) continue;
@@ -407,7 +417,7 @@ export class ContextGraph {
     if (newTerms.length) await this.store.upsertNodes(newTerms);
     await this.store.applyEdgeWrites('MENTIONS', [...writes, ...newEdges]);
     await this.store.applyEdgeWrites('RESOLVES_TO', entityWrites);
-    await this.store.applyEdgeWrites('NEXT', coWrites);
+    if (coWrites.length) await this.store.applyEdgeWrites('NEXT', coWrites);
     return { reinforced: writes.filter(w => !w.remove && w.w !== undefined).length, created: newEdges.length, entityLinks: entityWrites.length, removed: writes.filter(w => w.remove).length };
   }
 }
