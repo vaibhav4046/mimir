@@ -1,0 +1,2051 @@
+{
+ "model": "qwen3:1.7b",
+ "sampleSize": 40,
+ "methods": {
+  "all tools preloaded": {
+   "firstCallHitPct": 42.5,
+   "toolOfferedPct": 100,
+   "avgToolsOffered": 264,
+   "avgPromptTokens": 15522,
+   "avgMs": 1061,
+   "rows": [
+    {
+     "id": "c00p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "github__create_issue",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15526,
+     "ms": 12446
+    },
+    {
+     "id": "c02p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "slack__post_message",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15526,
+     "ms": 818
+    },
+    {
+     "id": "c04p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "gmail__search_emails",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15522,
+     "ms": 555
+    },
+    {
+     "id": "c06p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "calendar__find_free_time",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15525,
+     "ms": 619
+    },
+    {
+     "id": "c08p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "notion__create_page",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15522,
+     "ms": 738
+    },
+    {
+     "id": "c10p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15520,
+     "ms": 1058
+    },
+    {
+     "id": "c12p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "github__list_issues",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15521,
+     "ms": 537
+    },
+    {
+     "id": "c14p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "browser_action",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15530,
+     "ms": 756
+    },
+    {
+     "id": "c16p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "github__create_issue",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15524,
+     "ms": 1006
+    },
+    {
+     "id": "c18p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "browser_screenshot",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15528,
+     "ms": 624
+    },
+    {
+     "id": "c20p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "weather__get_forecast",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15523,
+     "ms": 640
+    },
+    {
+     "id": "c22p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "fs_read",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15523,
+     "ms": 588
+    },
+    {
+     "id": "c24p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "zoom__create_meeting",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15522,
+     "ms": 504
+    },
+    {
+     "id": "c26p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "social__post_tweet",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15522,
+     "ms": 832
+    },
+    {
+     "id": "c28p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "vercel__deploy_project",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15522,
+     "ms": 478
+    },
+    {
+     "id": "c30p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "news__search_news",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15522,
+     "ms": 517
+    },
+    {
+     "id": "c32p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "memory_save",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15526,
+     "ms": 750
+    },
+    {
+     "id": "c34p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "bot_spawn",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15521,
+     "ms": 595
+    },
+    {
+     "id": "c36p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "browser_action",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15524,
+     "ms": 742
+    },
+    {
+     "id": "c38p2",
+     "kind": "D",
+     "tools": 264,
+     "firstCall": "support__list_support_tickets",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15520,
+     "ms": 500
+    },
+    {
+     "id": "c40p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": "browser_search",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15524,
+     "ms": 561
+    },
+    {
+     "id": "c42p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": "notion__search_pages",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15520,
+     "ms": 532
+    },
+    {
+     "id": "c44p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": "bot_spawn",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15526,
+     "ms": 574
+    },
+    {
+     "id": "c46p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": "accounting__list_invoices",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15524,
+     "ms": 514
+    },
+    {
+     "id": "c48p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": "hubspot__create_deal",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15522,
+     "ms": 944
+    },
+    {
+     "id": "c50p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": "knowledge_search",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15519,
+     "ms": 515
+    },
+    {
+     "id": "c52p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15521,
+     "ms": 1844
+    },
+    {
+     "id": "c54p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15521,
+     "ms": 4340
+    },
+    {
+     "id": "c56p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15520,
+     "ms": 818
+    },
+    {
+     "id": "c58p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": "pdf__pdf_extract_text",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15525,
+     "ms": 506
+    },
+    {
+     "id": "c60p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": "analytics__get_site_traffic",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15519,
+     "ms": 624
+    },
+    {
+     "id": "c62p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": "bot_spawn",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15519,
+     "ms": 621
+    },
+    {
+     "id": "c64p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": "fs_list",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15520,
+     "ms": 426
+    },
+    {
+     "id": "c66p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15521,
+     "ms": 584
+    },
+    {
+     "id": "c68p2",
+     "kind": "S",
+     "tools": 264,
+     "firstCall": "social__schedule_social_post",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15520,
+     "ms": 1081
+    },
+    {
+     "id": "c70p2",
+     "kind": "E",
+     "tools": 264,
+     "firstCall": "support__list_support_tickets",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15521,
+     "ms": 494
+    },
+    {
+     "id": "c72p2",
+     "kind": "E",
+     "tools": 264,
+     "firstCall": "accounting__list_invoices",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 15520,
+     "ms": 532
+    },
+    {
+     "id": "c74p2",
+     "kind": "E",
+     "tools": 264,
+     "firstCall": "docker__container_logs",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15521,
+     "ms": 506
+    },
+    {
+     "id": "c76p2",
+     "kind": "E",
+     "tools": 264,
+     "firstCall": "knowledge_search",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15522,
+     "ms": 540
+    },
+    {
+     "id": "c78p2",
+     "kind": "E",
+     "tools": 264,
+     "firstCall": "bot_spawn",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 15521,
+     "ms": 570
+    }
+   ]
+  },
+  "BM25 on tools": {
+   "firstCallHitPct": 30,
+   "toolOfferedPct": 45,
+   "avgToolsOffered": 4.5,
+   "avgPromptTokens": 383,
+   "avgMs": 664,
+   "rows": [
+    {
+     "id": "c00p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 454,
+     "ms": 8376
+    },
+    {
+     "id": "c02p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "slack__post_message",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 492,
+     "ms": 432
+    },
+    {
+     "id": "c04p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "gmail__search_emails",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 407,
+     "ms": 327
+    },
+    {
+     "id": "c06p2",
+     "kind": "D",
+     "tools": 2,
+     "firstCall": "calendar__find_free_time",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 256,
+     "ms": 373
+    },
+    {
+     "id": "c08p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "notion__create_page",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 462,
+     "ms": 481
+    },
+    {
+     "id": "c10p2",
+     "kind": "D",
+     "tools": 0,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 49,
+     "ms": 335
+    },
+    {
+     "id": "c12p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "shopify__list_orders",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 427,
+     "ms": 347
+    },
+    {
+     "id": "c14p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "slack__post_message",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 462,
+     "ms": 491
+    },
+    {
+     "id": "c16p2",
+     "kind": "D",
+     "tools": 4,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 318,
+     "ms": 508
+    },
+    {
+     "id": "c18p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "docker__container_logs",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 482,
+     "ms": 420
+    },
+    {
+     "id": "c20p2",
+     "kind": "D",
+     "tools": 1,
+     "firstCall": "weather__get_forecast",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 188,
+     "ms": 347
+    },
+    {
+     "id": "c22p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "pdf__pdf_extract_text",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 485,
+     "ms": 360
+    },
+    {
+     "id": "c24p2",
+     "kind": "D",
+     "tools": 5,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 384,
+     "ms": 439
+    },
+    {
+     "id": "c26p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "social__post_tweet",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 468,
+     "ms": 540
+    },
+    {
+     "id": "c28p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "github__push_files",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 470,
+     "ms": 509
+    },
+    {
+     "id": "c30p2",
+     "kind": "D",
+     "tools": 4,
+     "firstCall": "news__search_news",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 343,
+     "ms": 328
+    },
+    {
+     "id": "c32p2",
+     "kind": "D",
+     "tools": 4,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 370,
+     "ms": 247
+    },
+    {
+     "id": "c34p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "bot_spawn",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 591,
+     "ms": 849
+    },
+    {
+     "id": "c36p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 435,
+     "ms": 591
+    },
+    {
+     "id": "c38p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 566,
+     "ms": 486
+    },
+    {
+     "id": "c40p2",
+     "kind": "S",
+     "tools": 3,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 323,
+     "ms": 360
+    },
+    {
+     "id": "c42p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": "drive__create_document",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 440,
+     "ms": 464
+    },
+    {
+     "id": "c44p2",
+     "kind": "S",
+     "tools": 4,
+     "firstCall": "linear__list_teams",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 338,
+     "ms": 342
+    },
+    {
+     "id": "c46p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 519,
+     "ms": 682
+    },
+    {
+     "id": "c48p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 462,
+     "ms": 1511
+    },
+    {
+     "id": "c50p2",
+     "kind": "S",
+     "tools": 1,
+     "firstCall": "analytics__get_ad_spend",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 185,
+     "ms": 377
+    },
+    {
+     "id": "c52p2",
+     "kind": "S",
+     "tools": 1,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 188,
+     "ms": 394
+    },
+    {
+     "id": "c54p2",
+     "kind": "S",
+     "tools": 3,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 313,
+     "ms": 445
+    },
+    {
+     "id": "c56p2",
+     "kind": "S",
+     "tools": 1,
+     "firstCall": "notion__query_database",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 187,
+     "ms": 346
+    },
+    {
+     "id": "c58p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 430,
+     "ms": 671
+    },
+    {
+     "id": "c60p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 457,
+     "ms": 778
+    },
+    {
+     "id": "c62p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 476,
+     "ms": 481
+    },
+    {
+     "id": "c64p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": "fs_list",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 440,
+     "ms": 301
+    },
+    {
+     "id": "c66p2",
+     "kind": "S",
+     "tools": 2,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 243,
+     "ms": 404
+    },
+    {
+     "id": "c68p2",
+     "kind": "S",
+     "tools": 5,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 379,
+     "ms": 411
+    },
+    {
+     "id": "c70p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": "hr__list_open_roles",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 435,
+     "ms": 358
+    },
+    {
+     "id": "c72p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": "accounting__create_bill",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 518,
+     "ms": 489
+    },
+    {
+     "id": "c74p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": "docker__container_logs",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 520,
+     "ms": 433
+    },
+    {
+     "id": "c76p2",
+     "kind": "E",
+     "tools": 0,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 51,
+     "ms": 187
+    },
+    {
+     "id": "c78p2",
+     "kind": "E",
+     "tools": 3,
+     "firstCall": "vercel__deploy_project",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 292,
+     "ms": 330
+    }
+   ]
+  },
+  "BM25 on tools + skills": {
+   "firstCallHitPct": 32.5,
+   "toolOfferedPct": 65,
+   "avgToolsOffered": 5.5,
+   "avgPromptTokens": 464,
+   "avgMs": 492,
+   "rows": [
+    {
+     "id": "c00p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 454,
+     "ms": 291
+    },
+    {
+     "id": "c02p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "slack__post_message",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 492,
+     "ms": 434
+    },
+    {
+     "id": "c04p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "gmail__search_emails",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 407,
+     "ms": 277
+    },
+    {
+     "id": "c06p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 470,
+     "ms": 343
+    },
+    {
+     "id": "c08p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "notion__create_page",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 462,
+     "ms": 410
+    },
+    {
+     "id": "c10p2",
+     "kind": "D",
+     "tools": 0,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 49,
+     "ms": 350
+    },
+    {
+     "id": "c12p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "shopify__list_orders",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 447,
+     "ms": 303
+    },
+    {
+     "id": "c14p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "slack__post_message",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 474,
+     "ms": 479
+    },
+    {
+     "id": "c16p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 449,
+     "ms": 643
+    },
+    {
+     "id": "c18p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "docker__container_logs",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 482,
+     "ms": 435
+    },
+    {
+     "id": "c20p2",
+     "kind": "D",
+     "tools": 4,
+     "firstCall": "weather__get_forecast",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 355,
+     "ms": 388
+    },
+    {
+     "id": "c22p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "pdf__pdf_extract_text",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 587,
+     "ms": 399
+    },
+    {
+     "id": "c24p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "zoom__create_meeting",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 430,
+     "ms": 1846
+    },
+    {
+     "id": "c26p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "social__post_tweet",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 477,
+     "ms": 452
+    },
+    {
+     "id": "c28p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "github__push_files",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 470,
+     "ms": 451
+    },
+    {
+     "id": "c30p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "news__search_news",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 544,
+     "ms": 370
+    },
+    {
+     "id": "c32p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 474,
+     "ms": 290
+    },
+    {
+     "id": "c34p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "bot_spawn",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 744,
+     "ms": 552
+    },
+    {
+     "id": "c36p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "youtube__search_videos",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 541,
+     "ms": 395
+    },
+    {
+     "id": "c38p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 566,
+     "ms": 407
+    },
+    {
+     "id": "c40p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": "browser_search",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 528,
+     "ms": 400
+    },
+    {
+     "id": "c42p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": "drive__create_document",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 430,
+     "ms": 395
+    },
+    {
+     "id": "c44p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 456,
+     "ms": 924
+    },
+    {
+     "id": "c46p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 519,
+     "ms": 543
+    },
+    {
+     "id": "c48p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 462,
+     "ms": 570
+    },
+    {
+     "id": "c50p2",
+     "kind": "S",
+     "tools": 4,
+     "firstCall": "analytics__get_ad_spend",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 371,
+     "ms": 392
+    },
+    {
+     "id": "c52p2",
+     "kind": "S",
+     "tools": 4,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 374,
+     "ms": 662
+    },
+    {
+     "id": "c54p2",
+     "kind": "S",
+     "tools": 4,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 363,
+     "ms": 1010
+    },
+    {
+     "id": "c56p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 605,
+     "ms": 565
+    },
+    {
+     "id": "c58p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 529,
+     "ms": 456
+    },
+    {
+     "id": "c60p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 607,
+     "ms": 369
+    },
+    {
+     "id": "c62p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 476,
+     "ms": 403
+    },
+    {
+     "id": "c64p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 473,
+     "ms": 427
+    },
+    {
+     "id": "c66p2",
+     "kind": "S",
+     "tools": 2,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 243,
+     "ms": 392
+    },
+    {
+     "id": "c68p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 437,
+     "ms": 687
+    },
+    {
+     "id": "c70p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": "hr__list_open_roles",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 435,
+     "ms": 286
+    },
+    {
+     "id": "c72p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": "accounting__create_bill",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 518,
+     "ms": 300
+    },
+    {
+     "id": "c74p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": "aws__cloudwatch_get_logs",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 519,
+     "ms": 486
+    },
+    {
+     "id": "c76p2",
+     "kind": "E",
+     "tools": 3,
+     "firstCall": "shell_exec",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 379,
+     "ms": 499
+    },
+    {
+     "id": "c78p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": "vercel__deploy_project",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 444,
+     "ms": 385
+    }
+   ]
+  },
+  "Graph, cold start": {
+   "firstCallHitPct": 35,
+   "toolOfferedPct": 77.5,
+   "avgToolsOffered": 5.7,
+   "avgPromptTokens": 489,
+   "avgMs": 623,
+   "rows": [
+    {
+     "id": "c00p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "linear__create_ticket",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 520,
+     "ms": 679
+    },
+    {
+     "id": "c02p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "slack__post_message",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 468,
+     "ms": 502
+    },
+    {
+     "id": "c04p2",
+     "kind": "D",
+     "tools": 4,
+     "firstCall": "gmail__search_emails",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 359,
+     "ms": 359
+    },
+    {
+     "id": "c06p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "calendar__find_free_time",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 485,
+     "ms": 712
+    },
+    {
+     "id": "c08p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "notion__create_page",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 462,
+     "ms": 520
+    },
+    {
+     "id": "c10p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 474,
+     "ms": 474
+    },
+    {
+     "id": "c12p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "shopify__list_orders",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 432,
+     "ms": 362
+    },
+    {
+     "id": "c14p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "slack__send_direct_message",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 463,
+     "ms": 538
+    },
+    {
+     "id": "c16p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 484,
+     "ms": 1732
+    },
+    {
+     "id": "c18p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "docker__container_logs",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 482,
+     "ms": 466
+    },
+    {
+     "id": "c20p2",
+     "kind": "D",
+     "tools": 5,
+     "firstCall": "weather__get_forecast",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 413,
+     "ms": 424
+    },
+    {
+     "id": "c22p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 608,
+     "ms": 375
+    },
+    {
+     "id": "c24p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "zoom__create_meeting",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 430,
+     "ms": 390
+    },
+    {
+     "id": "c26p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "social__post_tweet",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 477,
+     "ms": 499
+    },
+    {
+     "id": "c28p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "github__push_files",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 470,
+     "ms": 510
+    },
+    {
+     "id": "c30p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "news__search_news",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 457,
+     "ms": 352
+    },
+    {
+     "id": "c32p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 454,
+     "ms": 233
+    },
+    {
+     "id": "c34p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "bot_spawn",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 672,
+     "ms": 1077
+    },
+    {
+     "id": "c36p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "youtube__list_playlist",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 543,
+     "ms": 431
+    },
+    {
+     "id": "c38p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 545,
+     "ms": 325
+    },
+    {
+     "id": "c40p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 507,
+     "ms": 1274
+    },
+    {
+     "id": "c42p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": "drive__create_document",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 540,
+     "ms": 530
+    },
+    {
+     "id": "c44p2",
+     "kind": "S",
+     "tools": 4,
+     "firstCall": "slack__post_message",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 351,
+     "ms": 486
+    },
+    {
+     "id": "c46p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 529,
+     "ms": 931
+    },
+    {
+     "id": "c48p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 465,
+     "ms": 801
+    },
+    {
+     "id": "c50p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": "analytics__get_ad_spend",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 548,
+     "ms": 470
+    },
+    {
+     "id": "c52p2",
+     "kind": "S",
+     "tools": 5,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 421,
+     "ms": 649
+    },
+    {
+     "id": "c54p2",
+     "kind": "S",
+     "tools": 4,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 363,
+     "ms": 1029
+    },
+    {
+     "id": "c56p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 609,
+     "ms": 596
+    },
+    {
+     "id": "c58p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": "pdf__pdf_extract_text",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 530,
+     "ms": 431
+    },
+    {
+     "id": "c60p2",
+     "kind": "S",
+     "tools": 5,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 561,
+     "ms": 248
+    },
+    {
+     "id": "c62p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 532,
+     "ms": 523
+    },
+    {
+     "id": "c64p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": "fs_list",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 497,
+     "ms": 651
+    },
+    {
+     "id": "c66p2",
+     "kind": "S",
+     "tools": 4,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 370,
+     "ms": 499
+    },
+    {
+     "id": "c68p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 437,
+     "ms": 654
+    },
+    {
+     "id": "c70p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": "linear__list_my_tickets",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 475,
+     "ms": 372
+    },
+    {
+     "id": "c72p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": "accounting__create_bill",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 711,
+     "ms": 1554
+    },
+    {
+     "id": "c74p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": "aws__cloudwatch_get_logs",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 549,
+     "ms": 486
+    },
+    {
+     "id": "c76p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": "shell_exec",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 523,
+     "ms": 1229
+    },
+    {
+     "id": "c78p2",
+     "kind": "E",
+     "tools": 4,
+     "firstCall": "github__create_release",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 349,
+     "ms": 529
+    }
+   ]
+  },
+  "Graph, after learning": {
+   "firstCallHitPct": 32.5,
+   "toolOfferedPct": 75,
+   "avgToolsOffered": 5.5,
+   "avgPromptTokens": 504,
+   "avgMs": 541,
+   "rows": [
+    {
+     "id": "c00p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "github__create_issue",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 553,
+     "ms": 698
+    },
+    {
+     "id": "c02p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "slack__post_message",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 489,
+     "ms": 509
+    },
+    {
+     "id": "c04p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "gmail__search_emails",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 493,
+     "ms": 374
+    },
+    {
+     "id": "c06p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 471,
+     "ms": 558
+    },
+    {
+     "id": "c08p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 588,
+     "ms": 343
+    },
+    {
+     "id": "c10p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 525,
+     "ms": 386
+    },
+    {
+     "id": "c12p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "shopify__list_orders",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 501,
+     "ms": 407
+    },
+    {
+     "id": "c14p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 649,
+     "ms": 413
+    },
+    {
+     "id": "c16p2",
+     "kind": "D",
+     "tools": 3,
+     "firstCall": "cloudflare__create_dns_record",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 309,
+     "ms": 536
+    },
+    {
+     "id": "c18p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "docker__container_logs",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 589,
+     "ms": 506
+    },
+    {
+     "id": "c20p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "weather__get_forecast",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 481,
+     "ms": 445
+    },
+    {
+     "id": "c22p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 574,
+     "ms": 410
+    },
+    {
+     "id": "c24p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "zoom__create_meeting",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 481,
+     "ms": 400
+    },
+    {
+     "id": "c26p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "social__post_tweet",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 552,
+     "ms": 600
+    },
+    {
+     "id": "c28p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "github__push_files",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 470,
+     "ms": 454
+    },
+    {
+     "id": "c30p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "browser_search",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 550,
+     "ms": 479
+    },
+    {
+     "id": "c32p2",
+     "kind": "D",
+     "tools": 4,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 365,
+     "ms": 236
+    },
+    {
+     "id": "c34p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 672,
+     "ms": 762
+    },
+    {
+     "id": "c36p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "image__generate_image",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 603,
+     "ms": 585
+    },
+    {
+     "id": "c38p2",
+     "kind": "D",
+     "tools": 6,
+     "firstCall": "support__get_customer_history",
+     "hit": false,
+     "offered": false,
+     "promptTokens": 503,
+     "ms": 930
+    },
+    {
+     "id": "c40p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 608,
+     "ms": 685
+    },
+    {
+     "id": "c42p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 542,
+     "ms": 404
+    },
+    {
+     "id": "c44p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 517,
+     "ms": 521
+    },
+    {
+     "id": "c46p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": "stripe__create_invoice",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 491,
+     "ms": 962
+    },
+    {
+     "id": "c48p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 464,
+     "ms": 589
+    },
+    {
+     "id": "c50p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": "analytics__get_site_traffic",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 567,
+     "ms": 407
+    },
+    {
+     "id": "c52p2",
+     "kind": "S",
+     "tools": 5,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 502,
+     "ms": 429
+    },
+    {
+     "id": "c54p2",
+     "kind": "S",
+     "tools": 3,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 306,
+     "ms": 1021
+    },
+    {
+     "id": "c56p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 605,
+     "ms": 604
+    },
+    {
+     "id": "c58p2",
+     "kind": "S",
+     "tools": 3,
+     "firstCall": "pdf__pdf_extract_text",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 381,
+     "ms": 444
+    },
+    {
+     "id": "c60p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 636,
+     "ms": 492
+    },
+    {
+     "id": "c62p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 539,
+     "ms": 598
+    },
+    {
+     "id": "c64p2",
+     "kind": "S",
+     "tools": 5,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 485,
+     "ms": 523
+    },
+    {
+     "id": "c66p2",
+     "kind": "S",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 553,
+     "ms": 452
+    },
+    {
+     "id": "c68p2",
+     "kind": "S",
+     "tools": 3,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 276,
+     "ms": 556
+    },
+    {
+     "id": "c70p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": "linear__search_tickets",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 540,
+     "ms": 441
+    },
+    {
+     "id": "c72p2",
+     "kind": "E",
+     "tools": 4,
+     "firstCall": null,
+     "hit": false,
+     "offered": true,
+     "promptTokens": 362,
+     "ms": 750
+    },
+    {
+     "id": "c74p2",
+     "kind": "E",
+     "tools": 5,
+     "firstCall": "aws__cloudwatch_get_logs",
+     "hit": true,
+     "offered": true,
+     "promptTokens": 401,
+     "ms": 389
+    },
+    {
+     "id": "c76p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": "linear__search_tickets",
+     "hit": false,
+     "offered": true,
+     "promptTokens": 524,
+     "ms": 385
+    },
+    {
+     "id": "c78p2",
+     "kind": "E",
+     "tools": 6,
+     "firstCall": null,
+     "hit": false,
+     "offered": false,
+     "promptTokens": 448,
+     "ms": 966
+    }
+   ]
+  }
+ }
+}

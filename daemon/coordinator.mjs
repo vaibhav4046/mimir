@@ -27,6 +27,7 @@ import { CLOUD_PROVIDERS, discoverLocalServers, isLoopbackUrl, testModelCapabili
 import { McpOAuthManager } from './mcp-http.mjs';
 import { ModelLibrary, OpenRouterAuth } from './model-library.mjs';
 import { systemUsage } from './system-usage.mjs';
+import { AgentContextGraph } from './context-graph.mjs';
 import { VERSION } from './version.mjs';
 import { SHARED_MEMORY_SCOPE } from './context-recall.mjs';
 import { assertSafeUrl, probeModels, RESPONSE_MODES } from './llm-provider.mjs';
@@ -521,6 +522,7 @@ export async function startCoordinator(options = {}) {
   runner.foundry = foundry;
   runner.agiHarness = agiHarness;
   runner.dagSwarm = dagSwarm;
+  runner.contextGraph = new AgentContextGraph({ getSettings: () => store.getSettings() });
   runner.deepResearch = deepResearch;
 
   const proactive = new ProactiveEngine({
@@ -846,8 +848,10 @@ export async function startCoordinator(options = {}) {
       if (req.method === 'GET' && p === '/v1/models/library') return json(res, 200, await modelLibrary.overview());
       if (req.method === 'GET' && p === '/v1/system/usage') {
         const threadId = urlObj.searchParams.get('threadId');
-        return json(res, 200, await systemUsage({ settings: store.getSettings(), thread: threadId ? store.getThread(threadId) : null }));
+        const usage = await systemUsage({ settings: store.getSettings(), thread: threadId ? store.getThread(threadId) : null });
+        return json(res, 200, { ...usage, contextGraph: runner.contextGraph?.status() });
       }
+      if (req.method === 'GET' && p === '/v1/context-graph/status') return json(res, 200, runner.contextGraph?.status() || { enabled: false });
       if (req.method === 'POST' && p === '/v1/models/pull') {
         const body = await readBody(req);
         return json(res, 202, modelLibrary.startPull(body.name));

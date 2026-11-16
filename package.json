@@ -11,7 +11,7 @@
     "build": "vite build",
     "start": "electron .",
     "eval": "node tests/eval-suite.mjs",
-    "test": "node --test tests/daemon.test.mjs tests/proactive.test.mjs tests/commands.test.mjs tests/browser-task.test.mjs tests/mcp-oauth.test.mjs tests/model-setup.test.mjs tests/rag-council.test.mjs tests/autonomy-api.test.mjs tests/voice-duplex.test.mjs tests/team-context.test.mjs tests/model-library.test.mjs tests/workflows.test.mjs tests/trustworthy-golden-path.test.mjs tests/mimir-os-architecture.test.mjs tests/system-usage.test.mjs tests/frontier-edge-cases.test.mjs tests/no-python.test.mjs",
+    "test": "node --test tests/daemon.test.mjs tests/proactive.test.mjs tests/commands.test.mjs tests/browser-task.test.mjs tests/mcp-oauth.test.mjs tests/model-setup.test.mjs tests/rag-council.test.mjs tests/autonomy-api.test.mjs tests/voice-duplex.test.mjs tests/team-context.test.mjs tests/model-library.test.mjs tests/workflows.test.mjs tests/trustworthy-golden-path.test.mjs tests/mimir-os-architecture.test.mjs tests/system-usage.test.mjs tests/frontier-edge-cases.test.mjs tests/no-python.test.mjs tests/context-graph.test.mjs",
     "test:e2e": "node tests/e2e-ui.mjs",
     "manifest": "node scripts/update-manifest.mjs",
     "dist:win": "vite build && electron-builder --win --x64"

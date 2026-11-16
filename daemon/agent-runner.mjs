@@ -1810,6 +1810,12 @@ export class AgentRunner {
         modelName: selectedModel,
         explicitToolNames: toolNames,
       });
+      // Optional Context Graph: offer the few tools a HydraDB graph pulls for this request.
+      // Fails open, so a missing or unsure graph leaves the tool list exactly as curated above.
+      if (this.contextGraph?.enabled && !Array.isArray(toolNames)) {
+        const pulled = await this.contextGraph.select(userText, allTools);
+        if (pulled) allTools = pulled;
+      }
       const allowedToolNames = new Set(allTools.map(t => t?.function?.name || t?.name).filter(Boolean));
       const creativeIntentFmt =
         currentDepth === 0 &&
@@ -2611,6 +2617,7 @@ export class AgentRunner {
       let receipt = null;
       if (currentDepth === 0 && !abortController.signal.aborted) {
         const turnMessages = this.store.getThread(thread.id).messages.slice(turnStartIndex);
+        void this.contextGraph?.record?.({ userText, turnMessages, offered: [...allowedToolNames] });
         const baseUrl = settingsNow.provider === 'openai-compat' ? settingsNow.openaiBaseUrl : settingsNow.ollamaUrl;
         receipt = buildReceipt({
           runId: runId || thread.id,

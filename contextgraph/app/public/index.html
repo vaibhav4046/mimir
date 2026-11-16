@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Context Graph for agents, on HydraDB</title>
+  <meta name="description" content="Your agent should not read 264 tool manuals before it reads your request. Context Graph keeps tools, skills and entities in HydraDB and pulls only what the task needs, and learns from every task.">
+  <link rel="icon" type="image/png" href="/img/hydradb-avatar.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="#/" aria-label="Context Graph home">
+      <img src="/img/hydradb-avatar.png" width="28" height="28" alt="" />
+      <span><b>Context Graph</b><small>on HydraDB</small></span>
+    </a>
+    <nav aria-label="Sections">
+      <a href="#/" data-nav="lab">Try it</a>
+      <a href="#/results" data-nav="results">Benchmark</a>
+      <a href="#/how" data-nav="how">How it works</a>
+      <a href="#/deck" data-nav="deck">Pitch</a>
+    </nav>
+    <div class="pill" id="statusPill" role="status" aria-live="polite"><i></i><span>Connecting to HydraDB…</span></div>
+  </header>
+  <main id="main"></main>
+  <footer class="foot">
+    Built on <a href="https://github.com/hydra-db/hydradb" rel="noopener">HydraDB</a> (open source engine, run by us) ·
+    <a href="https://github.com/vaibhav4046/mimir/tree/main/contextgraph" rel="noopener">Source</a> ·
+    Part of <a href="https://github.com/vaibhav4046/mimir" rel="noopener">Mimir</a>, the local-first AI agent workspace
+  </footer>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

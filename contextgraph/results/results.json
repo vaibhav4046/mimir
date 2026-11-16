@@ -1,0 +1,388 @@
+{
+ "generatedAt": "2026-11-16T00:01:54.534Z",
+ "config": {
+  "k": 6,
+  "trials": 5,
+  "epochs": 5,
+  "hydradb": "v0.4.0 graph-node, local object store",
+  "catalogTools": 264,
+  "realMimirTools": 19,
+  "skills": 30,
+  "tasks": 240,
+  "train": 160,
+  "test": 80,
+  "allToolsSchemaChars": 76361
+ },
+ "baselines": {
+  "preloadAll": {
+   "complete": 100,
+   "recall": 100,
+   "avgTools": 264,
+   "avgSchemaChars": 76361,
+   "note": "every tool definition sent on every call"
+  },
+  "bm25Tools": {
+   "complete": 30,
+   "recall": 36.8,
+   "precision": 11.7,
+   "avgTools": 4.4,
+   "avgSchemaChars": 1281,
+   "byKind": {
+    "D": 50,
+    "S": 0,
+    "E": 40
+   }
+  },
+  "bm25ToolsAndSkills": {
+   "complete": 58.8,
+   "recall": 59.8,
+   "precision": 20.5,
+   "avgTools": 5.2,
+   "avgSchemaChars": 1589,
+   "byKind": {
+    "D": 60,
+    "S": 60,
+    "E": 50
+   }
+  }
+ },
+ "learningCurve": {
+  "epochs": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "testCompleteMean": [
+   60,
+   70.3,
+   69.5,
+   69.3,
+   69.3,
+   69.3
+  ],
+  "testCompleteSd": [
+   0,
+   0.5,
+   0.6,
+   0.6,
+   0.6,
+   0.6
+  ],
+  "testRecallMean": [
+   67.2,
+   72.6,
+   71.1,
+   70.5,
+   70.2,
+   70.2
+  ],
+  "trainCompleteMean": [
+   78.1,
+   100,
+   100,
+   100,
+   100,
+   100
+  ],
+  "byKindMean": {
+   "D": [
+    62.5,
+    65,
+    62.5,
+    62.5,
+    62.5,
+    62.5
+   ],
+   "S": [
+    53.3,
+    70,
+    70,
+    70,
+    70,
+    70
+   ],
+   "E": [
+    70,
+    92,
+    96,
+    94,
+    94,
+    94
+   ]
+  },
+  "avgToolsLoaded": [
+   5.69,
+   5.64,
+   5.59,
+   5.57,
+   5.56,
+   5.55
+  ],
+  "edgeWritesPerTrial": 8801,
+  "perTrial": [
+   [
+    60,
+    71.3,
+    68.8,
+    68.8,
+    68.8,
+    68.8
+   ],
+   [
+    60,
+    70,
+    70,
+    68.8,
+    68.8,
+    70
+   ],
+   [
+    60,
+    70,
+    70,
+    68.8,
+    68.8,
+    68.8
+   ],
+   [
+    60,
+    70,
+    70,
+    70,
+    70,
+    70
+   ],
+   [
+    60,
+    70,
+    68.8,
+    70,
+    70,
+    68.8
+   ]
+  ]
+ },
+ "confidence": {
+  "sweep": [
+   {
+    "threshold": 0,
+    "coveragePct": 100,
+    "completeWhenConfident": 68.8
+   },
+   {
+    "threshold": 0.3,
+    "coveragePct": 100,
+    "completeWhenConfident": 68.8
+   },
+   {
+    "threshold": 0.6,
+    "coveragePct": 100,
+    "completeWhenConfident": 68.8
+   },
+   {
+    "threshold": 1,
+    "coveragePct": 91.3,
+    "completeWhenConfident": 74
+   },
+   {
+    "threshold": 1.5,
+    "coveragePct": 76.3,
+    "completeWhenConfident": 73.8
+   },
+   {
+    "threshold": 2,
+    "coveragePct": 65,
+    "completeWhenConfident": 71.2
+   }
+  ],
+  "fallbackThreshold": 1,
+  "fallbackSetIs": "graph picks plus Mimir built-ins (19 tools)",
+  "withFallback": {
+   "complete": 70,
+   "avgSchemaChars": 2506
+  }
+ },
+ "drift": {
+  "newTools": 5,
+  "heldOutCompletePct": {
+   "onlyDescription": 60,
+   "afterOneExample": 60,
+   "afterTwoExamples": 80
+  },
+  "note": "tools added at run time, no rebuild; wording of the test task never appeared in training"
+ },
+ "jargon": {
+  "terms": [
+   "bluebird",
+   "mothership",
+   "greenlight",
+   "pennywise",
+   "huddle",
+   "stockcheck",
+   "zeroing",
+   "pulse",
+   "lighthouse",
+   "scribe"
+  ],
+  "tasks": 10,
+  "regressionBefore": 60,
+  "heldOut": {
+   "cold": 0,
+   "afterOneExample": 90,
+   "afterTwoExamples": 100
+  },
+  "regressionAfter": 61.3,
+  "bm25HeldOut": 0
+ },
+ "scale": [
+  {
+   "catalogTools": 264,
+   "seedSeconds": 37.4,
+   "graphCompleteCold": 60,
+   "bm25Complete": 30,
+   "graphAvgRequests": 4.13,
+   "preloadSchemaChars": 77811,
+   "graphSchemaChars": 1757,
+   "load": [
+    {
+     "concurrency": 1,
+     "queries": 176,
+     "perSec": 29,
+     "p50ms": 33.3,
+     "p95ms": 53.5,
+     "p99ms": 76.2
+    },
+    {
+     "concurrency": 8,
+     "queries": 709,
+     "perSec": 118,
+     "p50ms": 64.3,
+     "p95ms": 120.3,
+     "p99ms": 149.3
+    },
+    {
+     "concurrency": 32,
+     "queries": 657,
+     "perSec": 110,
+     "p50ms": 281.1,
+     "p95ms": 519.5,
+     "p99ms": 628
+    }
+   ]
+  },
+  {
+   "catalogTools": 5000,
+   "seedSeconds": 176.7,
+   "graphCompleteCold": 52.5,
+   "bm25Complete": 27.5,
+   "graphAvgRequests": 4.13,
+   "preloadSchemaChars": 1206004,
+   "graphSchemaChars": 1814,
+   "load": [
+    {
+     "concurrency": 1,
+     "queries": 37,
+     "perSec": 6,
+     "p50ms": 178,
+     "p95ms": 265.8,
+     "p99ms": 320.7
+    },
+    {
+     "concurrency": 8,
+     "queries": 110,
+     "perSec": 18,
+     "p50ms": 458.1,
+     "p95ms": 740.5,
+     "p99ms": 959.6
+    },
+    {
+     "concurrency": 32,
+     "queries": 117,
+     "perSec": 20,
+     "p50ms": 1044,
+     "p95ms": 31248,
+     "p99ms": 31354.3
+    }
+   ]
+  },
+  {
+   "catalogTools": 20000,
+   "seedSeconds": 631.7,
+   "graphCompleteCold": 52.5,
+   "bm25Complete": 20,
+   "graphAvgRequests": 4.28,
+   "preloadSchemaChars": 4778520,
+   "graphSchemaChars": 1765,
+   "load": [
+    {
+     "concurrency": 1,
+     "queries": 8,
+     "perSec": 1,
+     "p50ms": 929.1,
+     "p95ms": 1200.4,
+     "p99ms": 1200.4
+    },
+    {
+     "concurrency": 8,
+     "queries": 25,
+     "perSec": 4,
+     "p50ms": 2293.2,
+     "p95ms": 3467.5,
+     "p99ms": 4994.7
+    },
+    {
+     "concurrency": 32,
+     "queries": 44,
+     "perSec": 7,
+     "p50ms": 5979.5,
+     "p95ms": 31856,
+     "p99ms": 32565.8
+    }
+   ]
+  }
+ ],
+ "llm": {
+  "model": "qwen3:1.7b",
+  "sampleSize": 40,
+  "methods": {
+   "All tools preloaded": {
+    "firstCallHitPct": 42.5,
+    "toolOfferedPct": 100,
+    "avgToolsOffered": 264,
+    "avgPromptTokens": 15522,
+    "avgMs": 1061
+   },
+   "BM25 on tools": {
+    "firstCallHitPct": 30,
+    "toolOfferedPct": 45,
+    "avgToolsOffered": 4.5,
+    "avgPromptTokens": 383,
+    "avgMs": 664
+   },
+   "BM25 on tools + skills": {
+    "firstCallHitPct": 32.5,
+    "toolOfferedPct": 65,
+    "avgToolsOffered": 5.5,
+    "avgPromptTokens": 464,
+    "avgMs": 492
+   },
+   "Graph, cold start": {
+    "firstCallHitPct": 35,
+    "toolOfferedPct": 77.5,
+    "avgToolsOffered": 5.7,
+    "avgPromptTokens": 489,
+    "avgMs": 623
+   },
+   "Graph, after learning": {
+    "firstCallHitPct": 32.5,
+    "toolOfferedPct": 75,
+    "avgToolsOffered": 5.5,
+    "avgPromptTokens": 504,
+    "avgMs": 541
+   }
+  }
+ }
+}

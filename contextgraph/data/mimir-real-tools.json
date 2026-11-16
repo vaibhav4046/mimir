@@ -1,0 +1,197 @@
+[
+ {
+  "name": "shell_exec",
+  "description": "Run a shell command inside the bot workspace directory and inspect stdout/stderr.",
+  "params": [
+   "command",
+   "cwd"
+  ],
+  "chars": 376
+ },
+ {
+  "name": "fs_list",
+  "description": "List files and directories inside the bot workspace.",
+  "params": [
+   "path"
+  ],
+  "chars": 252
+ },
+ {
+  "name": "fs_read",
+  "description": "Read a UTF-8 text file inside the bot workspace. Optionally pass 1-based startLine/endLine for large files.",
+  "params": [
+   "path",
+   "startLine",
+   "endLine"
+  ],
+  "chars": 420
+ },
+ {
+  "name": "fs_write",
+  "description": "Create or overwrite a UTF-8 file inside the bot workspace.",
+  "params": [
+   "path",
+   "content"
+  ],
+  "chars": 254
+ },
+ {
+  "name": "fs_edit",
+  "description": "Safely replace an exact text snippet inside an existing UTF-8 workspace file without overwriting unrelated lines.",
+  "params": [
+   "path",
+   "oldText",
+   "newText",
+   "replaceAll"
+  ],
+  "chars": 605
+ },
+ {
+  "name": "foundry_create",
+  "description": "Create and Rust-verify a multi-modal studio deliverable: 3D model (glb, obj, stl), HD image (png, svg), music/audio track (wav), motion video (webm, mp4, gif), full-stack web app (webapp), playable HTML5 game (game), or document (pdf, docx, pptx, xlsx).",
+  "params": [
+   "title",
+   "format",
+   "prompt",
+   "subtitle"
+  ],
+  "chars": 798
+ },
+ {
+  "name": "browser_search",
+  "description": "Search the live 2026 web cleanly via DuckDuckGo/Wikipedia and return titles, URLs, and snippets without fragile selector timeouts.",
+  "params": [
+   "query",
+   "indexResults"
+  ],
+  "chars": 430
+ },
+ {
+  "name": "browser_open",
+  "description": "Open a web URL (or domain/search query) in the active browser mode and return title, excerpt, grounded interactiveElements selectors, and screenshot.",
+  "params": [
+   "url"
+  ],
+  "chars": 309
+ },
+ {
+  "name": "browser_action",
+  "description": "Interact with the open page using a grounded selector from interactiveElements (supports open Shadow DOM >>). Actions: click, double_click, hover, click_percent, type, fill_form, drag, draw, press, scroll, back, forward, select, check, upload, extract_structured, snapshot.",
+  "params": [
+   "action",
+   "selector",
+   "targetSelector",
+   "submitSelector",
+   "tableSelector",
+   "fields",
+   "path",
+   "pathPct",
+   "text",
+   "value",
+   "filePath",
+   "submit",
+   "key",
+   "x",
+   "y",
+   "xPct",
+   "yPct",
+   "direction"
+  ],
+  "chars": 1375
+ },
+ {
+  "name": "browser_screenshot",
+  "description": "Capture a fresh JPEG screenshot and interactiveElements map of the current browser page.",
+  "params": [],
+  "chars": 212
+ },
+ {
+  "name": "memory_save",
+  "description": "Persist a fact or preference in this bot long-term memory store.",
+  "params": [
+   "key",
+   "value"
+  ],
+  "chars": 257
+ },
+ {
+  "name": "memory_read",
+  "description": "Read stored memories for this bot, optionally filtered by substring query.",
+  "params": [
+   "query"
+  ],
+  "chars": 216
+ },
+ {
+  "name": "knowledge_search",
+  "description": "Search Mimir local 2026 indexed web & document knowledge base.",
+  "params": [
+   "query"
+  ],
+  "chars": 230
+ },
+ {
+  "name": "knowledge_ingest",
+  "description": "Fetch a live URL or web topic into the persistent 2026 Knowledge Base for future RAG grounding.",
+  "params": [
+   "url",
+   "query"
+  ],
+  "chars": 266
+ },
+ {
+  "name": "vault_use",
+  "description": "Resolve a saved credential from the local encrypted Vault. Provide fillSelector to type it directly into the open browser without exposing secret text.",
+  "params": [
+   "label",
+   "field",
+   "fillSelector"
+  ],
+  "chars": 537
+ },
+ {
+  "name": "math_eval",
+  "description": "Evaluate an exact mathematical expression deterministically (supports +, -, *, /, %, ^, **, sqrt, abs, round, floor, ceil, min, max, pow, log, ln, log10, log2, exp, sin, cos, tan, factorial, comb, pi, e, and variables).",
+  "params": [
+   "expression",
+   "variables"
+  ],
+  "chars": 515
+ },
+ {
+  "name": "bot_spawn",
+  "description": "Autonomously create and persist a specialized child ally bot under your own privilege ceiling when a task explicitly calls for a persistent specialist.",
+  "params": [
+   "name",
+   "role",
+   "systemPrompt",
+   "specialistTag",
+   "allowedTools",
+   "executionMode"
+  ],
+  "chars": 825
+ },
+ {
+  "name": "subagent_loop",
+  "description": "Delegate a bounded subtask to an existing ally bot (by botId or specialist role) and return its concise summary. Max depth is 2.",
+  "params": [
+   "botId",
+   "role",
+   "goal",
+   "maxSteps",
+   "depth"
+  ],
+  "chars": 674
+ },
+ {
+  "name": "council_convene",
+  "description": "Convene the multi-model/multi-bot Model Council on a topic for parallel opinions, anonymized peer ranking, and chairman consensus.",
+  "params": [
+   "topic",
+   "mode",
+   "useRag",
+   "seatIds"
+  ],
+  "chars": 550
+ }
+]

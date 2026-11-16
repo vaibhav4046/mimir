@@ -1,0 +1,6 @@
+# One-take voice script
+
+Record it once, at a relaxed conversational pace, and save it as `contextgraph/voice/full.m4a` (mp3 or wav is fine).
+Take a real breath (about one second of silence) at each "…". I use those pauses to line the screen up with your voice.
+
+Hey, I'm Vaibhav. Here's the thing that bugged me while building my agent app, Mimir. Every time an AI agent answers you, it first re-reads the manual for every tool it has. Five connected apps is around fifty-five thousand tokens, and that's Anthropic's number, not mine. … So I put the tools in a HydraDB graph instead. When you ask for something, the agent walks the graph and pulls only the few tools that job needs, about six out of my two hundred sixty-four. … Watch. I ask for something it's never seen, and it finds the right tools and shows you why. … Here's a harder one, and it misses a tool. I tell it once what it needed. … Now the same job in different words, and it gets it. That's the learning: a few edge weights changing in HydraDB, no retraining. … A made-up team word like "bluebird" goes from zero to ninety percent after one example. I'll be straight about the limits: on everyday wording it only gains a couple of points, and it slows down as the catalog grows. Those are my next fixes. The code and live demo are linked below. Thanks, HydraDB.
