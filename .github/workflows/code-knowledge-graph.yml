@@ -33,6 +33,8 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Graph regression tests
         run: node --test tests/code-understanding.test.mjs
+      - name: Mimir architecture and atlas regression tests
+        run: node --test tests/mimir-os-architecture.test.mjs
       - name: Generate local graph
         run: npm run graph:build
       - name: Verify generated graph
