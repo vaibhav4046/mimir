@@ -39,7 +39,7 @@ export function CodeKnowledgeGraphView() {
 
   const byId = useMemo(() => new Map((graph?.nodes || []).map(n => [n.id, n])), [graph]);
   const edges = graph?.edges || [];
-  const kinds = useMemo(() => ['All', ...new Set((graph?.nodes || []).map(n => n.type))].sort()], [graph]);
+  const kinds = useMemo(() => ['All', ...new Set((graph?.nodes || []).map(n => n.type))].sort(), [graph]);
 
   const visible = useMemo(() => {
     if (!graph) return [];
