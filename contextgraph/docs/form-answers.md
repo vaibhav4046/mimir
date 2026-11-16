@@ -4,14 +4,14 @@ Track: 2, Agent context layer (with Track 1 mechanics: edge reweighting, gap-dri
 Project name: Context Graph
 Live app: https://tooth-refrigerator-achieve-trim.trycloudflare.com
 Repo: https://github.com/vaibhav4046/mimir/tree/main/contextgraph
-Loom / video: (add the Loom link)
+Loom / video: (video link added at submission)
 
-One-line pitch: Small local models run out of context just reading the tool list (264 tools is 15,522 tokens). Context Graph keeps tools and skills in HydraDB and pulls about 6 per task, cutting the prompt to 494 tokens and the time per call by about half.
+One-line pitch: Small local models run out of context just reading the tool list (264 tools is 15,522 tokens). Context Graph keeps tools and skills in HydraDB and pulls about 6 per task, cutting the prompt to 543 tokens and the time per call by about half.
 
 Technical: metric, baseline, and improvement
 - Metric: share of held-out tasks where every needed tool was pulled; tokens and time per call; and the first tool call a real local model (qwen3:1.7b) makes.
-- Real small model, 40 unseen tasks, baseline = all 264 tools loaded: prompt 15,522 to 494 tokens, 1,071 to 580 ms per call. First-call accuracy did not improve (42.5% with everything loaded, 35% with the graph).
-- Coverage on 80 held-out tasks (held-out wording): 60% before learning, 66.8% after; a keyword index that also learns from the same training tasks 67.5%; keyword search over tools and skills 58.8%, over tools 30%. The movement is in skill jobs (53.3 to 58%) and entity jobs, 10 tasks (70 to 100%); plain jobs go 62.5 to 65%, and coverage peaks after one pass (72.8%). Sampling error on 80 tasks is about 5 points.
+- Real small model, 40 unseen tasks, baseline = all 264 tools loaded: prompt 15,522 to 543 tokens, 1,178 to 683 ms per call. First-call accuracy did not improve (42.5% with everything loaded, 35% with the graph).
+- Coverage on 80 held-out tasks (held-out wording): 68.8% before learning, 69% after; a keyword index that also learns from the same training tasks 67.5%; keyword search over tools and skills 58.8%, over tools 30%. The movement is in skill jobs (63.3 to 58.7%) and entity jobs, 10 tasks (70 to 100%); plain jobs go 72.5 to 69%, and coverage peaks after one pass (78.8%). Sampling error on 80 tasks is about 5 points.
 - Private team words: 0% before any example, 80% after one, 100% after two, no loss on what it knew.
 - Where HydraDB does real work: the graph (nodes and every weighted edge) is stored in HydraDB. A pull is a few one-hop UNION ALL reads and a lesson is a handful of edge writes; a restart test shows a graph restored from HydraDB answers identically. An in-process store gives identical answers (parity test, 160 retrievals), so one process does not strictly need HydraDB; durability is the reason for it. I have not tested two processes learning at once. Weak spots: latency grows with catalog size (33 ms at 264 tools, 929 ms at 20,000), and the demo re-seeds on start.
 

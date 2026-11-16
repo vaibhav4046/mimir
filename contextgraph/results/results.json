@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-16T08:09:10.255Z",
+ "generatedAt": "2026-11-16T09:07:58.464Z",
  "config": {
   "k": 6,
   "trials": 5,
@@ -56,31 +56,31 @@
    5
   ],
   "testCompleteMean": [
-   60,
-   72.8,
-   69.8,
-   65.8,
-   66.3,
-   66.8
+   68.8,
+   78.8,
+   72.5,
+   69.5,
+   70,
+   69
   ],
   "testCompleteSd": [
    0,
-   0.9,
-   0.9,
+   0.8,
+   0.8,
    0.6,
    0,
-   0.6
+   0.9
   ],
   "testRecallMean": [
-   67.2,
-   77.4,
-   74.8,
-   72.3,
-   72.5,
-   72.4
+   74.4,
+   82.2,
+   77.1,
+   75.6,
+   75.8,
+   74.4
   ],
   "trainCompleteMean": [
-   78.1,
+   81.9,
    100,
    100,
    100,
@@ -89,20 +89,20 @@
   ],
   "byKindMean": {
    "D": [
-    62.5,
-    71.5,
-    66.5,
-    64,
-    65,
-    65
+    72.5,
+    78.5,
+    69.5,
+    69,
+    70,
+    69
    ],
    "S": [
-    53.3,
-    65.3,
-    64,
-    56.7,
-    56.7,
-    58
+    63.3,
+    72,
+    67.4,
+    60,
+    60,
+    58.7
    ],
    "E": [
     70,
@@ -114,54 +114,54 @@
    ]
   },
   "avgToolsLoaded": [
-   5.69,
-   5.51,
-   5.49,
-   5.51,
-   5.52,
-   5.52
+   8.04,
+   6.72,
+   6.42,
+   6.35,
+   6.34,
+   6.29
   ],
-  "edgeWritesPerTrial": 8961,
+  "edgeWritesPerTrial": 9020,
   "perTrial": [
    [
-    60,
+    68.8,
+    80,
+    72.5,
+    68.8,
+    70,
+    68.8
+   ],
+   [
+    68.8,
+    78.8,
     72.5,
     70,
-    65,
-    66.3,
+    70,
+    68.8
+   ],
+   [
+    68.8,
+    77.5,
+    72.5,
+    70,
+    70,
+    70
+   ],
+   [
+    68.8,
+    78.8,
+    71.3,
+    68.8,
+    70,
     67.5
    ],
    [
-    60,
-    73.8,
     68.8,
-    66.3,
-    66.3,
-    66.3
-   ],
-   [
-    60,
-    71.3,
+    78.8,
+    73.8,
     70,
-    66.3,
-    66.3,
-    67.5
-   ],
-   [
-    60,
-    72.5,
-    68.8,
-    65,
-    66.3,
-    66.3
-   ],
-   [
-    60,
-    73.8,
-    71.3,
-    66.3,
-    66.3,
-    66.3
+    70,
+    70
    ]
   ]
  },
@@ -170,17 +170,17 @@
    {
     "threshold": 0,
     "coveragePct": 100,
-    "completeWhenConfident": 67.5
+    "completeWhenConfident": 68.8
    },
    {
     "threshold": 0.3,
     "coveragePct": 100,
-    "completeWhenConfident": 67.5
+    "completeWhenConfident": 68.8
    },
    {
     "threshold": 0.6,
     "coveragePct": 100,
-    "completeWhenConfident": 67.5
+    "completeWhenConfident": 68.8
    },
    {
     "threshold": 1,
@@ -201,15 +201,15 @@
   "fallbackThreshold": 1,
   "fallbackSetIs": "graph picks plus Mimir built-ins (19 tools)",
   "withFallback": {
-   "complete": 68.8,
-   "avgSchemaChars": 3119
+   "complete": 70,
+   "avgSchemaChars": 3341
   }
  },
  "drift": {
   "newTools": 5,
   "heldOutCompletePct": {
-   "onlyDescription": 60,
-   "afterOneExample": 60,
+   "onlyDescription": 80,
+   "afterOneExample": 80,
    "afterTwoExamples": 80
   },
   "note": "tools added at run time, no rebuild; wording of the test task never appeared in training"
@@ -228,13 +228,13 @@
    "scribe"
   ],
   "tasks": 10,
-  "regressionBefore": 60,
+  "regressionBefore": 68.8,
   "heldOut": {
    "cold": 0,
    "afterOneExample": 80,
    "afterTwoExamples": 100
   },
-  "regressionAfter": 60,
+  "regressionAfter": 68.8,
   "bm25HeldOut": 0
  },
  "scale": [
@@ -402,20 +402,20 @@
    },
    {
     "label": "Graph, cold start",
-    "complete": 72.1,
+    "complete": 77.5,
     "byKind": {
-     "D": 70,
-     "S": 74.4,
-     "E": 73.3
+     "D": 76.7,
+     "S": 78.9,
+     "E": 76.7
     }
    },
    {
     "label": "Graph, after learning",
-    "complete": 70.4,
+    "complete": 73.8,
     "byKind": {
-     "D": 70.8,
+     "D": 75,
      "S": 72.2,
-     "E": 63.3
+     "E": 73.3
     }
    }
   ]
@@ -429,35 +429,35 @@
     "toolOfferedPct": 100,
     "avgToolsOffered": 264,
     "avgPromptTokens": 15522,
-    "avgMs": 1071
+    "avgMs": 1178
    },
    "BM25 on tools": {
     "firstCallHitPct": 30,
     "toolOfferedPct": 45,
     "avgToolsOffered": 4.5,
     "avgPromptTokens": 383,
-    "avgMs": 637
+    "avgMs": 759
    },
    "BM25 on tools + skills": {
     "firstCallHitPct": 32.5,
     "toolOfferedPct": 65,
     "avgToolsOffered": 5.5,
     "avgPromptTokens": 464,
-    "avgMs": 481
+    "avgMs": 519
    },
    "Graph, cold start": {
-    "firstCallHitPct": 35,
-    "toolOfferedPct": 77.5,
-    "avgToolsOffered": 5.7,
-    "avgPromptTokens": 489,
-    "avgMs": 612
+    "firstCallHitPct": 37.5,
+    "toolOfferedPct": 85,
+    "avgToolsOffered": 7.9,
+    "avgPromptTokens": 626,
+    "avgMs": 640
    },
    "Graph, after learning": {
     "firstCallHitPct": 35,
     "toolOfferedPct": 82.5,
-    "avgToolsOffered": 5.5,
-    "avgPromptTokens": 494,
-    "avgMs": 580
+    "avgToolsOffered": 6.3,
+    "avgPromptTokens": 543,
+    "avgMs": 683
    }
   }
  }

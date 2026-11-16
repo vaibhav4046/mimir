@@ -48,11 +48,13 @@ The graph (all of it lives in HydraDB):
 
 **One pull** is a few bounded hops, one HydraDB request each (several start nodes joined with `UNION ALL`):
 words, then similar words, then tools and skills, then skills' required tools, then entities' systems' tools (and tools used together, whose boost is off by default).
-It returns the best few tools with the reason for each, or says it is unsure so the agent can fall back.
+It returns the top 6 tools when the match is strong (`score >= 1`), or widens up to 12 (`kWeak: 12`) when the match is weak so fewer needed tools are dropped, and flags when it is unsure so the agent can fall back.
 
 **Learning** is a few edge updates after a task, from the tools that really ran: strengthen edges to used tools, add edges for words that pointed nowhere
 (gap-driven ingestion, which also turns a skill-reached tool into a direct shortcut), weaken edges to tools that were pulled and ignored,
 link an entity to the system it turned out to live in, record tools used together. No model call, no retraining.
+
+**In the live lab:** a one-click 30-second guided demo (picks a task the shared graph still misses, teaches it, and tests two unseen rewordings), a side-by-side `$` per 1,000 calls comparison against preloading and keyword search, and **Try it on your own tools** (`POST /api/custom`, up to 150 tools, seeded into its own private HydraDB namespace).
 
 ## Results
 
@@ -61,20 +63,20 @@ link an entity to the system it turned out to live in, record tools used togethe
 ### It learns: held-out accuracy by training pass
 | Training passes | 0 | 1 | 2 | 3 | 4 | 5 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Held-out, complete | 60% ±0 | 72.8% ±0.9 | 69.8% ±0.9 | 65.8% ±0.6 | 66.3% ±0 | 66.8% ±0.6 |
-| Held-out, plain jobs | 62.5% | 71.5% | 66.5% | 64% | 65% | 65% |
-| Held-out, skill jobs | 53.3% | 65.3% | 64% | 56.7% | 56.7% | 58% |
+| Held-out, complete | 68.8% ±0 | 78.8% ±0.8 | 72.5% ±0.8 | 69.5% ±0.6 | 70% ±0 | 69% ±0.9 |
+| Held-out, plain jobs | 72.5% | 78.5% | 69.5% | 69% | 70% | 69% |
+| Held-out, skill jobs | 63.3% | 72% | 67.4% | 60% | 60% | 58.7% |
 | Held-out, entity jobs | 70% | 100% | 100% | 100% | 100% | 100% |
-| Training tasks, complete | 78.1% | 100% | 100% | 100% | 100% | 100% |
+| Training tasks, complete | 81.9% | 100% | 100% | 100% | 100% | 100% |
 
-Pass 0 is before any learning (the cold graph, built only from tool descriptions, skills and similar-word links). Edge writes per run: about 8,961.
+Pass 0 is before any learning (the cold graph, built only from tool descriptions, skills and similar-word links). Edge writes per run: about 9,020.
 
 ### Versus the alternatives (held-out tasks)
 | Method | Complete | Tools in prompt | Schema characters |
 | --- | ---: | ---: | ---: |
 | Preload all 264 (complete by construction) | 100% | 264 | 76,361 |
-| **Graph, after learning** | **66.8%** | 5.52 | 1,757 |
-| Graph, cold start | 60% | 5.69 | 1,757 |
+| **Graph, after learning** | **69%** | 6.29 | 1,757 |
+| Graph, cold start | 68.8% | 8.04 | 1,757 |
 | Keyword search (BM25) over tools and skills | 58.8% | 5.2 | 1,589 |
 | Keyword search (BM25) over tools | 30% | 4.4 | 1,281 |
 
@@ -83,7 +85,7 @@ In-process keyword index given the same 160 training tasks as the graph; evaluat
 
 | Method | Complete | Plain | Skill | Entity |
 | --- | ---: | ---: | ---: | ---: |
-| Graph, after learning | 66.8% | 65% | 58% | 100% |
+| Graph, after learning | 69% | 69% | 58.7% | 100% |
 | Keyword search over tools and skills (no learning) | 58.8% | 60% | 60% | 50% |
 | Keyword search that learns: experience documents | 67.5% | 65% | 60% | 100% |
 | Keyword search that learns: words appended to used tools | 62.5% | 55% | 60% | 100% |
@@ -95,34 +97,34 @@ Train on half of the jobs, test on the other half (all phrasings), then swap and
 | --- | ---: | ---: | ---: | ---: |
 | Keyword search over tools and skills (no learning) | 65.8% | 60% | 80% | 46.7% |
 | Keyword search that learns (experience documents) | 65.8% | 59.2% | 77.8% | 56.7% |
-| Graph, cold start | 72.1% | 70% | 74.4% | 73.3% |
-| Graph, after learning | 70.4% | 70.8% | 72.2% | 63.3% |
+| Graph, cold start | 77.5% | 76.7% | 78.9% | 76.7% |
+| Graph, after learning | 73.8% | 75% | 72.2% | 73.3% |
 
 ### End to end with a real local model (qwen3:1.7b, Ollama, 40 unseen tasks, temperature 0)
 | Tools offered by | First call is a needed tool | Needed tool offered | Tools | Prompt tokens | Time per call |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| All tools preloaded | 42.5% | 100% | 264 | 15,522 | 1,071 ms |
-| BM25 on tools | 30% | 45% | 4.5 | 383 | 637 ms |
-| BM25 on tools + skills | 32.5% | 65% | 5.5 | 464 | 481 ms |
-| Graph, cold start | 35% | 77.5% | 5.7 | 489 | 612 ms |
-| Graph, after learning | 35% | 82.5% | 5.5 | 494 | 580 ms |
+| All tools preloaded | 42.5% | 100% | 264 | 15,522 | 1,178 ms |
+| BM25 on tools | 30% | 45% | 4.5 | 383 | 759 ms |
+| BM25 on tools + skills | 32.5% | 65% | 5.5 | 464 | 519 ms |
+| Graph, cold start | 37.5% | 85% | 7.9 | 626 | 640 ms |
+| Graph, after learning | 35% | 82.5% | 6.3 | 543 | 683 ms |
 
 The preload row was given a 40,960-token context window so that 264 tools fit; every other row used 8,192. With 40 tasks, one task is 2.5 points.
 
 ### When it is not sure (first trial)
 | Confidence needed (top score) | Tasks answered | Complete when answered |
 | --- | ---: | ---: |
-| >= 0 | 100% | 67.5% |
-| >= 0.3 | 100% | 67.5% |
-| >= 0.6 | 100% | 67.5% |
+| >= 0 | 100% | 68.8% |
+| >= 0.3 | 100% | 68.8% |
+| >= 0.6 | 100% | 68.8% |
 | >= 1 | 83.8% | 71.6% |
 | >= 1.5 | 58.8% | 74.5% |
 | >= 2 | 35% | 89.3% |
 
-In the agent an unsure pull falls back to the default tool set: 68.8% complete with the fallback, at 3,119 schema characters per call on average.
+In the agent an unsure pull falls back to the default tool set: 70% complete with the fallback, at 3,341 schema characters per call on average.
 
 ### A tool the graph has never seen
-5 tools added at run time with no rebuild, tested on wording that never appeared in training: 60% found from the description alone, 60% after one example, 80% after two.
+5 tools added at run time with no rebuild, tested on wording that never appeared in training: 80% found from the description alone, 80% after one example, 80% after two.
 
 ### Catalog size and load (cold graph, one HydraDB node)
 | Catalog | Graph | Keyword search (tools only) | HydraDB requests per pull | 1 client | 8 clients | 32 clients |
@@ -133,20 +135,33 @@ In the agent an unsure pull falls back to the default tool set: 68.8% complete w
 
 Pulls per second and 95th-percentile latency of a complete retrieval. Tools beyond the first 264 are synthetic distractors built from the same vocabulary, so accuracy at larger sizes shows how well each method ignores noise.
 
+### Cold-start ablation (80 held-out tasks, in process)
+Runs `node bench/ablation.mjs` (`k: 6`, `kWeak: 12`) against the in-process store (which matches HydraDB in `test/parity.mjs`).
+
+| Variant | Complete | Plain (D) | Skill (S) | Entity (E) |
+| --- | ---: | ---: | ---: | ---: |
+| Full cold graph | 68.8% | 72.5% | 63.3% | 70.0% |
+| No similar-word bridge | 58.8% | 60.0% | 56.7% | 60.0% |
+| No skills | 45.0% | 67.5% | 3.3% | 80.0% |
+
+Note: the similar-word vocabulary (`data/similar.json`) was built from all task text including held-out wording (no labels), so the 10-point drop without the bridge is partly in-distribution.
+
+### AI-simulated persona review (not real users)
+Before the final polish, an AI-simulated 6-persona panel scored the product `3, 3, 2, cite-2/recommend-5, 3, 5` (out of 10). Addressed from that review: fixed the `/api/feedback` whitespace split bug, added the 30-second guided demo (always picks an unlearned task), added the side-by-side `$` comparison and plain-language summary, fixed mobile layout and the 3-column graph view, added "Try it on your own tools" (`POST /api/custom`), and added HydraDB request timeouts. Still open: no drop-in MCP gateway or npm package yet, and no multi-tenant auth on the shared demo.
+
 ## Honest limits
 
 - The 245 tools that are not Mimir's own are modelled on the public MCP servers of the same names. Nothing here executes them.
 - Task labels, skills and entity links were written by one person. This is a controlled benchmark, not a field study. The next step is replaying real agent logs.
 - "Held-out" means held-out wording, not held-out jobs. Each job appears in training in two other phrasings, and the 30 skills were written from the same ground truth as the skill-job labels, so the skill-job gain is partly in-distribution.
 - The learning gain is concentrated: plain jobs (40 held-out tasks) move only a little, skill jobs (30) and entity jobs (only 10) more. Coverage peaks after the first training pass and drifts down with more passes over the same examples. With 80 tasks the sampling error is about 5 points. The "±" in the tables is the spread over training-order shuffles on one fixed test set, not a confidence interval.
-- The keyword baselines cannot learn. I have not compared against a flat index that also learns from feedback.
 - Preload-everything shows 100% because it hands over every tool by construction; that number is not measured.
-- I tuned after seeing test results, twice. The "strong" confidence threshold (1.0) was picked from a sweep over held-out rows, and I changed two learner settings (`coUseBoost` to 0, `newEdge` to 0.12) after the unseen-jobs test showed the first settings hurt. That change moved the headline: after five passes the held-out figure went from 69.3% to 66.8%, skill jobs from 70% to 58%, entity jobs from 94% to 100%. Held-out figures that were also used to choose settings should be read with that in mind, and I have no ablation saying where the graph's lead on unseen jobs comes from (skills, similar words or entity links).
+- I tuned after seeing test results, three times: the "strong" confidence threshold (1.0) was picked from a sweep over held-out rows; two learner settings (`coUseBoost` to 0, `newEdge` to 0.12) were changed after the unseen-jobs test showed the first settings hurt (moving 5-pass held-out from 69.3% to 69%); and adaptive size (`kWeak: 12`) was chosen from a 3-option grid on held-out tasks. Held-out figures that were also used to choose settings should be read with that in mind.
 - Held-out accuracy is well below 100%. The graph does not understand language; it follows learned links. It helps most when wording varies, a thing is known, or the catalog is large.
 - A keyword index that knows the skills reaches 58.8% on the same tasks, and one that also learns from the same training tasks reaches 67.5%, about what the graph gets after learning. On this benchmark the graph is not measurably better than a flat index that stores past tasks. What it adds is a visible path for every pull and state kept outside the app process, in HydraDB.
-- Learning on other jobs can hurt a job the graph has not seen. Training on half of the jobs and testing on the other half lowered coverage under the first settings I tried (72.1% cold to 60.4%). I then turned off the co-use boost and weakened new links, which brought it back to 70.4%; I chose those two settings after seeing that test, so it is no longer fully untouched.
+- Learning on other jobs can hurt a job the graph has not seen. Training on half of the jobs and testing on the other half lowered coverage under the first settings I tried (72.1% cold to 60.4%). I then turned off the co-use boost and weakened new links, which brought it back to 73.8%; I chose those two settings after seeing that test, so it is no longer fully untouched.
 - On a real small model (qwen3:1.7b through Ollama, 40 unseen tasks) the graph cut the prompt from about 15,500 to about 500 tokens and the time per call roughly in half, but it did **not** improve first-call accuracy: 35% against 42.5% with every tool loaded, because the needed tool was missing from the pulled list on 17.5% of tasks. The measured win there is cost and speed, not correctness.
-- The semantic bridge uses single-word embeddings from `all-minilm`, which are noisy. Its vocabulary was built from the catalog and the task words (no labels), so unseen vocabulary is simply ignored.
+- The semantic bridge uses single-word embeddings from `all-minilm`, which are noisy. Its vocabulary was built from the catalog and all task words including held-out (no labels).
 - HydraDB's query dialect is narrow (no expressions in `RETURN`, one relationship type per pattern, no property writes in batch shapes). The design works inside it; see `src/store-hydradb.mjs` for the shapes used and why.
 - Load numbers come from one 4-core WSL VM with HydraDB and the load generator on the same machine.
 
