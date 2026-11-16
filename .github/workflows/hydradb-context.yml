@@ -1,0 +1,22 @@
+name: HydraDB context gate
+on:
+  push:
+    branches:
+      - feat/hydradb-agent-context-hackathon
+  pull_request:
+    paths:
+      - 'daemon/hydradb-context.mjs'
+      - 'tests/hydradb-context.test.mjs'
+      - 'daemon/agent-runner.mjs'
+jobs:
+  node-context-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check daemon/hydradb-context.mjs
+      - run: node --check daemon/agent-runner.mjs
+      - run: node --test tests/hydradb-context.test.mjs
