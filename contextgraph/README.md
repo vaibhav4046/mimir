@@ -18,7 +18,7 @@ Imagine a helper who, before every single question, reads the instruction manual
 - **The honest verdict:** it saves a lot of reading (about 15,500 tokens down to about 500 on the test catalog) and about half the time per call. On a tiny model it did **not** make the first tool choice more accurate, and a plain keyword index that also learns scores about the same. The limits are listed in full, in plain words, near the bottom.
 
 - **Live demo:** https://tooth-refrigerator-achieve-trim.trycloudflare.com
-- **Video walkthrough:** https://www.loom.com/share/2528c92e151447ffb309f0b16df119de
+- **Video walkthrough:** https://www.loom.com/share/608823a743494140be50f0876d19e75b
 - **Launch film (no words, 68 s):** [on X](https://x.com/mikeflag43/status/2122280911689384280)
 - **Track:** 2, the agent context layer (with Track 1's continual-learning mechanics: edge reweighting, gap-driven ingestion, path shortcuts)
 - **Built on:** HydraDB v0.4.0, built from source and run by us (not the hosted platform). The benchmark, the scale test and the local-model test ran against a running HydraDB node; the two comparison tests (a keyword index that learns, and jobs it has never seen) run in process, and the in-process store matches HydraDB exactly in the parity test.
