@@ -57,6 +57,8 @@ export class AgentContextGraph {
       // Words the graph has never seen are embedded live. It fails open: no Ollama or model just means no extra links.
       g.embedUnknown = createEmbedder({ url: this.getSettings().ollamaUrl || undefined });
       await g.restore(serverOf);
+      // Load the embedder's anchor vectors once, up front and without the per-request budget, so no turn waits for them.
+      { const budget = g.o.embedBudgetMs; g.o.embedBudgetMs = Infinity; await g.retrieve('qwertyuiop').catch(() => {}); g.o.embedBudgetMs = budget; }
       this.activeConfigKey = key;
       this.graph = g;
       return g;

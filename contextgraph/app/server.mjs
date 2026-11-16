@@ -61,7 +61,13 @@ async function buildGraph() {
   for (const name of ENTITY_NAMES) await g.registerEntity(name);
   say('adding semantic bridge edges');
   await g.loadSimilar(SIMILAR);
-  if (embedder) await g.retrieve('qwertyuiop').catch(() => {}); // warm the embedder (anchor vectors) so the first visitor is not slow
+  if (embedder) {
+    // Warm the embedder fully (no latency budget) so the first visitor does not wait for the anchor vectors.
+    const budget = g.o.embedBudgetMs;
+    g.o.embedBudgetMs = Infinity;
+    await g.retrieve('qwertyuiop').catch(() => {});
+    g.o.embedBudgetMs = budget;
+  }
   // Which example prompts does the untrained graph already get right? The page leads with those.
   state.examples = [];
   for (const t of TASKS.filter(x => x.split === 'test').filter((_, i) => i % 5 === 0)) {
