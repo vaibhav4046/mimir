@@ -1,0 +1,50 @@
+name: Mimir Code Knowledge Graph
+
+on:
+  pull_request:
+    paths:
+      - 'daemon/code-understanding.mjs'
+      - 'daemon/coordinator.mjs'
+      - 'renderer/components/CodeKnowledgeGraphView.jsx'
+      - 'renderer/components/RealmProjectMapView.jsx'
+      - 'scripts/build-code-graph.mjs'
+      - 'tests/code-understanding.test.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/code-knowledge-graph.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install packages
+        run: npm ci --ignore-scripts
+      - name: Graph regression tests
+        run: node --test tests/code-understanding.test.mjs
+      - name: Mimir architecture and atlas regression tests
+        run: node --test tests/mimir-os-architecture.test.mjs
+      - name: Generate local graph
+        run: npm run graph:build
+      - name: Verify generated graph
+        run: |
+          node -e "const g=require('./.ua/mimir-code-graph.json'); if(!g.nodes.length || !g.edges.length) process.exit(1); const ids=new Set(g.nodes.map(n=>n.id)); if(!g.edges.every(e=>ids.has(e.from)&&ids.has(e.to))) process.exit(2); console.log({nodes:g.nodes.length,edges:g.edges.length})"
+      - name: Build renderer
+        run: npm run build
+      - name: Publish graph JSON for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: mimir-code-knowledge-graph
+          path: .ua/mimir-code-graph.json
+          retention-days: 14

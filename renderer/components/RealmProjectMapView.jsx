@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '../api.js';
 import { MimirAsset } from './MimirAsset.jsx';
+import { CodeKnowledgeGraphView } from './CodeKnowledgeGraphView.jsx';
 
 const ATLAS_TYPE_LABELS = { Bot: 'Teammate', Artifact: 'Creation', Memory: 'Note', Evidence: 'Proof' };
 
@@ -127,6 +128,7 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
                 { id: 'graph', label: 'Map' },
                 { id: 'list', label: 'List' },
                 { id: 'timeline', label: 'Timeline' },
+                { id: 'code', label: 'Code intelligence' },
               ].map(vm => (
                 <button
                   key={vm.id}
@@ -222,6 +224,7 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
 
         {err && <div className="tool-card is-error">{err}</div>}
 
+        {viewMode === 'code' ? <CodeKnowledgeGraphView /> : (
         <div className="grid-2" style={{ gridTemplateColumns: 'minmax(0, 2fr) minmax(260px, 1fr)', alignItems: 'start' }}>
           {viewMode === 'graph' && (
           <div className="map-stage">
@@ -499,6 +502,7 @@ export function RealmProjectMapView({ onNavigate, onSelectBot }) {
             </div>
           </aside>
         </div>
+        )}
       </div>
     </div>
   );

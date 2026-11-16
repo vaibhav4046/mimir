@@ -46,6 +46,7 @@ import {
 import { DagSwarmEngine, SWARM_RECIPES } from './dag-swarm.mjs';
 import { ConnectorHub } from './connectors.mjs';
 import { buildMidgardProjectMap, buildMemoryAtlas } from './project-map.mjs';
+import { buildRepositoryKnowledgeGraph, findGraphNeighborhood } from './code-understanding.mjs';
 import { DeepResearchEngine, RESEARCH_TOPIC_PACKS } from './deep-research.mjs';
 import { runEvalSuite } from './eval-runner.mjs';
 import { runChatTurn } from './llm-provider.mjs';
@@ -2183,6 +2184,22 @@ export async function startCoordinator(options = {}) {
       }
       if (req.method === 'GET' && p === '/v1/projects/map') {
         return json(res, 200, await buildMidgardProjectMap({ store, foundry }));
+      }
+      // Read-only local code graph. Uses Understand Anything's .ua graph when installed.
+      // Otherwise scans Mimir's own source. Does not execute repositories or upload code.
+      if (req.method === 'GET' && p === '/v1/projects/knowledge-graph') {
+        const graph = buildRepositoryKnowledgeGraph();
+        const query = urlObj.searchParams.get('q') || '';
+        if (!query.trim()) return json(res, 200, graph);
+        const matched = findGraphNeighborhood(graph, query, 1, 250);
+        const nodeIds = new Set(matched.map(node => node.id));
+        return json(res, 200, {
+          ...graph,
+          nodes: matched,
+          edges: graph.edges.filter(edge => nodeIds.has(edge.from) && nodeIds.has(edge.to)),
+          query,
+          matchCount: matched.length,
+        });
       }
 
       // Model Council (Karpathy Stage 1-3 — Opt-In Policy)
