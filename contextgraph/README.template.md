@@ -17,6 +17,7 @@ Imagine a helper who, before every single question, reads the instruction manual
 
 - **Live demo:** {{LIVE}}
 - **Video walkthrough:** {{VIDEO}}
+- **Launch film (no words, 68 s):** [on X](https://x.com/mikeflag43/status/2122280911689384280)
 - **Track:** 2, the agent context layer (with Track 1's continual-learning mechanics: edge reweighting, gap-driven ingestion, path shortcuts)
 - **Built on:** HydraDB v0.4.0, built from source and run by us (not the hosted platform). The benchmark, the scale test and the local-model test ran against a running HydraDB node; the two comparison tests (a keyword index that learns, and jobs it has never seen) run in process, and the in-process store matches HydraDB exactly in the parity test.
 - **Wired into a real agent:** [Mimir](https://github.com/vaibhav4046/mimir)'s agent loop can use it (`daemon/context-graph.mjs`). It is opt-in, off by default, and fails open.
