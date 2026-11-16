@@ -15,10 +15,17 @@
 > [Test suite](tests/hydradb-context.test.mjs) ·
 > [OSS graph CI workflow](.github/workflows/hydradb-oss-integration.yml)
 >
-> **Evidence boundary:** existing CI unit tests use a simulated transport,
-> while the separate OSS workflow builds and queries a real HydraDB server.
+> **Verified OSS run (2026-11-16 01:11 GMT):**
+> [GitHub Actions end-to-end proof](https://github.com/vaibhav4046/mimir/actions/runs/43784241107)
+> compiled the upstream engine with native LAGraph, passed authenticated
+> write/traverse, and exercised the Mimir routing benchmark against the real
+> running server. Across **10 synthetic, labelled routing tasks** it measured
+> **81.55% fewer tool-schema JSON bytes**, **100% relevant-tool recall**,
+> **54.55% precision**, and **27.12 ms p95 latency** on warm round 3.
+> These are **tool-selection metrics, NOT end-to-end agent answer accuracy,
+> measured LLM token savings, production reliability or real-user demand**.
 > The Vercel landing site is not a public HydraDB-backed agent demo.
-> Do not present benchmark results until artifact JSON from a live run exists.
+> A separate held-out feedback-curve experiment is undergoing validation.
 
 
 **A local-first desktop AI workspace for multi-agent work, live browser control, code/document authoring, and gated execution.**
