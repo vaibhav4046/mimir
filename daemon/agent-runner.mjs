@@ -1821,7 +1821,9 @@ export class AgentRunner {
           });
           const names = new Set(routed.tools.map(t => t?.function?.name || t?.name));
           const narrowed = allTools.filter(t => names.has(t?.function?.name || t?.name));
-          if (narrowed.length) allTools = narrowed;
+          if (narrowed.length || routed.trace.status === 'all-suppressed') {
+            allTools = narrowed;
+          }
           console.info('[hydradb-context]', JSON.stringify({
             ...routed.trace, permissionChecked: true,
             modelToolCount: allTools.length,
