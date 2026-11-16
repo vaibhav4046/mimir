@@ -24,6 +24,8 @@ Use the **self-hosted open-source HydraDB** repository `https://github.com/hydra
 
 7. **Make the Loom.** Capture a working 90–150-second walkthrough: real OSS server/graph traversal; Mimir task choosing minimal context; actual before/after with reproducible metrics; one verified feedback edge changing later selection; live URL; source repo; target buyer. Check video playback without login; include captions. Do not use a scripted mock while saying it's real.
 
+**Confirmed organizer event:** https://luma.com/bqwllms4 — the event page lists the event venue as Discord and registration as approval-required. Official Discord invite: https://discord.com/invite/YPtwenvxY8 . The public Luma page does NOT show a submission form, so inspect the actual server announcement/submission channel. Do not reuse the unrelated August Hack Hydra submission form.
+
 8. **SUBMIT BEFORE THE CUTOFF.** Locate the hackathon's actual submission form or organizer channel, enter (a) live usable app URL, (b) public GitHub repo and exact branch/commit, (c) publicly playable Loom. Verify form receipt and screenshot confirmation with submitted timestamp. If login/2FA/manual permission blocks submission, send me a precise action request immediately with the link and what to click; keep building everything else. Do not claim submitted unless the platform confirms it.
 
 ## Execution policy
