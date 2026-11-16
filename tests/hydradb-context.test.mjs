@@ -24,6 +24,9 @@ function mockHydra() {
     } else if (query.includes('MATCH (c {id: $id})-[:ROUTES_TO]->(t)')) {
       columns = ['name'];
       rows = [...(edges.get(parameters.id) || [])].map(id => [{ type: 'string', value: names.get(id) }]);
+    } else if (query.includes('MATCH (c {id: $id})-[:SUPPRESSES]->(t)')) {
+      columns = ['name'];
+      rows = [];
     } else {
       throw Error('Unexpected query: ' + query);
     }
