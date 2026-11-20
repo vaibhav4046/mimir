@@ -76,4 +76,4 @@ Still not possible from this machine: a code-signing certificate (costs money an
 1. Real users: five people run it and report what broke (owner).
 2. Re-run the tool-routing bench with more prompts and a 4B model before claiming more.
 3. UI density pass: fewer words per screen, one primary action per view.
-4. Telegram bridge (long polling, pairing code) for phone approvals.
+4. ~~Telegram bridge for phone approvals~~ built 2026-11-20 (`daemon/telegram.mjs`, Settings card, `tests/telegram.test.mjs`). Tested only against a local stub of the Bot API; **never run against the real api.telegram.org**. Needs one real run with a BotFather token: pair, approve, deny, an irreversible approval's second tap.

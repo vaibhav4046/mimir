@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../api.js';
 import { MimirAsset } from './MimirAsset.jsx';
 import { ModelSetupWizard } from './ModelSetupWizard.jsx';
+import { TelegramCard } from './TelegramCard.jsx';
 
 /** Shows which optional runtimes this machine has, with the exact command to add a missing one. */
 function PreflightCard() {
@@ -207,6 +208,7 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
 
         <PreflightCard />
         <ContextGraphCard settings={settings} onSaved={onSaved} />
+        <TelegramCard />
 
         <form className="card" onSubmit={handleSave}>
           <h3 className="card-title">AI model</h3>
