@@ -1,0 +1,42 @@
+name: Release (Windows installer)
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      - name: Test
+        run: npm test
+      - name: Build the Rust core (bundled into the installer)
+        run: cargo build --release --manifest-path rust/Cargo.toml
+      - name: Say whether this build will be signed
+        shell: pwsh
+        run: |
+          if ($env:CSC_LINK) { "Signing with the certificate from the CSC_LINK secret." } else { "No CSC_LINK secret: this installer will be UNSIGNED (Windows SmartScreen will warn). See docs/RELEASING.md." }
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+      - name: Build the installer
+        run: npm run dist:win
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      - name: Show the signature status
+        shell: pwsh
+        run: Get-ChildItem release\*.exe | ForEach-Object { Get-AuthenticodeSignature $_.FullName | Format-List Path, Status }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mimir-windows-installer
+          path: |
+            release/*.exe
+            release/*.blockmap
