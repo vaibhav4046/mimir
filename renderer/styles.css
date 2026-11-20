@@ -4889,3 +4889,9 @@ label:has(.sr-only:focus-visible) {
 .run-node-sub { fill: var(--ink-muted, #91a8bd); font-size: 10.5px; }
 @media (prefers-reduced-motion: reduce) { .is-running > .run-dot, .run-node.is-running rect { animation: none; } }
 @media (max-width: 640px) { .run-step { grid-template-columns: 12px minmax(0, 1fr); } .run-step .muted, .run-step-state { grid-column: 2; } }
+/* Workflow editor: schedule, notifications and the weekday chips stack cleanly instead of running together */
+.wf-when, .wf-notify { border: 1px solid var(--rule, #1d2b3b); padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; margin: 0; }
+.wf-when legend, .wf-notify legend { font-size: 12px; font-weight: 700; padding: 0 6px; color: var(--ink-muted, #91a8bd); }
+.wf-notify label { display: flex; align-items: center; gap: 8px; }
+.wf-schedule { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.wf-schedule .chip[aria-pressed="true"] { background: var(--frost, #3ac9ff); color: #04121c; border-color: var(--frost, #3ac9ff); }

@@ -295,7 +295,7 @@ export class WorkflowEngine {
     if (stripped && stripped !== rawSteps[0].instruction) rawSteps[0] = { title: titleOf(stripped), instruction: stripped };
 
     return {
-      name: titleOf(text.replace(/^(?:every|each|when(?:ever)?)\b[^,]*,\s*/i, '')),
+      name: titleOf(text.replace(/^(?:every|each|when(?:ever)?)\b[^,]*,\s*/i, '').split(/\s*(?:,|;|\bthen\b|\band then\b)\s*/i)[0] || text),
       description: text,
       trigger,
       triggerNote: note || null,

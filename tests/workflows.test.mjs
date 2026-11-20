@@ -96,6 +96,7 @@ test('workflow end to end: draft from a sentence, run with hand-offs, fail, resu
   const draft = (await api('POST', '/v1/workflows/draft', { description: sentence })).data;
   assert.equal(draft.plannedBy, 'wording');
   assert.deepEqual(draft.trigger, { type: 'daily', dailyAt: '08:00' });
+  assert.equal(draft.name, 'Research competitor pricing', 'the name is the first clause, not the first six words');
   assert.deepEqual(draft.steps.map(s => s.instruction), ['research competitor pricing', 'write a short brief about competitor moves', 'draft one reply idea'], 'schedule words are not part of step 1');
   assert.deepEqual(draft.steps.map(s => nameOf(s.botId)), ['Mara', 'Cole', 'Cole'], 'the opening verb decides: writing about competitors is still writing');
   assert.equal((await api('GET', '/v1/workflows')).data.workflows.length, 0);
