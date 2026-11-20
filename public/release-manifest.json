@@ -33,13 +33,13 @@
   "artifacts": [
     {
       "path": "package.json",
-      "bytes": 2121,
-      "sha256": "122cd4589fbd1e6cb6229aa859e913b57b0f87cbc1ee04fef50c2d5c5a7a3e92"
+      "bytes": 2145,
+      "sha256": "5d17cab4d8fc84e972314f4cb4f3a097a7e0b17de708f3969c7fe6eee1b5fe72"
     },
     {
       "path": "daemon/coordinator.mjs",
-      "bytes": 137693,
-      "sha256": "6059be66c2f755d29e31d654e4ed738bb483573609d3af892ceb0306bf386a95"
+      "bytes": 136935,
+      "sha256": "2ebcaeb8cfaef603a3662516a620880c51433a01e40f4c6b3b0ed599132d7eef"
     },
     {
       "path": "daemon/receipt.mjs",

@@ -64,6 +64,7 @@ import {
   detectHardwareCapabilities,
 } from './contracts.mjs';
 import { SentinelPolicyService } from './sentinel.mjs';
+import { TelegramBridge } from './telegram.mjs';
 import {
   NORSE_AGENT_REGISTRY,
   validateNorseRegistry,
@@ -526,6 +527,33 @@ export async function startCoordinator(options = {}) {
   runner.contextGraph.warm();
   runner.deepResearch = deepResearch;
 
+  // Phone approvals: the bot token lives in the vault like other secrets; the bridge resolves approvals
+  // through runner.resolveApproval, the same function the UI route calls.
+  const TELEGRAM_TOKEN_LABEL = 'TELEGRAM_BOT_TOKEN';
+  const telegram = new TelegramBridge({
+    baseUrl: options.telegramBaseUrl,
+    getSettings: () => store.getSettings(),
+    tokenStore: {
+      get: () => vault.resolveSecret(TELEGRAM_TOKEN_LABEL)?.fields?.value || '',
+      set: value => store.secretWriter(TELEGRAM_TOKEN_LABEL, value),
+      clear: () => {
+        const old = vault.resolveSecret(TELEGRAM_TOKEN_LABEL);
+        if (old) vault.deleteEntry(old.id);
+      },
+    },
+    statePath: path.join(dataDir, 'telegram.json'),
+    listPending: () => runner.listPendingApprovals(),
+    resolveApproval: (id, decision) => runner.resolveApproval(id, decision),
+    redact: text => vault.redactText(text),
+    ...(options.telegramBridgeOptions || {}),
+  });
+  const runnerBroadcast = runner.broadcast;
+  runner.broadcast = (event, data) => {
+    runnerBroadcast?.(event, data);
+    telegram.onEvent(event, data);
+  };
+  if (vault.resolveSecret(TELEGRAM_TOKEN_LABEL) && !store.getSettings().localOnly) telegram.start().catch(() => {});
+
   const proactive = new ProactiveEngine({
     store,
     routines,
@@ -852,6 +880,15 @@ export async function startCoordinator(options = {}) {
         const usage = await systemUsage({ settings: store.getSettings(), thread: threadId ? store.getThread(threadId) : null });
         return json(res, 200, { ...usage, contextGraph: runner.contextGraph?.status() });
       }
+      // Phone approvals (Telegram). Only the connect and pair-code routes return a pairing code; none returns the token.
+      if (req.method === 'GET' && p === '/v1/telegram/status') return json(res, 200, telegram.status());
+      if (req.method === 'POST' && p === '/v1/telegram/connect') {
+        const body = await readBody(req);
+        return json(res, 200, { ...(await telegram.connect(body.token)), ...telegram.status() });
+      }
+      if (req.method === 'POST' && p === '/v1/telegram/pair-code') return json(res, 200, { ...telegram.newPairingCode(), ...telegram.status() });
+      if (req.method === 'POST' && p === '/v1/telegram/unpair') return json(res, 200, telegram.unpair());
+      if (req.method === 'POST' && p === '/v1/telegram/disconnect') return json(res, 200, await telegram.disconnect());
       if (req.method === 'GET' && p === '/v1/context-graph/status') return json(res, 200, runner.contextGraph?.status() || { enabled: false });
       if (req.method === 'POST' && p === '/v1/models/pull') {
         const body = await readBody(req);
@@ -1530,7 +1567,7 @@ export async function startCoordinator(options = {}) {
 
       // Vault
       if (req.method === 'GET' && p === '/v1/vault') {
-        return json(res, 200, vault.listMasked());
+        return json(res, 200, vault.listMasked().filter(e => e.label !== TELEGRAM_TOKEN_LABEL));
       }
       if (req.method === 'POST' && p === '/v1/vault') {
         const body = await readBody(req);
@@ -2893,7 +2930,9 @@ export async function startCoordinator(options = {}) {
       prunePairingState();
       return [...pairingRequests.values()].map(r => ({ ...r }));
     },
+    telegram,
     async close() {
+      await telegram.stop();
       runner.killAllRuns();
       dagSwarm.abortAll?.();
       proactive.stop();
