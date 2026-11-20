@@ -175,7 +175,7 @@ export function defaultSettings() {
     openaiModel: 'gpt-4o-mini',
     localOnly: false, // when true, no model call may leave this computer
     // Optional Context Graph (HydraDB): offer only the tools a graph pulls for each request.
-    contextGraph: { enabled: false, url: 'http://127.0.0.1:18443' },
+    contextGraph: { enabled: true, url: 'http://127.0.0.1:18443', store: 'auto' },
     modelSetupDone: false,
     enableFallback: true,
     approvalPolicy: 'ask-writes', // 'ask-writes' | 'always-ask' | 'auto-approve'

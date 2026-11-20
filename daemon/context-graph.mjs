@@ -1,4 +1,5 @@
 import { HydraStore } from '../contextgraph/src/store-hydradb.mjs';
+import { MemoryStore } from '../contextgraph/src/store-memory.mjs';
 import { ContextGraph } from '../contextgraph/src/graph.mjs';
 import { setNamespace } from '../contextgraph/src/text.mjs';
 import { createEmbedder } from '../contextgraph/src/embed-similar.mjs';
@@ -14,6 +15,7 @@ import { createEmbedder } from '../contextgraph/src/embed-similar.mjs';
  * Enable in settings: contextGraph: { enabled: true, url: 'http://127.0.0.1:18443' } and set
  * MIMIR_CONTEXT_GRAPH_TOKEN (the HydraDB bearer token) in the environment.
  */
+const INIT_BUDGET_MS = 1500;
 const serverOf = name => (name.startsWith('mcp__') ? name.split('__')[1] : 'mimir');
 const nameOf = t => t?.function?.name || t?.name || '';
 const descOf = t => t?.function?.description || t?.description || nameOf(t);
@@ -50,8 +52,7 @@ export class AgentContextGraph {
       this.initPromise = null;
     }
     this.initPromise ||= (async () => {
-      const store = this.injectedStore || new HydraStore({ url, token: process.env.MIMIR_CONTEXT_GRAPH_TOKEN || cfg.token || undefined });
-      await store.init();
+      const store = await this.#openStore(cfg, url);
       setNamespace(this.namespace);
       const g = new ContextGraph(store, { k, embedBudgetMs: 40 });
       // Words the graph has never seen are embedded live. It fails open: no Ollama or model just means no extra links.
@@ -71,12 +72,55 @@ export class AgentContextGraph {
     }
   }
 
+  /**
+   * HydraDB when a node answers, otherwise an in-process graph, so the feature works on a plain
+   * install. cfg.store = 'hydradb' makes HydraDB required (init errors surface and trip the breaker);
+   * 'memory' skips it. The in-process graph forgets what it learned when Mimir restarts.
+   */
+  async #openStore(cfg, url) {
+    if (this.injectedStore) { await this.injectedStore.init(); this.storeKind = this.injectedStore.kind || 'injected'; return this.injectedStore; }
+    const mode = cfg.store || 'auto';
+    if (mode !== 'memory') {
+      try {
+        const hydra = new HydraStore({ url, token: process.env.MIMIR_CONTEXT_GRAPH_TOKEN || cfg.token || undefined });
+        await hydra.init();
+        this.storeKind = 'hydradb';
+        return hydra;
+      } catch (err) {
+        if (mode === 'hydradb') throw err;
+      }
+    }
+    const mem = new MemoryStore();
+    await mem.init();
+    this.storeKind = 'memory';
+    return mem;
+  }
+
+  /** The graph if it is ready within the budget, else null (setup keeps going in the background). */
+  async #ready() {
+    if (this.graph && this.activeConfigKey) return this.#init();
+    const budget = this.getSettings()?.contextGraph?.initBudgetMs ?? INIT_BUDGET_MS;
+    const init = this.#init();
+    init.catch(() => {}); // the race below reports it; must not become an unhandled rejection
+    let timer;
+    const late = new Promise(r => { timer = setTimeout(() => r(null), budget); timer.unref?.(); });
+    try { return await Promise.race([init, late]); } finally { clearTimeout(timer); }
+  }
+
+  /** Start setup in the background (called at startup) so the first turn does not wait. */
+  warm() {
+    if (this.enabled) this.#init().catch(err => { this.failures += 1; this.lastFailureAt = Date.now(); this.lastPull = { error: err.message, at: new Date().toISOString() }; });
+  }
+
   /** The subset of `tools` to offer for this request, or null to keep the full list. */
   async select(userText, tools) {
     this.narrowed = false;
     if (!this.enabled || !Array.isArray(tools) || tools.length < 8 || typeof userText !== 'string' || userText.trim().length < 4) return null;
     try {
-      const g = await this.#init();
+      // Never hold a turn for setup: if the graph is still warming up (HydraDB probe, embedder), this turn
+      // runs on the full list and setup finishes in the background.
+      const g = await this.#ready();
+      if (!g) return null;
       setNamespace(this.namespace);
       const known = new Set([...g.tools.values()].map(x => x.name));
       for (const t of tools) {
@@ -118,6 +162,6 @@ export class AgentContextGraph {
   }
 
   status() {
-    return { enabled: this.enabled, connected: Boolean(this.graph), failures: this.failures, lastPull: this.lastPull };
+    return { enabled: this.enabled, connected: Boolean(this.graph), store: this.storeKind || null, failures: this.failures, lastPull: this.lastPull };
   }
 }

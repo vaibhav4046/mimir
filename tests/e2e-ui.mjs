@@ -503,6 +503,30 @@ async function main() {
     assert.equal(pageErrors.length, 0, `Uncaught page errors: ${pageErrors.join('; ')}`);
     assert.equal(consoleErrors.length, 0, `Console errors: ${consoleErrors.join('; ')}`);
 
+    // First launch, step two: model is ready, so a first task is offered once; skipping ends it for good.
+    const ftTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mimir-e2e-ft-'));
+    const ftCoord = await startCoordinator({ dataDir: ftTmp, enableScheduler: false });
+    ftCoord.store.updateSettings({ modelSetupDone: true });
+    const ftCtx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const ftPage = await ftCtx.newPage();
+    ftPage.on('pageerror', err => pageErrors.push(`ftPage: ${err.message}`));
+    try {
+      const ftUrl = `http://127.0.0.1:${uiSrv.address().port}/?coordinator=${encodeURIComponent(ftCoord.url)}`;
+      await ftPage.goto(ftUrl, { waitUntil: 'domcontentloaded' });
+      await ftPage.waitForSelector('[data-testid="first-task"]', { timeout: 15000 });
+      for (const id of ['plan-week', 'explain', 'make-file']) assert.ok(await ftPage.isVisible(`[data-testid="first-task-${id}"]`), `starter ${id} visible`);
+      await ftPage.click('[data-testid="first-task-skip"]');
+      await ftPage.waitForSelector('[data-testid="sidebar"]', { timeout: 15000 });
+      assert.equal(await ftPage.isVisible('[data-testid="first-task"]'), false, 'first task gone after skip');
+      await ftPage.reload({ waitUntil: 'domcontentloaded' });
+      await ftPage.waitForSelector('[data-testid="sidebar"]', { timeout: 15000 });
+      assert.equal(await ftPage.isVisible('[data-testid="first-task"]'), false, 'first task does not come back');
+    } finally {
+      await ftCtx.close();
+      await ftCoord.close();
+      fs.rmSync(ftTmp, { recursive: true, force: true });
+    }
+
     // Extra Functional QA Journeys:
     // A. Expired Session Recovery + B. No-Ollama & Offline Internet + C. Active Agent Abort + D. Real Coordinator Restart Persistence
     // A. Expired Pairing Session TTL -> UI detects 401 SESSION_EXPIRED and prompts re-pairing

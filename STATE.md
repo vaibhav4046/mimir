@@ -51,10 +51,17 @@ Live checks with `qwen3:1.7b` on this machine:
 
 Code-signing certificate · Google OAuth client (Gmail/Drive/Calendar sign-in) · macOS/iOS build host · an always-on machine for true 24/7 · model API keys (a chat subscription is not an API key; providers do not offer login-without-key for API use).
 
+## Update 2026-11-20 (tool routing, first task)
+
+- **Role-scoped tool sets already exist** (`curateToolsForBotTurn`, `daemon/local-exec.mjs`); the "Known problems" item about over-calling is partly stale. Measured with `qwen3:1.7b`, 16 plain + 16 tool prompts (`tests/tool-gate-bench.mjs`, results in `docs/tool-gate-bench.json`): today's curation over-called a tool on 1 of 16 plain prompts.
+- **Context Graph router is now on by default** and works without HydraDB (`store: 'auto'` falls back to an in-process graph that forgets on restart). Same bench: first tool call correct 50% → 62.5%, overall 71.9% → 81.3%, prompt tokens 896 → 664. **Small sample (n=32, one model, one run): treat as a direction, not proof.** A "no tools unless the request shows a need" gate was tried and did not improve accuracy (not shipped). Telling the model which tools were pulled made it worse.
+- The graph changes what the model is *shown*, never what it may *run* (`permittedToolNames` in `daemon/agent-runner.mjs`). Setup never blocks a turn: a slow graph is skipped once and used when ready.
+- **First launch has a step two**: after the model is set up, `FirstTask` offers three starter tasks (plan my week, explain something, make a file). Shown once; covered by the e2e journey.
+- Build note: `cargo build --release --manifest-path rust/Cargo.toml` is needed for the Rust WAL test to pass in a fresh checkout.
+
 ## Next, in order
 
-1. Role-scoped tool sets so small models stop over-calling tools (measure with the eval set before/after).
-2. First-run flow: wizard → pick a team preset → first task, no settings pages.
+1. Real users: five people run it and report what broke (owner).
+2. Re-run the tool-routing bench with more prompts and a 4B model before claiming more.
 3. UI density pass: fewer words per screen, one primary action per view.
-4. Rebuild and re-test the Windows installer.
-5. Telegram bridge (long polling, pairing code) for phone approvals.
+4. Telegram bridge (long polling, pairing code) for phone approvals.

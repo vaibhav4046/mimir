@@ -523,6 +523,7 @@ export async function startCoordinator(options = {}) {
   runner.agiHarness = agiHarness;
   runner.dagSwarm = dagSwarm;
   runner.contextGraph = new AgentContextGraph({ getSettings: () => store.getSettings() });
+  runner.contextGraph.warm();
   runner.deepResearch = deepResearch;
 
   const proactive = new ProactiveEngine({
@@ -911,8 +912,10 @@ export async function startCoordinator(options = {}) {
             const host = new URL(cg.url.trim()).hostname.replace(/^\[|\]$/g, '');
             if (!['127.0.0.1', 'localhost', '::1'].includes(host)) return json(res, 400, { error: 'contextGraph.url must point at a HydraDB on this computer (127.0.0.1 or localhost)' });
           }
-          body.contextGraph = { enabled: Boolean(cg.enabled), url: (cg.url || 'http://127.0.0.1:18443').trim(), k: Math.min(12, Math.max(1, Number(cg.k) || 6)) };
+          if (cg.store !== undefined && !['auto', 'memory', 'hydradb'].includes(cg.store)) return json(res, 400, { error: "contextGraph.store must be 'auto', 'memory' or 'hydradb'" });
+          body.contextGraph = { enabled: Boolean(cg.enabled), url: (cg.url || 'http://127.0.0.1:18443').trim(), k: Math.min(12, Math.max(1, Number(cg.k) || 6)), store: cg.store || 'auto' };
           runner.contextGraph = new AgentContextGraph({ getSettings: () => store.getSettings() });
+          runner.contextGraph.warm();
         }
         // Fast mode needs to know the smallest installed model.
         if (body.responseMode === 'fast' && !store.getSettings().autoTierModels?.fast_local) await modelLibrary.refreshTiers();

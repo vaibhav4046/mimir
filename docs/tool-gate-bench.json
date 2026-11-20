@@ -1,0 +1,2650 @@
+{
+ "model": "qwen3:1.7b",
+ "system": "You are Mimir, a helpful assistant.",
+ "toolsInFullList": 15,
+ "prompts": 32,
+ "variants": {
+  "curated": {
+   "unneededToolCallPct": 6.3,
+   "correctFirstToolPct": 50,
+   "toolWasOfferedPct": 93.8,
+   "overallOkPct": 71.9,
+   "avgToolsOffered": 8.4,
+   "avgPromptTokens": 896,
+   "avgMs": 712,
+   "errors": 0,
+   "rows": [
+    {
+     "text": "hi, how are you today?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 301,
+     "tokens": 849
+    },
+    {
+     "text": "What is 17 times 23?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 200,
+     "tokens": 852
+    },
+    {
+     "text": "Explain what a closure is in JavaScript in two sentences.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 425,
+     "tokens": 854
+    },
+    {
+     "text": "Rewrite this to sound friendlier: \"Your request has been denied.\"",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 119,
+     "tokens": 857
+    },
+    {
+     "text": "Give me three name ideas for a coffee shop.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 872,
+     "tokens": 852
+    },
+    {
+     "text": "What is the capital of Australia?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 104,
+     "tokens": 849
+    },
+    {
+     "text": "Is it better to rent or buy a house? Keep it short.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 310,
+     "tokens": 856
+    },
+    {
+     "text": "Translate \"good morning\" into Spanish and French.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 666,
+     "tokens": 852
+    },
+    {
+     "text": "Summarize in one line: Mimir is a free assistant that runs on your own computer with local models.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 250,
+     "tokens": 865
+    },
+    {
+     "text": "Thanks, that was helpful!",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 259,
+     "tokens": 848
+    },
+    {
+     "text": "Can you tell me a short joke about programmers?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 344,
+     "tokens": 852
+    },
+    {
+     "text": "What is the difference between TCP and UDP?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 3378,
+     "tokens": 851
+    },
+    {
+     "text": "Help me think through whether to learn Rust or Go first.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 6486,
+     "tokens": 854
+    },
+    {
+     "text": "Write a two-line poem about rain.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "browser_search",
+     "ok": false,
+     "canSucceed": true,
+     "ms": 292,
+     "tokens": 850
+    },
+    {
+     "text": "How many days are in a leap year?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 159,
+     "tokens": 851
+    },
+    {
+     "text": "Convert 70 degrees Fahrenheit to Celsius.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 1202,
+     "tokens": 851
+    },
+    {
+     "text": "Remember that my sister is called Priya.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 167,
+     "tokens": 851
+    },
+    {
+     "text": "What did I tell you about my sister?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 226,
+     "tokens": 851
+    },
+    {
+     "text": "Look up the latest Node.js LTS version online.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "browser_search",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 317,
+     "tokens": 852
+    },
+    {
+     "text": "Create a file called todo.md with three tasks for tomorrow.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "fs_write",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 577,
+     "tokens": 854
+    },
+    {
+     "text": "What files do I have in my workspace?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "fs_list",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 232,
+     "tokens": 851
+    },
+    {
+     "text": "Show me what is inside package.json.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 918,
+     "tokens": 850
+    },
+    {
+     "text": "Run npm test and tell me if it passes.",
+     "noToolPrompt": false,
+     "offered": [
+      "shell_exec",
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "browser_open",
+      "browser_action",
+      "browser_screenshot",
+      "memory_save",
+      "memory_read",
+      "vault_use",
+      "subagent_loop",
+      "council_convene"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 741,
+     "tokens": 1557
+    },
+    {
+     "text": "Open example.com and tell me the main heading.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "browser_search",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 316,
+     "tokens": 852
+    },
+    {
+     "text": "Search my knowledge base for the onboarding policy.",
+     "noToolPrompt": false,
+     "offered": [
+      "shell_exec",
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "browser_open",
+      "browser_action",
+      "browser_screenshot",
+      "memory_save",
+      "memory_read",
+      "vault_use",
+      "subagent_loop",
+      "council_convene"
+     ],
+     "first": "memory_read",
+     "ok": false,
+     "canSucceed": false,
+     "ms": 332,
+     "tokens": 1557
+    },
+    {
+     "text": "Save a note that the launch date moved to Friday.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "memory_save",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 381,
+     "tokens": 853
+    },
+    {
+     "text": "Read notes.txt and give me the key points.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "fs_read",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 257,
+     "tokens": 852
+    },
+    {
+     "text": "Put the meeting summary into a document I can download.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "fs_write",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 1241,
+     "tokens": 853
+    },
+    {
+     "text": "Ask the team to draft a launch tagline.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 388,
+     "tokens": 852
+    },
+    {
+     "text": "Find out who won the most recent Formula 1 race.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 741,
+     "tokens": 854
+    },
+    {
+     "text": "List everything in the reports folder.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "fs_list",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 280,
+     "tokens": 849
+    },
+    {
+     "text": "What is in my notes about pricing?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 300,
+     "tokens": 850
+    }
+   ]
+  },
+  "gate": {
+   "unneededToolCallPct": 0,
+   "correctFirstToolPct": 50,
+   "toolWasOfferedPct": 93.8,
+   "overallOkPct": 75,
+   "avgToolsOffered": 4.4,
+   "avgPromptTokens": 490,
+   "avgMs": 863,
+   "errors": 0,
+   "rows": [
+    {
+     "text": "hi, how are you today?",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 338,
+     "tokens": 37
+    },
+    {
+     "text": "What is 17 times 23?",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 201,
+     "tokens": 40
+    },
+    {
+     "text": "Explain what a closure is in JavaScript in two sentences.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 518,
+     "tokens": 42
+    },
+    {
+     "text": "Rewrite this to sound friendlier: \"Your request has been denied.\"",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 275,
+     "tokens": 45
+    },
+    {
+     "text": "Give me three name ideas for a coffee shop.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 1124,
+     "tokens": 40
+    },
+    {
+     "text": "What is the capital of Australia?",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 117,
+     "tokens": 37
+    },
+    {
+     "text": "Is it better to rent or buy a house? Keep it short.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 234,
+     "tokens": 44
+    },
+    {
+     "text": "Translate \"good morning\" into Spanish and French.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 134,
+     "tokens": 40
+    },
+    {
+     "text": "Summarize in one line: Mimir is a free assistant that runs on your own computer with local models.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 216,
+     "tokens": 53
+    },
+    {
+     "text": "Thanks, that was helpful!",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 220,
+     "tokens": 36
+    },
+    {
+     "text": "Can you tell me a short joke about programmers?",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 339,
+     "tokens": 40
+    },
+    {
+     "text": "What is the difference between TCP and UDP?",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 3083,
+     "tokens": 39
+    },
+    {
+     "text": "Help me think through whether to learn Rust or Go first.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 11160,
+     "tokens": 42
+    },
+    {
+     "text": "Write a two-line poem about rain.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 231,
+     "tokens": 38
+    },
+    {
+     "text": "How many days are in a leap year?",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 165,
+     "tokens": 39
+    },
+    {
+     "text": "Convert 70 degrees Fahrenheit to Celsius.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 1230,
+     "tokens": 39
+    },
+    {
+     "text": "Remember that my sister is called Priya.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 196,
+     "tokens": 851
+    },
+    {
+     "text": "What did I tell you about my sister?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 249,
+     "tokens": 851
+    },
+    {
+     "text": "Look up the latest Node.js LTS version online.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "browser_search",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 329,
+     "tokens": 852
+    },
+    {
+     "text": "Create a file called todo.md with three tasks for tomorrow.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "fs_write",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 657,
+     "tokens": 854
+    },
+    {
+     "text": "What files do I have in my workspace?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "fs_list",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 259,
+     "tokens": 851
+    },
+    {
+     "text": "Show me what is inside package.json.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 1084,
+     "tokens": 850
+    },
+    {
+     "text": "Run npm test and tell me if it passes.",
+     "noToolPrompt": false,
+     "offered": [
+      "shell_exec",
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "browser_open",
+      "browser_action",
+      "browser_screenshot",
+      "memory_save",
+      "memory_read",
+      "vault_use",
+      "subagent_loop",
+      "council_convene"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 788,
+     "tokens": 1557
+    },
+    {
+     "text": "Open example.com and tell me the main heading.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "browser_search",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 315,
+     "tokens": 852
+    },
+    {
+     "text": "Search my knowledge base for the onboarding policy.",
+     "noToolPrompt": false,
+     "offered": [
+      "shell_exec",
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "browser_open",
+      "browser_action",
+      "browser_screenshot",
+      "memory_save",
+      "memory_read",
+      "vault_use",
+      "subagent_loop",
+      "council_convene"
+     ],
+     "first": "memory_read",
+     "ok": false,
+     "canSucceed": false,
+     "ms": 330,
+     "tokens": 1557
+    },
+    {
+     "text": "Save a note that the launch date moved to Friday.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "memory_save",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 377,
+     "tokens": 853
+    },
+    {
+     "text": "Read notes.txt and give me the key points.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "fs_read",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 283,
+     "tokens": 852
+    },
+    {
+     "text": "Put the meeting summary into a document I can download.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "fs_write",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 1435,
+     "tokens": 853
+    },
+    {
+     "text": "Ask the team to draft a launch tagline.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 394,
+     "tokens": 852
+    },
+    {
+     "text": "Find out who won the most recent Formula 1 race.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 784,
+     "tokens": 854
+    },
+    {
+     "text": "List everything in the reports folder.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "fs_list",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 278,
+     "tokens": 849
+    },
+    {
+     "text": "What is in my notes about pricing?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 287,
+     "tokens": 850
+    }
+   ]
+  },
+  "graph": {
+   "unneededToolCallPct": 0,
+   "correctFirstToolPct": 62.5,
+   "toolWasOfferedPct": 93.8,
+   "overallOkPct": 81.3,
+   "avgToolsOffered": 5.9,
+   "avgPromptTokens": 664,
+   "avgMs": 804,
+   "errors": 0,
+   "rows": [
+    {
+     "text": "hi, how are you today?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 483,
+     "tokens": 849
+    },
+    {
+     "text": "What is 17 times 23?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 350,
+     "tokens": 852
+    },
+    {
+     "text": "Explain what a closure is in JavaScript in two sentences.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 699,
+     "tokens": 854
+    },
+    {
+     "text": "Rewrite this to sound friendlier: \"Your request has been denied.\"",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 201,
+     "tokens": 857
+    },
+    {
+     "text": "Give me three name ideas for a coffee shop.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 1394,
+     "tokens": 852
+    },
+    {
+     "text": "What is the capital of Australia?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 122,
+     "tokens": 849
+    },
+    {
+     "text": "Is it better to rent or buy a house? Keep it short.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 362,
+     "tokens": 856
+    },
+    {
+     "text": "Translate \"good morning\" into Spanish and French.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 831,
+     "tokens": 852
+    },
+    {
+     "text": "Summarize in one line: Mimir is a free assistant that runs on your own computer with local models.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_read",
+      "foundry_create",
+      "browser_search",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 378,
+     "tokens": 667
+    },
+    {
+     "text": "Thanks, that was helpful!",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 309,
+     "tokens": 848
+    },
+    {
+     "text": "Can you tell me a short joke about programmers?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 424,
+     "tokens": 852
+    },
+    {
+     "text": "What is the difference between TCP and UDP?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 4889,
+     "tokens": 851
+    },
+    {
+     "text": "Help me think through whether to learn Rust or Go first.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_read",
+      "foundry_create",
+      "browser_search"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 5401,
+     "tokens": 504
+    },
+    {
+     "text": "Write a two-line poem about rain.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_read",
+      "fs_write"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 383,
+     "tokens": 257
+    },
+    {
+     "text": "How many days are in a leap year?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 505,
+     "tokens": 851
+    },
+    {
+     "text": "Convert 70 degrees Fahrenheit to Celsius.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 1786,
+     "tokens": 851
+    },
+    {
+     "text": "Remember that my sister is called Priya.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 193,
+     "tokens": 851
+    },
+    {
+     "text": "What did I tell you about my sister?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 258,
+     "tokens": 851
+    },
+    {
+     "text": "Look up the latest Node.js LTS version online.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "browser_search",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 350,
+     "tokens": 852
+    },
+    {
+     "text": "Create a file called todo.md with three tasks for tomorrow.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create"
+     ],
+     "first": "fs_write",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 716,
+     "tokens": 517
+    },
+    {
+     "text": "What files do I have in my workspace?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write"
+     ],
+     "first": "fs_list",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 383,
+     "tokens": 309
+    },
+    {
+     "text": "Show me what is inside package.json.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write"
+     ],
+     "first": "fs_read",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 391,
+     "tokens": 308
+    },
+    {
+     "text": "Run npm test and tell me if it passes.",
+     "noToolPrompt": false,
+     "offered": [
+      "shell_exec",
+      "fs_read"
+     ],
+     "first": "shell_exec",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 489,
+     "tokens": 276
+    },
+    {
+     "text": "Open example.com and tell me the main heading.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "browser_search",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 416,
+     "tokens": 852
+    },
+    {
+     "text": "Search my knowledge base for the onboarding policy.",
+     "noToolPrompt": false,
+     "offered": [
+      "browser_search",
+      "browser_open"
+     ],
+     "first": "browser_search",
+     "ok": false,
+     "canSucceed": false,
+     "ms": 440,
+     "tokens": 268
+    },
+    {
+     "text": "Save a note that the launch date moved to Friday.",
+     "noToolPrompt": false,
+     "offered": [
+      "memory_save"
+     ],
+     "first": "memory_save",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 457,
+     "tokens": 170
+    },
+    {
+     "text": "Read notes.txt and give me the key points.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_read",
+      "memory_read"
+     ],
+     "first": "fs_read",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 406,
+     "tokens": 250
+    },
+    {
+     "text": "Put the meeting summary into a document I can download.",
+     "noToolPrompt": false,
+     "offered": [
+      "foundry_create",
+      "subagent_loop"
+     ],
+     "first": "foundry_create",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 584,
+     "tokens": 475
+    },
+    {
+     "text": "Ask the team to draft a launch tagline.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 529,
+     "tokens": 852
+    },
+    {
+     "text": "Find out who won the most recent Formula 1 race.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 933,
+     "tokens": 854
+    },
+    {
+     "text": "List everything in the reports folder.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "memory_save"
+     ],
+     "first": "fs_list",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 314,
+     "tokens": 217
+    },
+    {
+     "text": "What is in my notes about pricing?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 360,
+     "tokens": 850
+    }
+   ]
+  },
+  "gate+graph": {
+   "unneededToolCallPct": 0,
+   "correctFirstToolPct": 50,
+   "toolWasOfferedPct": 93.8,
+   "overallOkPct": 75,
+   "avgToolsOffered": 2.3,
+   "avgPromptTokens": 296,
+   "avgMs": 1090,
+   "errors": 0,
+   "rows": [
+    {
+     "text": "hi, how are you today?",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 323,
+     "tokens": 37
+    },
+    {
+     "text": "What is 17 times 23?",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 199,
+     "tokens": 40
+    },
+    {
+     "text": "Explain what a closure is in JavaScript in two sentences.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 684,
+     "tokens": 42
+    },
+    {
+     "text": "Rewrite this to sound friendlier: \"Your request has been denied.\"",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 329,
+     "tokens": 45
+    },
+    {
+     "text": "Give me three name ideas for a coffee shop.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 1561,
+     "tokens": 40
+    },
+    {
+     "text": "What is the capital of Australia?",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 128,
+     "tokens": 37
+    },
+    {
+     "text": "Is it better to rent or buy a house? Keep it short.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 467,
+     "tokens": 44
+    },
+    {
+     "text": "Translate \"good morning\" into Spanish and French.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 241,
+     "tokens": 40
+    },
+    {
+     "text": "Summarize in one line: Mimir is a free assistant that runs on your own computer with local models.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 431,
+     "tokens": 53
+    },
+    {
+     "text": "Thanks, that was helpful!",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 431,
+     "tokens": 36
+    },
+    {
+     "text": "Can you tell me a short joke about programmers?",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 700,
+     "tokens": 40
+    },
+    {
+     "text": "What is the difference between TCP and UDP?",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 5164,
+     "tokens": 39
+    },
+    {
+     "text": "Help me think through whether to learn Rust or Go first.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 14325,
+     "tokens": 42
+    },
+    {
+     "text": "Write a two-line poem about rain.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 264,
+     "tokens": 38
+    },
+    {
+     "text": "How many days are in a leap year?",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 177,
+     "tokens": 39
+    },
+    {
+     "text": "Convert 70 degrees Fahrenheit to Celsius.",
+     "noToolPrompt": true,
+     "offered": [],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 1443,
+     "tokens": 39
+    },
+    {
+     "text": "Remember that my sister is called Priya.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 230,
+     "tokens": 851
+    },
+    {
+     "text": "What did I tell you about my sister?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 291,
+     "tokens": 851
+    },
+    {
+     "text": "Look up the latest Node.js LTS version online.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "browser_search",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 384,
+     "tokens": 852
+    },
+    {
+     "text": "Create a file called todo.md with three tasks for tomorrow.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create"
+     ],
+     "first": "fs_write",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 755,
+     "tokens": 517
+    },
+    {
+     "text": "What files do I have in my workspace?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write"
+     ],
+     "first": "fs_list",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 291,
+     "tokens": 309
+    },
+    {
+     "text": "Show me what is inside package.json.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write"
+     ],
+     "first": "fs_read",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 317,
+     "tokens": 308
+    },
+    {
+     "text": "Run npm test and tell me if it passes.",
+     "noToolPrompt": false,
+     "offered": [
+      "shell_exec",
+      "fs_read",
+      "foundry_create"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 775,
+     "tokens": 481
+    },
+    {
+     "text": "Open example.com and tell me the main heading.",
+     "noToolPrompt": false,
+     "offered": [
+      "browser_search"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 235,
+     "tokens": 207
+    },
+    {
+     "text": "Search my knowledge base for the onboarding policy.",
+     "noToolPrompt": false,
+     "offered": [
+      "browser_search",
+      "browser_open"
+     ],
+     "first": "browser_search",
+     "ok": false,
+     "canSucceed": false,
+     "ms": 383,
+     "tokens": 268
+    },
+    {
+     "text": "Save a note that the launch date moved to Friday.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_read",
+      "foundry_create",
+      "memory_save"
+     ],
+     "first": "memory_save",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 477,
+     "tokens": 465
+    },
+    {
+     "text": "Read notes.txt and give me the key points.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_read",
+      "foundry_create",
+      "memory_read"
+     ],
+     "first": "fs_read",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 345,
+     "tokens": 455
+    },
+    {
+     "text": "Put the meeting summary into a document I can download.",
+     "noToolPrompt": false,
+     "offered": [
+      "foundry_create",
+      "subagent_loop"
+     ],
+     "first": "foundry_create",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 987,
+     "tokens": 475
+    },
+    {
+     "text": "Ask the team to draft a launch tagline.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 951,
+     "tokens": 852
+    },
+    {
+     "text": "Find out who won the most recent Formula 1 race.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 915,
+     "tokens": 854
+    },
+    {
+     "text": "List everything in the reports folder.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "memory_save"
+     ],
+     "first": "fs_list",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 316,
+     "tokens": 217
+    },
+    {
+     "text": "What is in my notes about pricing?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 358,
+     "tokens": 850
+    }
+   ]
+  },
+  "graph+hint": {
+   "unneededToolCallPct": 6.3,
+   "correctFirstToolPct": 56.3,
+   "toolWasOfferedPct": 93.8,
+   "overallOkPct": 75,
+   "avgToolsOffered": 5.7,
+   "avgPromptTokens": 669,
+   "avgMs": 997,
+   "errors": 0,
+   "rows": [
+    {
+     "text": "hi, how are you today?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 403,
+     "tokens": 849
+    },
+    {
+     "text": "What is 17 times 23?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 306,
+     "tokens": 852
+    },
+    {
+     "text": "Explain what a closure is in JavaScript in two sentences.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 616,
+     "tokens": 854
+    },
+    {
+     "text": "Rewrite this to sound friendlier: \"Your request has been denied.\"",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_write",
+      "foundry_create",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 377,
+     "tokens": 562
+    },
+    {
+     "text": "Give me three name ideas for a coffee shop.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 1297,
+     "tokens": 852
+    },
+    {
+     "text": "What is the capital of Australia?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 151,
+     "tokens": 849
+    },
+    {
+     "text": "Is it better to rent or buy a house? Keep it short.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 465,
+     "tokens": 856
+    },
+    {
+     "text": "Translate \"good morning\" into Spanish and French.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 942,
+     "tokens": 852
+    },
+    {
+     "text": "Summarize in one line: Mimir is a free assistant that runs on your own computer with local models.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_read",
+      "foundry_create",
+      "browser_search",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 292,
+     "tokens": 701
+    },
+    {
+     "text": "Thanks, that was helpful!",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 331,
+     "tokens": 848
+    },
+    {
+     "text": "Can you tell me a short joke about programmers?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 464,
+     "tokens": 852
+    },
+    {
+     "text": "What is the difference between TCP and UDP?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 5881,
+     "tokens": 851
+    },
+    {
+     "text": "Help me think through whether to learn Rust or Go first.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_read",
+      "foundry_create",
+      "browser_search"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 8066,
+     "tokens": 534
+    },
+    {
+     "text": "Write a two-line poem about rain.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_read",
+      "fs_write"
+     ],
+     "first": "fs_write",
+     "ok": false,
+     "canSucceed": true,
+     "ms": 1024,
+     "tokens": 283
+    },
+    {
+     "text": "How many days are in a leap year?",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 445,
+     "tokens": 851
+    },
+    {
+     "text": "Convert 70 degrees Fahrenheit to Celsius.",
+     "noToolPrompt": true,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": true,
+     "canSucceed": true,
+     "ms": 1604,
+     "tokens": 851
+    },
+    {
+     "text": "Remember that my sister is called Priya.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 214,
+     "tokens": 851
+    },
+    {
+     "text": "What did I tell you about my sister?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 303,
+     "tokens": 851
+    },
+    {
+     "text": "Look up the latest Node.js LTS version online.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": "browser_search",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 388,
+     "tokens": 852
+    },
+    {
+     "text": "Create a file called todo.md with three tasks for tomorrow.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create"
+     ],
+     "first": "fs_write",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 680,
+     "tokens": 550
+    },
+    {
+     "text": "What files do I have in my workspace?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write"
+     ],
+     "first": "fs_list",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 307,
+     "tokens": 338
+    },
+    {
+     "text": "Show me what is inside package.json.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write"
+     ],
+     "first": "fs_list",
+     "ok": false,
+     "canSucceed": true,
+     "ms": 329,
+     "tokens": 337
+    },
+    {
+     "text": "Run npm test and tell me if it passes.",
+     "noToolPrompt": false,
+     "offered": [
+      "shell_exec",
+      "fs_read",
+      "foundry_create"
+     ],
+     "first": "shell_exec",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 641,
+     "tokens": 511
+    },
+    {
+     "text": "Open example.com and tell me the main heading.",
+     "noToolPrompt": false,
+     "offered": [
+      "browser_search"
+     ],
+     "first": "browser_search",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 543,
+     "tokens": 230
+    },
+    {
+     "text": "Search my knowledge base for the onboarding policy.",
+     "noToolPrompt": false,
+     "offered": [
+      "browser_search",
+      "browser_open"
+     ],
+     "first": "browser_search",
+     "ok": false,
+     "canSucceed": false,
+     "ms": 523,
+     "tokens": 294
+    },
+    {
+     "text": "Save a note that the launch date moved to Friday.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_read",
+      "foundry_create",
+      "memory_save"
+     ],
+     "first": "memory_save",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 657,
+     "tokens": 495
+    },
+    {
+     "text": "Read notes.txt and give me the key points.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_read",
+      "foundry_create",
+      "memory_read"
+     ],
+     "first": "fs_read",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 507,
+     "tokens": 485
+    },
+    {
+     "text": "Put the meeting summary into a document I can download.",
+     "noToolPrompt": false,
+     "offered": [
+      "foundry_create",
+      "subagent_loop"
+     ],
+     "first": "foundry_create",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 1073,
+     "tokens": 503
+    },
+    {
+     "text": "Ask the team to draft a launch tagline.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 759,
+     "tokens": 852
+    },
+    {
+     "text": "Find out who won the most recent Formula 1 race.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 1493,
+     "tokens": 854
+    },
+    {
+     "text": "List everything in the reports folder.",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "memory_save"
+     ],
+     "first": "fs_list",
+     "ok": true,
+     "canSucceed": true,
+     "ms": 467,
+     "tokens": 243
+    },
+    {
+     "text": "What is in my notes about pricing?",
+     "noToolPrompt": false,
+     "offered": [
+      "fs_list",
+      "fs_read",
+      "fs_write",
+      "foundry_create",
+      "browser_search",
+      "memory_save",
+      "memory_read",
+      "subagent_loop"
+     ],
+     "first": null,
+     "ok": false,
+     "canSucceed": true,
+     "ms": 366,
+     "tokens": 850
+    }
+   ]
+  }
+ }
+}

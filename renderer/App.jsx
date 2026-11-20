@@ -40,6 +40,7 @@ const BoardMeetingView = lazyNamed(() => import('./components/BoardMeetingView.j
 const MimriStackView = lazyNamed(() => import('./components/MimriStackView.jsx'), 'MimriStackView');
 const VoiceLiveModal = lazyNamed(() => import('./components/VoiceLiveModal.jsx'), 'VoiceLiveModal');
 const FirstRunSetup = lazyNamed(() => import('./components/FirstRunSetup.jsx'), 'FirstRunSetup');
+const FirstTask = lazyNamed(() => import('./components/FirstTask.jsx'), 'FirstTask');
 
 export function App() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -1017,6 +1018,22 @@ export function App() {
             const next = await apiFetch('/v1/settings', { method: 'PATCH', body: JSON.stringify({ firstRunDismissed: true }) });
             setSettings(next);
             setActiveTab('settings');
+          }}
+        />
+      </Suspense>
+    );
+  }
+
+  // Right after setup: one tap runs a first task. Shown once; skipping or running it ends onboarding.
+  if (mode !== 'spotlight' && mode !== 'popout' && settings && settings.modelSetupDone && !settings.onboardingDone && !settings.firstRunDismissed && bots.length > 0) {
+    const finishOnboarding = async () => setSettings(await apiFetch('/v1/settings', { method: 'PATCH', body: JSON.stringify({ onboardingDone: true }) }));
+    return (
+      <Suspense fallback={<div className="view-scroll"><div className="view-container muted" style={{ padding: 24 }}>Loading...</div></div>}>
+        <FirstTask
+          onSkip={finishOnboarding}
+          onRun={async prompt => {
+            await finishOnboarding();
+            await handleRunOverviewPrompt(prompt);
           }}
         />
       </Suspense>

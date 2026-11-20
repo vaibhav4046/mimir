@@ -1810,7 +1810,10 @@ export class AgentRunner {
         modelName: selectedModel,
         explicitToolNames: toolNames,
       });
-      // Optional Context Graph: offer the few tools a HydraDB graph pulls for this request.
+      // What this bot may run this turn. The Context Graph below only changes what the model is shown,
+      // never what it may run: a tool the graph left out can still be called if the model asks for it.
+      const permittedToolNames = new Set(allTools.map(t => t?.function?.name || t?.name).filter(Boolean));
+      // Context Graph: show the few tools the graph pulls for this request.
       // Fails open, so a missing or unsure graph leaves the tool list exactly as curated above.
       if (this.contextGraph?.enabled && !Array.isArray(toolNames)) {
         const pulled = await this.contextGraph.select(userText, allTools);
@@ -1831,6 +1834,8 @@ export class AgentRunner {
           allTools = [foundrySchema];
           allowedToolNames.clear();
           allowedToolNames.add('foundry_create');
+          permittedToolNames.clear();
+          permittedToolNames.add('foundry_create');
         }
       }
 
@@ -2080,7 +2085,7 @@ export class AgentRunner {
         lastModel = res.model;
         lastProvider = res.provider;
         const isSmallModel = isSmallLocalModelName(res.model || targetModel);
-        const formatError = detectToolOrJsonFormatFailure(res, allowedToolNames);
+        const formatError = detectToolOrJsonFormatFailure(res, permittedToolNames);
         if (formatError && isSmallModel) {
           if (reflexionRetriesUsed < MAX_REFLEXION_RETRIES) {
             reflexionRetriesUsed += 1;
@@ -2207,7 +2212,7 @@ export class AgentRunner {
 
         // Pre-evaluate Sentinel policy & approval gates so eligible read-only bursts can run in parallel
         const evaluatedCalls = res.toolCalls.map(tc => {
-          const allowed = allowedToolNames.has(tc.name);
+          const allowed = permittedToolNames.has(tc.name);
           let sentinelBlockedReason = null;
           let sentinelApprovalReason = null;
           if (allowed && this.sentinel) {

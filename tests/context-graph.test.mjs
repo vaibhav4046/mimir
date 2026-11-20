@@ -9,7 +9,7 @@ import { SKILLS, ENTITIES } from '../contextgraph/data/skills.mjs';
 import { TASKS } from '../contextgraph/data/tasks.mjs';
 
 const schemas = TOOLS.slice(0, 120).map(toSchema);
-const make = (store, enabled = true) => new AgentContextGraph({ store, namespace: 'test', getSettings: () => ({ contextGraph: { enabled } }) });
+const make = (store, enabled = true) => new AgentContextGraph({ store, namespace: 'test', getSettings: () => ({ contextGraph: { enabled, initBudgetMs: 60_000 } }) });
 const names = tools => tools.map(t => t.function.name);
 
 test('catalog and benchmark labels are consistent', () => {
@@ -54,6 +54,36 @@ test('it learns from the tools that really ran, and a restart keeps what it lear
   const edgesBefore = (await store.stats()).edges;
   await restarted.select('Send an email to my supplier', schemas);
   assert.equal((await store.stats()).edges, edgesBefore, 'tools already in the graph are not added twice');
+});
+
+test('with no HydraDB running it uses an in-process graph, unless HydraDB is required', async () => {
+  const dead = 'http://127.0.0.1:1'; // nothing listens here
+  const mk = store => new AgentContextGraph({ namespace: 'test-fallback', getSettings: () => ({ contextGraph: { enabled: true, initBudgetMs: 60_000, url: dead, ...(store ? { store } : {}) } }) });
+  const auto = mk();
+  const pulled = await auto.select('Send an email to my supplier asking for a quote', schemas);
+  assert.ok(pulled && names(pulled).includes('gmail__send_email'), 'still narrows the list without HydraDB');
+  assert.equal(auto.status().store, 'memory');
+  const strict = mk('hydradb');
+  assert.equal(await strict.select('Send an email to my supplier asking for a quote', schemas), null, 'required HydraDB missing: fails open');
+  assert.match(strict.status().lastPull.error, /./);
+  const forced = mk('memory');
+  assert.ok(await forced.select('Send an email to my supplier asking for a quote', schemas));
+  assert.equal(forced.status().store, 'memory');
+});
+
+test('a turn never waits for setup: a slow graph is skipped once, then used when it is ready', async () => {
+  const slow = new MemoryStore();
+  const realInit = slow.init.bind(slow);
+  slow.init = async () => { await new Promise(r => setTimeout(r, 300)); await realInit(); };
+  const cg = new AgentContextGraph({ store: slow, namespace: 'test-slow', getSettings: () => ({ contextGraph: { enabled: true, initBudgetMs: 20 } }) });
+  const t0 = performance.now();
+  assert.equal(await cg.select('Send an email to my supplier asking for a quote', schemas), null, 'first turn runs on the full list');
+  assert.ok(performance.now() - t0 < 250, 'did not wait for setup');
+  assert.equal(cg.status().failures, 0, 'being slow is not a failure');
+  const deadline = Date.now() + 60_000;
+  let pulled = null;
+  while (!pulled && Date.now() < deadline) { await new Promise(r => setTimeout(r, 100)); pulled = await cg.select('Send an email to my supplier asking for a quote', schemas); }
+  assert.ok(pulled && names(pulled).includes('gmail__send_email'), 'used once ready');
 });
 
 test('it fails open: a broken store never breaks a turn, and it stops trying after repeated failures', async () => {
