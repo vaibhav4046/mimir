@@ -16,6 +16,7 @@ import { createEmbedder } from '../contextgraph/src/embed-similar.mjs';
  * MIMIR_CONTEXT_GRAPH_TOKEN (the HydraDB bearer token) in the environment.
  */
 const INIT_BUDGET_MS = 1500;
+const WARM_DELAY_MS = 8000;
 const serverOf = name => (name.startsWith('mcp__') ? name.split('__')[1] : 'mimir');
 const nameOf = t => t?.function?.name || t?.name || '';
 const descOf = t => t?.function?.description || t?.description || nameOf(t);
@@ -108,8 +109,14 @@ export class AgentContextGraph {
   }
 
   /** Start setup in the background (called at startup) so the first turn does not wait. */
-  warm() {
-    if (this.enabled) this.#init().catch(err => { this.failures += 1; this.lastFailureAt = Date.now(); this.lastPull = { error: err.message, at: new Date().toISOString() }; });
+  warm(delayMs = WARM_DELAY_MS) {
+    // Delayed on purpose: startup is busy (model checks, scheduler catch-up), and loading the embedder at the same
+    // moment slows everything else. A turn that arrives before this fires simply uses the full tool list.
+    const timer = setTimeout(() => {
+      if (this.enabled) this.#init().catch(err => { this.failures += 1; this.lastFailureAt = Date.now(); this.lastPull = { error: err.message, at: new Date().toISOString() }; });
+    }, delayMs);
+    timer.unref?.();
+    return timer;
   }
 
   /** The subset of `tools` to offer for this request, or null to keep the full list. */
