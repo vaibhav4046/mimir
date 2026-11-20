@@ -492,6 +492,20 @@ export function SettingsView({ settings, modelStatus, onSaved, onProbeModels }) 
             </label>
           </div>
 
+          <label className="field-label">
+            Teammates answering at once (0 = automatic)
+            <input
+              type="number"
+              min={0}
+              max={4}
+              className="input"
+              data-testid="delegation-concurrency"
+              value={form.delegationConcurrency ?? 0}
+              onChange={e => setForm(f => ({ ...f, delegationConcurrency: Math.min(4, Math.max(0, Number(e.target.value) || 0)) }))}
+            />
+            <span className="muted">Automatic keeps one at a time when everyone uses the same local model. Raise it only if your Ollama runs requests in parallel (set OLLAMA_NUM_PARALLEL) and your graphics card has memory to spare.</span>
+          </label>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button type="submit" className="btn btn-primary" disabled={saving}>
               {saving ? 'Saving...' : 'Save'}

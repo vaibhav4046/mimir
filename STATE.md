@@ -25,7 +25,7 @@ Live checks with `qwen3:1.7b` on this machine:
 ## What changed in the last session
 
 - **Workflows** (`daemon/workflows.mjs`, Routines → Workflows): one sentence → trigger + ordered steps, each step assigned to a bot by its opening verb; results handed step to step; every step's output written to disk by the engine; checkpoint after each step; resume from the failed step; schedules go through the proactive engine. Each step only gets the tools its kind of work needs (research: search/read; writing: none), and an empty result gets one forced write-up. Live with `qwen3:1.7b`: a 3-step workflow went from failing after 147 s to finishing in 8 s once tools were scoped.
-  - Not built: weekday schedules, steps that branch or run in parallel, approvals shown outside the Workflows card, connectors as step targets (email/Slack send), editing a saved workflow in the UI.
+  - (Stale, see the 2026-11-20 update below: parallel steps, weekday schedules, conditions, Slack/Teams/email-draft results and editing now exist.)
   - Research steps on a tiny model still often produce general knowledge rather than fresh web findings; the step is marked with a note when it finished without tools.
 - **Service worker fix**: scripts and styles were cached forever on first load, so the UI never updated. Now network-first, old cache purged, not registered on the dev server.
 - **Run receipts** (`daemon/receipt.mjs`): each turn records what tools really did and flags statements like "I saved the file" with no matching action. Attached to messages; no UI yet.
@@ -43,7 +43,7 @@ Live checks with `qwen3:1.7b` on this machine:
 
 - With the 1.7B model, a chief with all tools available tends to call `council_convene` and `memory_save` for simple questions. Mitigated only for turns where a teammate has reported (tools are withheld for the synthesis). The general case needs a smaller default tool set per bot role.
 - `memory_save` asks for approval under the default policy, which interrupts unattended runs.
-- Delegations run one after another (one local model). No parallel workers.
+- Delegations of several `@mentions` run one at a time when every teammate uses the same Ollama model (on purpose: it avoids thrashing one runner). The new setting `delegationConcurrency` (Settings, 0 = automatic, max 4) lets you raise it when Ollama runs requests in parallel (`OLLAMA_NUM_PARALLEL`). Workflow steps marked "at the same time" always run in parallel.
 - Shared-profile capture is pattern-based ("remember that …", "my name is …"); it will miss facts stated other ways.
 - Installer 1.0.5 (2026-11-15) matches the code. The landing page is no longer packed into it.
 
@@ -58,6 +58,18 @@ Code-signing certificate · Google OAuth client (Gmail/Drive/Calendar sign-in) �
 - The graph changes what the model is *shown*, never what it may *run* (`permittedToolNames` in `daemon/agent-runner.mjs`). Setup never blocks a turn: a slow graph is skipped once and used when ready.
 - **First launch has a step two**: after the model is set up, `FirstTask` offers three starter tasks (plan my week, explain something, make a file). Shown once; covered by the e2e journey.
 - Build note: `cargo build --release --manifest-path rust/Cargo.toml` is needed for the Rust WAL test to pass in a fresh checkout.
+
+## Update 2026-11-20 (workflows)
+
+Earlier notes in this file said parallel steps and parallel delegation were missing: they were not (workflows already had `parallel` stages, delegation has `runWithConcurrency`). Checked against the code and corrected here. What was really missing, and is now built and tested:
+
+- **Weekday schedules**: "every weekday at 9", "every Monday and Thursday at 6:30pm", "on weekends at 10" become a daily schedule limited to those days (`weekdays` on the trigger and on the routine; the proactive engine skips other days, including catch-up). A bare day name in a sentence ("write about Monday's meeting") is not a schedule.
+- **Conditional steps**: a step can run only if the earlier results mention / do not mention a phrase, or produced anything; if not met it is skipped or it stops the workflow (run still counts as done). No model involved: plain text matching.
+- **Slack / Teams / email on finish**: a finished workflow posts the result text to the Slack and Teams webhooks set in Settings (once, manual or scheduled), and prepares an email draft (`mailto:`) that opens in the user's mail app. **Mimir never sends email itself.** There is no Gmail/Outlook login.
+- **Editing a saved workflow** in the UI: schedule (days, time, interval, folder), steps (add, remove, reorder, who, parallel, condition), notifications.
+- Browser journey added to `tests/e2e-ui.mjs` (describe, review weekdays, save, edit, add a conditional step).
+
+Still not possible from this machine: a code-signing certificate (costs money and needs an identity), Google OAuth client for Gmail/Drive/Calendar sign-in (needs a Google Cloud project owned by you), macOS/iOS builds (needs a Mac), real users, and models that reason better than a 1.7B-9B model.
 
 ## Next, in order
 

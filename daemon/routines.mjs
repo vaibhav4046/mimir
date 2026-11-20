@@ -69,6 +69,13 @@ export const GROKBOT_PRESET_SKILLS = Object.freeze([
 /**
  * Scheduled routines, Teach-a-Task workflow recordings, and outbound Slack/Teams webhooks.
  */
+/** Unique sorted day numbers 0-6; all seven days (or none) mean "every day", stored as []. */
+export function normalizeWeekdays(value) {
+  if (!Array.isArray(value)) return [];
+  const days = [...new Set(value.map(Number).filter(n => Number.isInteger(n) && n >= 0 && n <= 6))].sort((a, b) => a - b);
+  return days.length === 7 ? [] : days;
+}
+
 export class RoutineManager {
   constructor({ store, runPromptFn, broadcast }) {
     this.store = store;
@@ -100,6 +107,7 @@ export class RoutineManager {
       prompt: String(input.prompt || '').trim(),
       intervalMinutes: Math.max(0, Number(input.intervalMinutes ?? 0) || 0),
       dailyAt, // 'HH:MM' local; takes precedence over intervalMinutes when set
+      weekdays: normalizeWeekdays(input.weekdays ?? existing?.weekdays), // 0 = Sunday ... 6; empty = every day
       watchPath: String(input.watchPath ?? existing?.watchPath ?? '').trim(), // run when this file/folder changes
       retryInterrupted: Boolean(input.retryInterrupted ?? existing?.retryInterrupted ?? true), // false = at-most-once
       maxAttempts: Math.min(10, Math.max(1, Number(input.maxAttempts ?? existing?.maxAttempts ?? 3) || 3)),

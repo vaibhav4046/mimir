@@ -176,6 +176,7 @@ export function defaultSettings() {
     localOnly: false, // when true, no model call may leave this computer
     // Optional Context Graph (HydraDB): offer only the tools a graph pulls for each request.
     contextGraph: { enabled: true, url: 'http://127.0.0.1:18443', store: 'auto' },
+    delegationConcurrency: 0, // teammates answering at once when you @mention several: 0 = automatic (1 on one Ollama model), up to 4
     modelSetupDone: false,
     enableFallback: true,
     approvalPolicy: 'ask-writes', // 'ask-writes' | 'always-ask' | 'auto-approve'

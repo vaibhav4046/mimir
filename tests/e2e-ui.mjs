@@ -108,6 +108,33 @@ async function main() {
     await page.waitForSelector('[data-testid="mcp-view"]');
     await page.click('[data-testid="nav-routines"]');
     await page.waitForSelector('[data-testid="routines-view"]');
+
+    // Workflows: describe a job, review the weekday schedule, save, then edit it and add a conditional step
+    await page.waitForSelector('[data-testid="workflows-panel"]');
+    await page.fill('[data-testid="wf-describe"]', 'Every weekday at 8am, research competitor pricing, then write a short brief about it');
+    await page.click('[data-testid="wf-build"]');
+    await page.waitForSelector('[data-testid="wf-draft"]');
+    for (const d of [1, 2, 3, 4, 5]) assert.equal(await page.getAttribute(`[data-testid="wf-weekday-${d}"]`, 'aria-pressed'), 'true', `weekday ${d} picked from the sentence`);
+    assert.equal(await page.getAttribute('[data-testid="wf-weekday-0"]', 'aria-pressed'), 'false');
+    await page.click('[data-testid="wf-weekday-3"]'); // drop Wednesday
+    await page.click('[data-testid="wf-save"]');
+    await page.waitForSelector('[data-testid^="wf-edit-"]');
+    assert.deepEqual(coord.store.state.workflows[0].trigger.weekdays, [1, 2, 4, 5]);
+    await page.click('[data-testid^="wf-edit-"]');
+    await page.waitForSelector('[data-testid="wf-draft"]');
+    await page.click('[data-testid="wf-add-step"]');
+    await page.fill('input[aria-label="Step 3"]', 'draft one reply idea');
+    await page.selectOption('[data-testid="wf-cond-2"]', 'previous_mentions');
+    await page.fill('input[aria-label="Phrase for step 3"]', 'price');
+    await page.fill('[data-testid="wf-notify-email"]', 'boss@example.com');
+    await page.click('[data-testid="wf-save"]');
+    await page.waitForSelector('[data-testid="wf-draft"]', { state: 'detached' });
+    const editedWf = coord.store.state.workflows[0];
+    assert.equal(coord.store.state.workflows.length, 1, 'editing saves over the same workflow');
+    assert.equal(editedWf.steps.length, 3);
+    assert.deepEqual(editedWf.steps[2].condition, { when: 'previous_mentions', text: 'price', otherwise: 'skip' });
+    assert.equal(editedWf.notify.email, 'boss@example.com');
+    assert.deepEqual(editedWf.trigger.weekdays, [1, 2, 4, 5], 'the schedule survived the edit');
     await page.click('[data-testid="nav-settings"]');
     await page.waitForSelector('[data-testid="settings-view"]');
     assert.equal(await page.$('[data-testid="nav-overview"]'), null, 'Developer views must be hidden until enabled in Settings');

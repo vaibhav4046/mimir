@@ -275,3 +275,26 @@ test('HTTP: /v1/proactive overview + config, kill switch pauses scheduling, stat
   assert.equal(after.data.status.paused, true, 'pause survives restart');
   assert.equal(after.data.status.maxRunsPerDay, 12);
 });
+
+
+test('weekday schedules fire only on their days and the next run skips the others', async t => {
+  const { routines, engine, calls } = makeHarness(t);
+  const r = routines.saveRoutine({ name: 'Monday job', prompt: 'monday job', dailyAt: '09:00', weekdays: [1] });
+  r.createdAt = new Date(at(0, 0, 1)).toISOString(); // Nov 1 2026 is a Sunday; Nov 9 and 16 are Mondays
+  assert.equal(new Date(at(9, 0, 9)).getDay(), 1);
+  await engine.tick(at(10, 0, 10)); // Tuesday: Monday's slot is still owed, so it runs once
+  assert.equal(calls.length, 1);
+  assert.equal(engine.nextDueAt(routines.listRoutines()[0], at(10, 5, 10)), at(9, 0, 16), 'next Monday, not tomorrow');
+  await engine.tick(at(9, 5, 11)); // Wednesday
+  await engine.tick(at(9, 5, 13)); // Friday
+  assert.equal(calls.length, 1, 'no run on days that were not chosen');
+  await engine.tick(at(9, 5, 16)); // next Monday
+  assert.equal(calls.length, 2);
+
+  const done = rtn => ({ ...rtn, lastSlotKey: 'already-ran' }); // any key that is not the current slot: nothing is owed
+  const weekdays = routines.saveRoutine({ name: 'Weekdays', prompt: 'wd', dailyAt: '09:00', weekdays: [1, 2, 3, 4, 5] });
+  const afterFriday = engine.nextDueAt(done(weekdays), at(10, 0, 13));
+  assert.equal(new Date(afterFriday).getDay(), 1, 'after Friday the next run is Monday');
+  const weekend = routines.saveRoutine({ name: 'Weekend', prompt: 'we', dailyAt: '09:00', weekdays: [0, 6] });
+  assert.equal(new Date(engine.nextDueAt(done(weekend), at(10, 0, 10))).getDay(), 6, 'from a Tuesday the next run is Saturday');
+});

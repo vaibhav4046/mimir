@@ -173,9 +173,15 @@ export class ProactiveEngine {
       d.setDate(d.getDate() + days);
       return d.getTime();
     };
+    // `weekdays` (0 = Sunday ... 6 = Saturday) limits the schedule to those days; empty means every day.
+    const days = Array.isArray(routine.weekdays) && routine.weekdays.length ? routine.weekdays : null;
+    const allowed = ms => !days || days.includes(new Date(ms).getDay());
     const todayAt = localTimeToday(now, minutes);
-    const at = todayAt <= now ? todayAt : shiftDays(todayAt, -1);
-    return { at, nextAt: shiftDays(at, 1), key: `${routine.id}:d:${localDayKey(at)}` };
+    let at = todayAt <= now ? todayAt : shiftDays(todayAt, -1);
+    for (let i = 0; i < 7 && !allowed(at); i += 1) at = shiftDays(at, -1);
+    let nextAt = shiftDays(at, 1);
+    for (let i = 0; i < 7 && !allowed(nextAt); i += 1) nextAt = shiftDays(nextAt, 1);
+    return { at, nextAt, key: `${routine.id}:d:${localDayKey(at)}` };
   }
 
   #slotKey(routine, now) {

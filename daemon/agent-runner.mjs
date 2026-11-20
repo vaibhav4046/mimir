@@ -50,9 +50,12 @@ async function runWithConcurrency(items, concurrency, worker) {
   return results;
 }
 
-function resolveTargetConcurrency(targets, settingsNow = {}) {
+export function resolveTargetConcurrency(targets, settingsNow = {}) {
   const list = Array.isArray(targets) ? targets : [];
   if (list.length <= 1) return 1;
+  // The user can choose: raise it when Ollama serves several requests at once (OLLAMA_NUM_PARALLEL) or the models differ.
+  const chosen = Math.floor(Number(settingsNow?.delegationConcurrency) || 0);
+  if (chosen > 0) return Math.min(chosen, 4, list.length);
   const provider = String(settingsNow?.provider || 'ollama').toLowerCase();
   if (provider === 'ollama') {
     const models = list.map(t => String(t?.modelOverride || settingsNow?.ollamaModel || 'default'));

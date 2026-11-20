@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { normalizeWeekdays } from './routines.mjs';
 
 /**
  * Workflows: a job described once, run end to end.
@@ -78,6 +79,34 @@ export function assignBot(text, bots, fallbackId) {
   return fallbackId;
 }
 
+const DAY_NUMBER = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+
+/** "weekdays", "Monday to Friday", "every Monday and Thursday": the day numbers (0 = Sunday), or null. */
+export function weekdaysIn(text) {
+  const t = String(text || '');
+  if (/\b(?:every\s+weekday|on\s+weekdays|weekdays|monday\s+(?:to|through|-)\s+friday|mon\s*-\s*fri)\b/i.test(t)) return [1, 2, 3, 4, 5];
+  if (/\b(?:every\s+weekend|on\s+weekends)\b/i.test(t)) return [0, 6];
+  // Only day names introduced by "every / each / on" (or chained to one with "and" / a comma) count, so
+  // "write about Monday's meeting" is not a schedule.
+  const found = new Set();
+  const re = /\b(?:every|each|on)\s+((?:(?:sun|mon|tues?|wed(?:nes)?|thu(?:rs?)?|fri|sat(?:ur)?)(?:day)?s?(?:\s*(?:,|and|&)\s*)?)+)/gi;
+  for (const m of t.matchAll(re)) {
+    for (const d of m[1].matchAll(/\b(sun|mon|tue|wed|thu|fri|sat)/gi)) found.add(DAY_NUMBER[d[1].toLowerCase()]);
+  }
+  return found.size ? [...found].sort((a, b) => a - b) : null;
+}
+
+/** First clock time in the text ("at 9am", "at 6:30 pm", "at 14:00") as HH:MM, or null. */
+function timeIn(t) {
+  const m = String(t).match(/\bat\s+(\d{1,2})(?::(\d\d))?\s*(am|pm)?\b/i);
+  if (!m) return null;
+  let h = Number(m[1]);
+  const ap = (m[3] || '').toLowerCase();
+  if (ap === 'pm' && h < 12) h += 12;
+  if (ap === 'am' && h === 12) h = 0;
+  return h <= 23 ? `${String(h).padStart(2, '0')}:${m[2] || '00'}` : null;
+}
+
 /** Read a schedule or trigger out of plain words. Returns { trigger, note? }. */
 export function parseTrigger(text) {
   const t = String(text || '');
@@ -94,11 +123,16 @@ export function parseTrigger(text) {
   if (/\bevery morning\b/i.test(t)) return { trigger: { type: 'daily', dailyAt: '08:00' } };
   if (/\bevery (?:evening|night)\b/i.test(t)) return { trigger: { type: 'daily', dailyAt: '18:00' } };
   if (/\b(?:every ?day|daily|each day)\b/i.test(t)) return { trigger: { type: 'daily', dailyAt: '09:00' } };
+  const days = weekdaysIn(t);
+  if (days) {
+    const when = timeIn(t);
+    return { trigger: { type: 'daily', dailyAt: when || '09:00', weekdays: days } };
+  }
   const every = t.match(/\bevery\s+(\d+)\s*(minute|min|hour|hr)s?\b/i);
   if (every) return { trigger: { type: 'interval', intervalMinutes: Math.max(5, Number(every[1]) * (/^h/i.test(every[2]) ? 60 : 1)) } };
   if (/\b(?:every hour|hourly)\b/i.test(t)) return { trigger: { type: 'interval', intervalMinutes: 60 } };
-  if (/\b(?:every week|weekly|every (?:mon|tues|wednes|thurs|fri|satur|sun)day)\b/i.test(t)) {
-    return { trigger: { type: 'interval', intervalMinutes: 7 * 24 * 60 }, note: 'Runs every 7 days from the first run. Picking a specific weekday is not supported yet.' };
+  if (/\b(?:every week|weekly)\b/i.test(t)) {
+    return { trigger: { type: 'interval', intervalMinutes: 7 * 24 * 60 }, note: 'Runs every 7 days from the first run. Name a day ("every Monday at 9am") to pick one.' };
   }
   return { trigger: { type: 'manual' } };
 }
@@ -118,6 +152,41 @@ const titleOf = text => {
   const short = clean.split(/\s+/).slice(0, 6).join(' ');
   return short.charAt(0).toUpperCase() + short.slice(1);
 };
+
+const CONDITIONS = ['previous_mentions', 'previous_lacks', 'previous_nonempty'];
+const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
+
+/**
+ * A step may run only if the results before it say something. `previous_mentions` / `previous_lacks`
+ * look for a phrase (case-insensitive) in the earlier steps' output; `previous_nonempty` needs any result.
+ */
+export function evalCondition(cond, previousText) {
+  const prev = String(previousText || '');
+  const needle = String(cond?.text || '').trim().toLowerCase();
+  if (cond?.when === 'previous_nonempty') return prev.trim().length > 0;
+  if (cond?.when === 'previous_mentions') return needle.length > 0 && prev.toLowerCase().includes(needle);
+  if (cond?.when === 'previous_lacks') return needle.length > 0 && !prev.toLowerCase().includes(needle);
+  return true;
+}
+
+function cleanCondition(c) {
+  if (!c || !CONDITIONS.includes(c.when)) return null;
+  const text = String(c.text || '').trim().slice(0, 80);
+  if (c.when !== 'previous_nonempty' && !text) throw bad('A condition that looks for a phrase needs the phrase.');
+  return { when: c.when, ...(c.when === 'previous_nonempty' ? {} : { text }), otherwise: c.otherwise === 'stop' ? 'stop' : 'skip' };
+}
+
+/** What the workflow tells the outside world when it finishes. Email is a draft, never sent by Mimir. */
+function cleanNotify(n) {
+  const email = String(n?.email || '').trim();
+  if (email && !EMAIL.test(email)) throw bad('That email address does not look right.');
+  return { slack: Boolean(n?.slack), teams: Boolean(n?.teams), email };
+}
+
+export function emailDraft(to, subject, body) {
+  const text = String(body).slice(0, 1500);
+  return { to, subject, body: text, mailto: `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}` };
+}
 
 export const WORKFLOW_TEMPLATES = [
   {
@@ -245,9 +314,13 @@ export class WorkflowEngine {
     const name = String(input.name || '').trim();
     if (!name) throw bad('Give the workflow a name.');
     const steps = (Array.isArray(input.steps) ? input.steps : [])
-      .map(s => ({ title: String(s.title || '').trim().slice(0, 60), instruction: String(s.instruction || '').trim(), botId: s.botId, parallel: Boolean(s.parallel) }))
+      .map(s => ({ title: String(s.title || '').trim().slice(0, 60), instruction: String(s.instruction || '').trim(), botId: s.botId, parallel: Boolean(s.parallel), condition: cleanCondition(s.condition) }))
       .filter(s => s.instruction);
-    if (steps[0]) steps[0].parallel = false; // nothing before it to run beside
+    if (steps[0]) {
+      steps[0].parallel = false; // nothing before it to run beside
+      steps[0].condition = null; // nothing before it to look at
+    }
+    for (const s of steps) if (!s.condition) delete s.condition;
     if (!steps.length || steps.length > MAX_STEPS) throw bad(`A workflow needs 1 to ${MAX_STEPS} steps.`);
     for (const s of steps) {
       if (!this.store.getBot(s.botId)) throw bad(`Step "${s.title || s.instruction.slice(0, 30)}" has no valid bot.`);
@@ -258,6 +331,8 @@ export class WorkflowEngine {
     if (trigger.type === 'daily') {
       if (!HHMM.test(String(t.dailyAt || ''))) throw bad('Daily time must be HH:MM.');
       trigger.dailyAt = t.dailyAt;
+      const days = normalizeWeekdays(t.weekdays);
+      if (days.length) trigger.weekdays = days;
     }
     if (trigger.type === 'interval') trigger.intervalMinutes = Math.max(5, Number(t.intervalMinutes) || 60);
     if (trigger.type === 'file') {
@@ -273,6 +348,7 @@ export class WorkflowEngine {
       description: String(input.description || existing?.description || '').slice(0, 1000),
       trigger,
       steps,
+      notify: cleanNotify(input.notify ?? existing?.notify),
       enabled: input.enabled !== false,
       createdAt: existing?.createdAt || now,
       updatedAt: now,
@@ -284,6 +360,30 @@ export class WorkflowEngine {
     this.#syncSchedule(wf);
     this.store.save();
     return wf;
+  }
+
+  /** Tell Slack / Teams (the webhooks set in Settings) and prepare an email draft when the workflow asks for it. */
+  async #tell(wf, run, message, note) {
+    const n = wf.notify;
+    if (!n || (!n.slack && !n.teams && !n.email)) return;
+    if (n.slack || n.teams) {
+      const settings = this.store.getSettings();
+      const missing = [n.slack && !settings.slackWebhookUrl && 'Slack', n.teams && !settings.teamsWebhookUrl && 'Teams'].filter(Boolean);
+      if (missing.length) note('notify-skipped', `${missing.join(' and ')} webhook is not set in Settings, so nothing was sent there`);
+      try {
+        const bot = this.store.getBot(wf.steps[0].botId);
+        const results = await this.routines.notifyWebhooks({ id: `rtn-${wf.id}`, name: wf.name, notifySlack: n.slack, notifyTeams: n.teams }, bot, message);
+        const sent = (results || []).filter(r => r.status === 'fulfilled' && r.value?.ok).length;
+        if (sent) note('notified', `Posted the result to ${sent} channel(s)`);
+        else if ((results || []).length) note('notify-failed', 'The webhook did not accept the message (see the dead-letter list)');
+      } catch (err) {
+        note('notify-failed', `Could not post the result: ${err?.message || err}`);
+      }
+    }
+    if (n.email) {
+      run.emailDraft = emailDraft(n.email, `${wf.name}: result`, message);
+      note('email-draft', `Email draft to ${n.email} is ready to open (Mimir never sends email itself)`);
+    }
   }
 
   /** The schedule lives in the routine system so workflows get its catch-up and retry rules. */
@@ -300,8 +400,11 @@ export class WorkflowEngine {
       prompt: `Run workflow "${wf.name}"`,
       workflowId: wf.id,
       enabled: wf.enabled,
+      notifySlack: false, // the workflow posts its own result, once, with the full text
+      notifyTeams: false,
       intervalMinutes: wf.trigger.type === 'interval' ? wf.trigger.intervalMinutes : 0,
       dailyAt: wf.trigger.type === 'daily' ? wf.trigger.dailyAt : '',
+      weekdays: wf.trigger.type === 'daily' ? wf.trigger.weekdays || [] : [],
       watchPath: wf.trigger.type === 'file' ? wf.trigger.watchPath : '',
       maxAttempts: 2,
     });
@@ -366,7 +469,19 @@ export class WorkflowEngine {
       const runStep = async (i, waveStart) => {
         const step = wf.steps[i];
         const rec = run.steps[i];
-        if (!rec || rec.status === 'done') return; // missing or finished in an earlier attempt
+        if (!rec || rec.status === 'done' || rec.status === 'skipped') return; // missing or settled in an earlier attempt
+        if (step.condition) {
+          const before = run.steps.slice(0, waveStart).filter(r => r.status === 'done').map(r => r.output).join('\n');
+          if (!evalCondition(step.condition, before)) {
+            rec.status = 'skipped';
+            rec.note = `Skipped: the earlier results ${step.condition.when === 'previous_lacks' ? 'mention' : step.condition.when === 'previous_nonempty' ? 'were empty' : 'do not mention'}${step.condition.text ? ` "${step.condition.text}"` : ''}`;
+            rec.finishedAt = new Date().toISOString();
+            note('step-skipped', `${rec.botName} skipped "${rec.title}": ${rec.note}`, i);
+            if (step.condition.otherwise === 'stop') run.stopped = `Stopped at "${rec.title}": ${rec.note}`;
+            checkpoint();
+            return;
+          }
+        }
         rec.status = 'running';
         rec.error = null;
         rec.startedAt = new Date().toISOString();
@@ -434,11 +549,20 @@ export class WorkflowEngine {
         const settled = await Promise.allSettled(wave.map(i => runStep(i, wave[0])));
         const failed = settled.find(r => r.status === 'rejected');
         if (failed) throw failed.reason;
+        if (run.stopped) {
+          for (const r of run.steps) if (r.status === 'waiting') { r.status = 'skipped'; r.note = 'Skipped: the workflow stopped earlier'; }
+          note('stopped', run.stopped);
+          break;
+        }
       }
       run.status = 'done';
       note('finished', `"${wf.name}" finished`);
-      run.deliverable = run.steps.at(-1).file;
-      return { ok: true, reply: `Workflow "${wf.name}" finished ${run.steps.length} step(s). Result: ${run.steps.at(-1).output.slice(0, 400)}`, runId: run.id, run };
+      const last = [...run.steps].reverse().find(r => r.status === 'done') || null;
+      run.deliverable = last?.file || null;
+      const result = last ? last.output : '';
+      const summary = run.stopped ? `${run.stopped}. Nothing more to do.` : `Workflow "${wf.name}" finished ${run.steps.filter(r => r.status === 'done').length} step(s). Result: ${result.slice(0, 400)}`;
+      await this.#tell(wf, run, run.stopped ? summary : `${summary}\n\n${result.slice(0, 1600)}`, note);
+      return { ok: true, reply: summary, runId: run.id, run };
     } catch (err) {
       run.status = 'failed';
       run.error = err.message;
