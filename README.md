@@ -123,9 +123,10 @@ Package the Windows installer with `npm run dist:win` (unsigned unless you provi
 ```bash
 npm test          # unit + integration suite (node:test), what CI runs
 npm run build     # production renderer build, also run in CI
+cargo build --release -p mimir-daemon --manifest-path rust/Cargo.toml   # optional Rust core (not built in CI)
 ```
 
-`npm test` starts real coordinators on loopback ports, drives a headless Chromium through Playwright for the browser tests, and fakes model endpoints with local mock servers. One test needs a live Ollama with `qwen3:1.7b`; it skips itself when `CI` is set. CI is [.github/workflows/ci.yml](.github/workflows/ci.yml).
+`npm test` starts real coordinators on loopback ports, drives a headless Chromium through Playwright for the browser tests, and fakes model endpoints with local mock servers. One test needs a live Ollama with `qwen3:1.7b`; it skips itself when `CI` is set. The durable-queue test drives the Rust sidecar and skips unless you have built it with `cargo build --release -p mimir-daemon --manifest-path rust/Cargo.toml`; CI does not build it yet. CI is [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
 These need a local model, so they are not in CI:
 

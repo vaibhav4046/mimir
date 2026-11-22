@@ -25,5 +25,6 @@ jobs:
       - name: Build the renderer (catches JSX and import errors)
         run: npm run build
       - name: Unit and integration tests
-        # The one test that needs a live Ollama model skips itself when CI is set.
+        # Skipped here with a printed reason: the live-Ollama test (no local model on runners) and
+        # the Rust-sidecar queue test (needs the separately built rust/ binary).
         run: npm test
