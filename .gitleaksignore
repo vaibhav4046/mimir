@@ -1,0 +1,15 @@
+# Reviewed 2026-11-22: all are fake fixtures (sk-test-..., sk-or-v1-test-..., ghp_1234567890abcdef) or a loopback CI dev token, not real secrets.
+0f008acdda96470a32e09e6868cc2d17e672d7d1:rust/crates/mimir-ffi/src/lib.rs:generic-api-key:53
+0f008acdda96470a32e09e6868cc2d17e672d7d1:tests/model-library.test.mjs:generic-api-key:92
+0f008acdda96470a32e09e6868cc2d17e672d7d1:tests/model-setup.test.mjs:generic-api-key:121
+0f008acdda96470a32e09e6868cc2d17e672d7d1:tests/model-setup.test.mjs:generic-api-key:125
+d405f56982710a7bd0b631bca01975df24cc9f64:.github/workflows/hydradb-oss-integration.yml:curl-auth-header:55
+d405f56982710a7bd0b631bca01975df24cc9f64:.github/workflows/hydradb-oss-integration.yml:curl-auth-header:60
+rust/crates/mimir-ffi/src/lib.rs:generic-api-key:53
+tests/model-library.test.mjs:generic-api-key:92
+tests/model-setup.test.mjs:generic-api-key:121
+tests/model-setup.test.mjs:generic-api-key:125
+rust\crates\mimir-ffi\src\lib.rs:generic-api-key:53
+tests\model-setup.test.mjs:generic-api-key:121
+tests\model-setup.test.mjs:generic-api-key:125
+tests\model-library.test.mjs:generic-api-key:92
