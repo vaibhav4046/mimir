@@ -275,7 +275,10 @@ test('Embedded Playwright Chromium navigation & JPEG screenshot capture', async 
   assert.ok(openRes.data.screenshotBase64.length > 500);
 });
 
-test('Live local Ollama (qwen3:1.7b, think=false) end-to-end tool execution turn', async t => {
+// Needs a running Ollama with qwen3:1.7b pulled. CI runners have no local model, so CI skips it.
+const LIVE_OLLAMA_SKIP = process.env.CI ? 'needs a live local Ollama with qwen3:1.7b (not available on CI runners)' : false;
+
+test('Live local Ollama (qwen3:1.7b, think=false) end-to-end tool execution turn', { skip: LIVE_OLLAMA_SKIP }, async t => {
   const dir = makeTempDir();
   let activeCoord = null;
   t.after(async () => {
