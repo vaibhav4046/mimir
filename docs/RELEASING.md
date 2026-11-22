@@ -37,5 +37,5 @@ Get-AuthenticodeSignature "release\Mimir Setup 1.0.5.exe" | Format-List Status, 
 ## Before you tag
 
 1. `npm test` and `npm run test:e2e` pass.
-2. `STATE.md` matches reality (it is the ledger new contributors read first).
+2. `docs/reports/STATE.md` matches reality (it is the ledger new contributors read first).
 3. Install the built installer on a clean Windows user, open it, finish the first-run screen, run one task, uninstall.

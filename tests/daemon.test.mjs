@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
+import { fileURLToPath } from 'node:url';
 import { WebSocket } from 'ws';
 import { startCoordinator } from '../daemon/coordinator.mjs';
 import { resolveSafePath, resolveChromiumPath, resolveUrlOrSearch } from '../daemon/local-exec.mjs';
@@ -275,7 +276,10 @@ test('Embedded Playwright Chromium navigation & JPEG screenshot capture', async 
   assert.ok(openRes.data.screenshotBase64.length > 500);
 });
 
-test('Live local Ollama (qwen3:1.7b, think=false) end-to-end tool execution turn', async t => {
+// Needs a running Ollama with qwen3:1.7b pulled. CI runners have no local model, so CI skips it.
+const LIVE_OLLAMA_SKIP = process.env.CI ? 'needs a live local Ollama with qwen3:1.7b (not available on CI runners)' : false;
+
+test('Live local Ollama (qwen3:1.7b, think=false) end-to-end tool execution turn', { skip: LIVE_OLLAMA_SKIP }, async t => {
   const dir = makeTempDir();
   let activeCoord = null;
   t.after(async () => {
@@ -483,7 +487,11 @@ test('RSI Critic reflection, SFT/DPO datasets, KnowledgeBase, and 9-Principle Sc
   assert.ok(rsiState.data.rules.length >= 1);
 });
 
-test('Rust core WAL queue: idempotency, --worker execution, lease crash reclaim, restart durability, sandbox & redaction', async t => {
+// The Rust sidecar is a separate build step that CI does not run. Skip with a pointer when it is missing.
+const RUST_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'rust', 'target', 'release', process.platform === 'win32' ? 'mimir-daemon.exe' : 'mimir-daemon');
+const RUST_SKIP = fs.existsSync(RUST_BIN) ? false : 'Rust core not built: run cargo build --release -p mimir-daemon --manifest-path rust/Cargo.toml';
+
+test('Rust core WAL queue: idempotency, --worker execution, lease crash reclaim, restart durability, sandbox & redaction', { skip: RUST_SKIP }, async t => {
   const dir = makeTempDir();
   let activeCoord = null;
   t.after(async () => {

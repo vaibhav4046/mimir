@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    # Windows is the tested desktop target; several tests use PowerShell and Windows paths.
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      # The Electron binary is only needed to package the desktop app, not to test it.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build the renderer (catches JSX and import errors)
+        run: npm run build
+      - name: Unit and integration tests
+        # Skipped here with a printed reason: the live-Ollama test (no local model on runners) and
+        # the Rust-sidecar queue test (needs the separately built rust/ binary).
+        run: npm test
