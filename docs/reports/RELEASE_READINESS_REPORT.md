@@ -18,8 +18,8 @@
 | Vite production build | `npx vite build` | **PASS** | `56` modules transformed in `2.96s` (`dist/renderer/` updated cleanly) |
 | Playwright E2E UI test | `npm run test:e2e` | **PASS** | `{"ok":true,"e2e":"passed","pageErrors":0,"consoleErrors":0}` |
 | Release manifest integrity | `public/release-manifest.json` | **PASS** | SHA-256 & byte sizes synchronized for all 6 tracked release artifacts; verified by `npm test` |
-| Live Chromium Home + Audio + Ollama | `http://localhost:5173/?port=4567` | **PASS** | Live `qwen3:1.7b` -> `foundry_create` -> Rust `validate_wav` generated `synthwave-ambient.wav` (`1,058,444` bytes / `1034 KB`), `3/3 structural checks passed`, playable `<audio>` waveform UI ([final_step_278.png](local-captures/final_step_278.png)) |
-| Live Chromium Atlas + Contracts + Hardware | `http://127.0.0.1:4567/v1/contracts`, `/v1/hardware/capabilities`, `Projects` | **PASS** | `14` contracts (`2026.1`), `7` lifecycle states, RTX 3050 `6144 MiB` VRAM detected, Tier-2 video gated cleanly (`HARDWARE_GATED_VRAM_LIMIT`), Yggdrasil 11-entity Atlas (`129` nodes, `79` edges, `32` duplicates), `0` console/page/HTTP errors ([final_step_315.png](local-captures/final_step_315.png)) |
+| Live Chromium Home + Audio + Ollama | `http://localhost:5173/?port=4567` | **PASS** | Live `qwen3:1.7b` -> `foundry_create` -> Rust `validate_wav` generated `synthwave-ambient.wav` (`1,058,444` bytes / `1034 KB`), `3/3 structural checks passed`, playable `<audio>` waveform UI (`final_step_278.png` (local capture, not in repo)) |
+| Live Chromium Atlas + Contracts + Hardware | `http://127.0.0.1:4567/v1/contracts`, `/v1/hardware/capabilities`, `Projects` | **PASS** | `14` contracts (`2026.1`), `7` lifecycle states, RTX 3050 `6144 MiB` VRAM detected, Tier-2 video gated cleanly (`HARDWARE_GATED_VRAM_LIMIT`), Yggdrasil 11-entity Atlas (`129` nodes, `79` edges, `32` duplicates), `0` console/page/HTTP errors (`final_step_315.png` (local capture, not in repo)) |
 
 ---
 
