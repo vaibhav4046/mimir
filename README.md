@@ -1,47 +1,42 @@
 # Mimir
 
-**A local-first desktop AI workspace for multi-agent work, live browser control, code/document authoring, and gated execution.**
+[![CI](https://github.com/vaibhav4046/mimir/actions/workflows/ci.yml/badge.svg)](https://github.com/vaibhav4046/mimir/actions/workflows/ci.yml)
 
-Mimir runs locally on your machine with [Ollama](https://ollama.com) (plus optional OpenAI-compatible or OpenRouter endpoints). Assistants collaborate in threads and Spaces, inspect and edit files in an interactive Canvas, drive an observable browser window, search local and live sources, generate multi-format deliverables, and pause for human approval before taking external or irreversible actions.
+**Describe your workflow once, Mimir automates it. Free and local.**
+
+You write a job in plain words, such as *"Every day at 8am, research competitor pricing, then write a short brief"*. Mimir turns it into a trigger and ordered steps, gives each step to a suitable assistant, and runs it on schedule with local models through [Ollama](https://ollama.com). No API key is needed. Anything irreversible stops at an approval gate first, which you can answer from the desktop app or your phone.
+
+![Mimir landing page at mimir-site-dusky.vercel.app](docs/assets/mimir-home.png)
+
+**Live site:** https://mimir-site-dusky.vercel.app (product page and Windows download; the app itself runs on your computer).
+
+### What this demonstrates
+
+- **Plain-English to durable workflow.** `daemon/workflows.mjs` parses a description into a trigger (daily, weekly, interval, file-watch or manual) and steps, routes each step to a bot by role, runs `parallel` steps in waves, checkpoints after every step and resumes a failed run from the step that failed. Covered by `tests/workflows.test.mjs`.
+- **A tool-calling agent loop built for small local models.** `daemon/agent-runner.mjs` and `daemon/llm-provider.mjs` run tool calls against Ollama or any OpenAI-compatible endpoint, curate the tool list per role so a 1.7B model is not flooded, and fit history to the context window. `tests/tool-gate-bench.mjs` measures whether a small model over-calls tools (results below).
+- **Human-in-the-loop safety.** Tools are classified by reversibility (`daemon/local-exec.mjs`). Outbound, system and credential actions go through `daemon/sentinel.mjs` for approval and leave receipts (`daemon/receipt.mjs`). `daemon/telegram.mjs` lets you approve from a phone, with a second confirm tap for irreversible actions (`tests/telegram.test.mjs`).
 
 ---
 
 ## Architecture
 
-Mimir separates the desktop shell, the local HTTP/WebSocket coordinator daemon, and the React renderer:
-
-```text
-+-------------------------------------------------------------------+
-| Electron Desktop Shell (electron/main.cjs, preload.cjs)           |
-+---------------------------------+---------------------------------+
-                                  |
-                                  v
-+-------------------------------------------------------------------+
-| React 19 + Vite UI (renderer/)                                    |
-|  - ChatView & CommandPaletteModal (Ctrl+K, branching, Spaces)     |
-|  - ComputerPane & CanvasPane (Live Screen, Canvas, Files, Memory) |
-|  - Overview, Boardroom, Forge, Library, Vault, Routines, Settings |
-+---------------------------------+---------------------------------+
-                                  | HTTP + WebSocket (127.0.0.1)
-                                  v
-+-------------------------------------------------------------------+
-| Local Coordinator Daemon (daemon/coordinator.mjs)                 |
-|  - Agent orchestration: agent-runner.mjs, dag-swarm.mjs,          |
-|    model-council.mjs, proactive.mjs, routines.mjs, workflows.mjs  |
-|  - Execution & safety: local-exec.mjs (Playwright), sentinel.mjs, |
-|    receipt.mjs, vault.mjs, browser-guard.mjs, desktop-control.mjs |
-|  - Knowledge & synthesis: rag-engine.mjs, deep-research.mjs,      |
-|    knowledge-rsi.mjs, foundry.mjs, voice.mjs, llm-provider.mjs    |
-+---------------------------------+---------------------------------+
-                                  | Optional Python / Rust workers
-                                  v
-+-------------------------------------------------------------------+
-| Local Workers & Storage                                           |
-|  - scripts/ (voice_engine.py, foundry_builder.py,                 |
-|    creative_studio_builder.py, desktop_ctrl.py)                   |
-|  - Ollama / BYOK LLM endpoints + per-bot /workspace directories   |
-+-------------------------------------------------------------------+
+```mermaid
+flowchart LR
+  UI["renderer/ (React 19 + Vite UI)"] -->|HTTP + WebSocket on 127.0.0.1| Coord["daemon/coordinator.mjs"]
+  Shell["electron/main.cjs (desktop shell)"] --> UI
+  Coord --> WF["daemon/workflows.mjs (WorkflowEngine)"]
+  Sched["daemon/proactive.mjs + routines.mjs (scheduler)"] --> WF
+  WF --> Runner["daemon/agent-runner.mjs (tool-calling loop)"]
+  Coord --> Runner
+  Runner --> LLM["daemon/llm-provider.mjs"]
+  LLM --> Models[("Ollama (default) or an OpenAI-compatible endpoint")]
+  Runner --> Tools["daemon/local-exec.mjs (files, Playwright browser)"]
+  Runner --> Gate["daemon/sentinel.mjs + receipt.mjs (approvals, receipts)"]
+  Gate --> TG["daemon/telegram.mjs (phone approvals)"]
+  Coord --> Store[("daemon/store.mjs (store.json + per-bot workspaces)")]
 ```
+
+The daemon also hosts optional engines that are not on the main path: multi-model council (`model-council.mjs`), local RAG (`rag-engine.mjs`), deep research (`deep-research.mjs`), document generation (`foundry.mjs` with Python workers in `scripts/`), MCP servers (`mcp-manager.mjs`) and an opt-in tool-selection graph (`context-graph.mjs`, see `contextgraph/`). An optional Rust core lives in `rust/`.
 
 ---
 
@@ -82,68 +77,77 @@ Drive an observable browser inside the **Work View -> Screen** tab (`daemon/loca
 
 ## Requirements
 
-- **Node.js** (ESM support for `daemon/` and Vite 6 / React 19 renderer)
-- **[Ollama](https://ollama.com/download)** for local inference (8 GB RAM minimum recommended; GPU with 4 GB+ VRAM improves speed)
-- **Windows 10/11 x64** is the primary tested desktop target (`npm run dist:win`); macOS and Linux can run from source
-- **Optional Python 3.11+** for local voice (`scripts/voice_engine.py`) and document/creative generation:
+- **Node.js 22+** (CI uses 22).
+- **[Ollama](https://ollama.com/download)** for local models, with a model pulled (for example `ollama pull qwen3:1.7b`). 8 GB RAM is the practical minimum; a GPU with 4 GB+ VRAM helps.
+- **Windows 10/11 x64** is the main tested desktop target (`npm run dist:win`). macOS and Linux run from source.
+- **Optional Python 3.11+** for local voice (`scripts/voice_engine.py`) and binary document generation:
   ```bash
   python -m pip install -r scripts/requirements.txt
   ```
+
+**What needs what:** no API key is needed for anything. Without Ollama the app, the UI, workflows editing and the test suite still run, but chat turns report that no model is reachable. An OpenAI-compatible or OpenRouter key is optional and only used if you add one in Settings.
 
 ---
 
 ## Quickstart
 
-Clone the repository and install JavaScript dependencies:
-
 ```bash
-npm install
+git clone https://github.com/vaibhav4046/mimir.git
+cd mimir
+npm ci
 ```
 
-Run the local coordinator daemon and the Vite development UI in two terminals:
+Run the coordinator daemon and the UI in two terminals. The UI looks for the daemon on port 4567, so pin it there (the daemon picks a random port otherwise):
 
 ```bash
-# Terminal 1: start the local coordinator daemon on 127.0.0.1
-npm run dev:daemon
+# Terminal 1: coordinator daemon on 127.0.0.1:4567
+MIMIR_PORT=4567 npm run dev:daemon        # PowerShell: $env:MIMIR_PORT=4567; npm run dev:daemon
 
-# Terminal 2: start the React renderer dev server
+# Terminal 2: Vite dev server, then open http://localhost:5173
 npm run dev:renderer
 ```
 
-Or launch the Electron desktop shell directly (after building the renderer if needed):
+Or run the Electron desktop shell, which starts its own daemon:
 
 ```bash
 npm run build
 npm start
 ```
 
-### Packaging (Windows x64)
+Package the Windows installer with `npm run dist:win` (unsigned unless you provide a certificate, see [docs/RELEASING.md](docs/RELEASING.md)).
+
+---
+
+## Tests
 
 ```bash
-npm run dist:win
+npm test          # unit + integration suite (node:test), what CI runs
+npm run build     # production renderer build, also run in CI
+```
+
+`npm test` starts real coordinators on loopback ports, drives a headless Chromium through Playwright for the browser tests, and fakes model endpoints with local mock servers. One test needs a live Ollama with `qwen3:1.7b`; it skips itself when `CI` is set. CI is [.github/workflows/ci.yml](.github/workflows/ci.yml).
+
+These need a local model, so they are not in CI:
+
+```bash
+npm run test:e2e  # full UI journey against the built renderer (needs Chromium)
+npm run eval      # 8-task local model eval (needs Ollama)
+node tests/tool-gate-bench.mjs qwen3:1.7b   # tool over-calling benchmark (needs Ollama)
 ```
 
 ---
 
-## Running Tests
+## Results
 
-Run the Node unit and integration suite (`package.json`):
+From `node tests/tool-gate-bench.mjs qwen3:1.7b`, committed at [docs/tool-gate-bench.json](docs/tool-gate-bench.json). One run, 32 hand-written prompts (some need no tool, some need a specific one), real Mimir tool schemas, `qwen3:1.7b` on Ollama. Small sample, so treat the differences as indicative.
 
-```bash
-npm test
-```
+| Variant | Unneeded tool calls | Correct first tool | Overall OK | Avg tools offered | Avg prompt tokens |
+|---|---|---|---|---|---|
+| curated (what Mimir ships) | 6.3% | 50% | 71.9% | 8.4 | 896 |
+| gate (no tools when the request shows no need) | 0% | 50% | 75% | 4.4 | 490 |
+| graph (Context Graph narrows the list) | 0% | 62.5% | 81.3% | 5.9 | 664 |
 
-Run the end-to-end UI suite (`tests/e2e-ui.mjs`):
-
-```bash
-npm run test:e2e
-```
-
-Run the evaluation suite (`tests/eval-suite.mjs`):
-
-```bash
-npm run eval
-```
+Other measured runs (local eval suite, release checks) are kept as dated working notes in [docs/reports/](docs/reports/) and [docs/EVAL_REPORT.md](docs/EVAL_REPORT.md); they were recorded on one machine and need Ollama to reproduce.
 
 ---
 
